@@ -1,6 +1,6 @@
 # Implementation Plan: Editor visual de plantillas del catálogo
 
-**Branch**: `003-catalog-template-editor` (sin repositorio git aún) | **Date**: 2026-10-03 | **Spec**: [spec.md](./spec.md)
+**Branch**: `003-catalog-template-editor` (el nombre solo identifica la feature; no tiene rama propia, el trabajo vive en `main`) | **Date**: 2026-10-03 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/003-catalog-template-editor/spec.md`
 

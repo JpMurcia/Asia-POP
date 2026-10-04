@@ -225,4 +225,4 @@ MVP → US3 (tema editable) → US4 (fidelidad del PDF con pie y textos largos) 
 - Las tareas T080 (cuenta real de Alegra) y T085 (escenarios y revisión visual final) de la feature 001 siguen abiertas; esta feature no las reemplaza.
 - El cambio de aspecto del PDF por defecto (elementos nuevos pintados con `#11052C`/`#FF007A`/`#00FF66`/`#FF9900`) se valida con el responsable en T057 y T062; si no le gusta, se cambia solo `backend/src/catalog/theme.ts`.
 - La pantalla Negocio de 001 conserva su estilo actual durante US1 y se reemplaza por Apariencia en US3 (T050–T051).
-- Hacer commit por tarea o grupo lógico cuando el proyecto sea un repositorio git.
+- Hacer commit por tarea o grupo lógico (el proyecto ya es un repositorio git, rama `main`).

@@ -1,6 +1,6 @@
 # Implementation Plan: Generador de Catálogo PDF ASIANPOP MARKET+
 
-**Branch**: `001-catalog-pdf-generator` (sin repositorio git aún) | **Date**: 2026-10-02 | **Spec**: [spec.md](./spec.md)
+**Branch**: `001-catalog-pdf-generator` (el nombre solo identifica la feature; no tiene rama propia, el trabajo vive en `main`) | **Date**: 2026-10-02 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/001-catalog-pdf-generator/spec.md`
 

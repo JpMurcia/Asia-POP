@@ -1,6 +1,6 @@
 # Feature Specification: Generador de Catálogo PDF ASIANPOP MARKET+
 
-**Feature Branch**: `001-catalog-pdf-generator` (el proyecto aún no es un repositorio git; el nombre solo identifica la feature)
+**Feature Branch**: `001-catalog-pdf-generator` (el nombre solo identifica la feature; no tiene rama propia, el trabajo vive en `main`)
 
 **Created**: 2026-10-02
 

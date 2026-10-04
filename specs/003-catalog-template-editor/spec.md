@@ -1,6 +1,6 @@
 # Feature Specification: Editor visual de plantillas del catálogo
 
-**Feature Branch**: `003-catalog-template-editor` (el proyecto aún no es un repositorio git; el nombre solo identifica la feature)
+**Feature Branch**: `003-catalog-template-editor` (el nombre solo identifica la feature; no tiene rama propia, el trabajo vive en `main`)
 
 **Created**: 2026-10-03
 

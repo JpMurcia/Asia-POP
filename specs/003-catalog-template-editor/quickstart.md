@@ -8,7 +8,7 @@ Escenarios para comprobar la feature de punta a punta. Detalle de endpoints en [
 - Tipografías nuevas instaladas en el frontend: `@fontsource/bungee`, `@fontsource/zen-maru-gothic`, `@fontsource/space-grotesk` y `@fontsource/dm-serif-display`.
 - Para escenarios sin cuenta real: servidor simulado de Alegra (`backend/tests/fixtures/dev-mock.ts`) con productos de varias categorías, al menos uno agotado y una sección propia con texto de introducción.
 - Constitución en v1.1.0 (principio IV enmendado); ver `plan.md`.
-- Línea base de 002 capturada **antes** de cambiar el render (tarea T004): PDF, una captura por página y copia de `frontend/src/print/` en `specs/003-catalog-template-editor/visual/baseline-002/`. El proyecto no es un repositorio git; sin esa copia no hay con qué comparar Neón Noche una vez eliminados los componentes antiguos.
+- Línea base de 002 capturada **antes** de cambiar el render (tarea T004): PDF, una captura por página y copia de `frontend/src/print/` en `specs/003-catalog-template-editor/visual/baseline-002/`. El historial de git solo tiene un commit con el código ya nuevo; sin esa copia no hay con qué comparar Neón Noche una vez eliminados los componentes antiguos.
 
 ## Arranque
 

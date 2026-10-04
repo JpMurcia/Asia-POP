@@ -267,5 +267,5 @@ MVP → US4 (alerta sin categoría) → US5 (mochis y productos propios) → US6
 
 - `[P]` = archivos distintos y sin dependencias pendientes.
 - Confirmar que las pruebas fallan antes de implementar.
-- Hacer commit por tarea o grupo lógico (cuando el proyecto sea un repositorio git).
+- Hacer commit por tarea o grupo lógico (el proyecto ya es un repositorio git, rama `main`).
 - T080 debe hacerse lo antes posible si hay credenciales disponibles, porque puede cambiar tipos y mapeos de US1; si se dispone de ellas, adelantarla antes de T025.

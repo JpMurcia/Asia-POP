@@ -8,7 +8,7 @@
 
 **Organization**: Tareas agrupadas por historia de usuario. **US1 es el MVP**: por sí sola devuelve las fotos al catálogo. US2 y US3 dependen de US1 (necesitan que las fotos se descarguen) pero son independientes entre sí.
 
-**Sin repositorio git**: el proyecto no es un repositorio. Los cambios son acotados, pero considera `git init` (el `.gitignore` ya protege `data/`, `.env` y credenciales) o copiar el árbol antes de empezar.
+**Control de versiones**: el proyecto ya es un repositorio git (rama `main`); el `.gitignore` protege `data/`, `.env` y credenciales.
 
 ## Format: `[ID] [P?] [Story] Description`
 

@@ -8,7 +8,7 @@
 
 **Organization**: Tareas agrupadas por historia de usuario. **Las fases de US2 y US1 (ambas P1) van en ese orden** porque el editor reutiliza el render de plantillas y el PDF que se construye en US2. Entre el final de US2 y el final de US1 la pantalla Apariencia antigua deja de afectar al PDF: no publicar entre ambas.
 
-**Sin repositorio git**: el proyecto no es un repositorio. T004 deja una línea base de 002 en `specs/003-catalog-template-editor/visual/baseline-002/` antes de que T040 y T067 eliminen código; considera `git init` (el `.gitignore` ya protege secretos) o copiar el árbol antes de esas dos tareas.
+**Control de versiones**: el proyecto ya es un repositorio git (rama `main`), pero 003 se implementó antes de que lo fuera y el commit inicial solo contiene el código resultante. Por eso T004 dejó una línea base de 002 en `specs/003-catalog-template-editor/visual/baseline-002/` antes de que T040 y T067 eliminaran código, y esa copia sigue siendo la única referencia de los componentes antiguos.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -340,5 +340,5 @@ Task: "IntroBlock en frontend/src/print/blocks/IntroBlock.tsx"
 - La etiqueta [Story] enlaza cada tarea con su historia de la spec.
 - Cada historia debe poder completarse y probarse por separado.
 - Comprobar que las pruebas fallan antes de implementar.
-- Guardar el progreso después de cada tarea o grupo lógico: el proyecto no es un repositorio git, así que conviene `git init` o una copia del árbol antes de T040 y T067, que eliminan código.
+- Guardar el progreso después de cada tarea o grupo lógico (hacer commit en `main`). T040 y T067 eliminan código: la copia de línea base de T004 conserva el original.
 - Evitar: tareas vagas, conflictos en un mismo archivo y dependencias entre historias que rompan su independencia.

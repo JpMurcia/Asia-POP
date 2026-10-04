@@ -1,6 +1,6 @@
 # Feature Specification: Fotos de productos de Alegra en el catálogo
 
-**Feature Branch**: `004-fix-alegra-images` (el proyecto aún no es un repositorio git; el nombre solo identifica la feature)
+**Feature Branch**: `004-fix-alegra-images` (el nombre solo identifica la feature; no tiene rama propia, el trabajo vive en `main`)
 
 **Created**: 2026-10-04
 

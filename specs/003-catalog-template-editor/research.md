@@ -97,7 +97,7 @@ Las otras tres bases (`pop`, `kawaii`, `kraft`) siguen el mockup, agregando los 
 
 **Diferencias aceptadas** (spec, Clarifications): los íconos de WhatsApp de «Domicilios» y Fredoka 700 en lugar de Fredoka One. Todo lo demás de `neon` debe coincidir con el PDF de 002.
 
-**Riesgo**: ninguna calibración reproduce el PDF al píxel. Mitigación: (1) **línea base** de 002 capturada antes de tocar nada (PDF, una captura por página y copia de `frontend/src/print/`, en `specs/003-catalog-template-editor/visual/baseline-002/`; el proyecto no es un repositorio git, así que esa copia es la única referencia una vez eliminados los componentes antiguos); (2) revisión visual con capturas lado a lado (como `visual-review.md` de 002); (3) la aprobación visual de 002 (sus T057 y T062) sigue abierta y se valida junto con SC-003.
+**Riesgo**: ninguna calibración reproduce el PDF al píxel. Mitigación: (1) **línea base** de 002 capturada antes de tocar nada (PDF, una captura por página y copia de `frontend/src/print/`, en `specs/003-catalog-template-editor/visual/baseline-002/`; el historial de git solo tiene un commit con el código ya nuevo, así que esa copia es la única referencia una vez eliminados los componentes antiguos); (2) revisión visual con capturas lado a lado (como `visual-review.md` de 002); (3) la aprobación visual de 002 (sus T057 y T062) sigue abierta y se valida junto con SC-003.
 
 ## 7. Arquitectura del editor (frontend)
 

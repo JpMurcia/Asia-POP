@@ -1,6 +1,6 @@
 # Implementation Plan: Panel de administración y personalización del catálogo
 
-**Branch**: `002-admin-panel-theming` (sin repositorio git aún) | **Date**: 2026-10-03 | **Spec**: [spec.md](./spec.md)
+**Branch**: `002-admin-panel-theming` (el nombre solo identifica la feature; no tiene rama propia, el trabajo vive en `main`) | **Date**: 2026-10-03 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/002-admin-panel-theming/spec.md`
 
