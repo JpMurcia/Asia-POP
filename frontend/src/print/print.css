@@ -1,0 +1,39 @@
+/*
+ * Hoja A4 del catálogo (210mm x 297mm = 794 x 1123 px a 96 dpi). Cada página se dibuja con `TemplatePage`
+ * (`template.css` y los estilos de `blocks/`); aquí solo vive lo que necesita el documento impreso.
+ */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.print-root {
+  font-family: 'Poppins', system-ui, sans-serif;
+  background: #1a1a1a;
+}
+
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  break-after: page;
+  page-break-after: always;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.a4-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+@media screen {
+  .print-root {
+    padding: 16px 0;
+  }
+  .a4-page {
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+}

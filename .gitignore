@@ -1,0 +1,17 @@
+﻿node_modules/
+dist/
+data/
+docs/credenciales.txt
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Capturas PNG de las revisiones visuales de cada feature (~170 MB): se quedan en disco pero no se versionan.
+# Los PDF y el código de línea base de esas carpetas sí se versionan.
+specs/**/visual/**/*.png

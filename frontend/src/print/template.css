@@ -1,0 +1,94 @@
+/*
+ * Dibujo de las plantillas del catálogo. La hoja mide 595,28 × 841,89 px lógicos (A4 en puntos) y se escala con
+ * `transform`; cada elemento se coloca en % de la hoja. Lo usan el editor, las miniaturas, la vista previa y el PDF.
+ */
+.tpl-page-frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+}
+.tpl-page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  overflow: hidden; /* lo que sale de la hoja se recorta y no agranda el documento */
+  background-repeat: no-repeat;
+  font-family: 'Poppins', system-ui, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+/* Capa del editor sobre la hoja: misma escala que la hoja, sin recorte y sin capturar el puntero */
+.tpl-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+/* En la hoja impresa el recorte lo hace .a4-page; aquí solo se evita que el contenido escalado la desborde */
+.tpl-print > .tpl-page {
+  overflow: hidden;
+}
+
+/* Fondo de imagen: un <img> (no un background) para que la impresión espere a que cargue */
+.tpl-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  user-select: none;
+}
+
+.tpl-el {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+/* Texto: caja flex para centrar en vertical; `.tpl-text` es lo que mide useFit */
+.tpl-text-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.tpl-text {
+  width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+}
+
+.tpl-badge {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.tpl-badge-text {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.tpl-shape {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.tpl-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}

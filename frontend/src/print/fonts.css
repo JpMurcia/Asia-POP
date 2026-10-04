@@ -1,0 +1,29 @@
+/*
+ * Las seis familias que ofrece el editor de plantillas (FR-017), todas locales (@fontsource): el PDF no debe
+ * depender de internet. El editor y la vista de impresión importan esta misma hoja.
+ *
+ * Zen Maru Gothic se importa solo en su subconjunto latino: sus archivos completos incluyen cientos de
+ * subconjuntos japoneses (decenas de MB) y los textos del catálogo están en español.
+ */
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+
+@import '@fontsource/fredoka/400.css';
+@import '@fontsource/fredoka/500.css';
+@import '@fontsource/fredoka/600.css';
+@import '@fontsource/fredoka/700.css';
+
+@import '@fontsource/zen-maru-gothic/latin-400.css';
+@import '@fontsource/zen-maru-gothic/latin-500.css';
+@import '@fontsource/zen-maru-gothic/latin-700.css';
+@import '@fontsource/zen-maru-gothic/latin-900.css';
+
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';
+
+@import '@fontsource/bungee/400.css';
+
+@import '@fontsource/dm-serif-display/400.css';

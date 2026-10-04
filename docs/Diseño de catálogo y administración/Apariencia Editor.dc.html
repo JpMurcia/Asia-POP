@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&family=Poppins:wght@400;500;600;700;800&family=Bungee&family=Zen+Maru+Gothic:wght@500;700;900&family=Space+Grotesk:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+a{color:#C41E72}
+a:hover{color:#E5368C}
+input,select,button,textarea{font:inherit}
+input[type=color]{-webkit-appearance:none;appearance:none;border:0;padding:0;background:none;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+input[type=color]::-webkit-color-swatch{border:0;border-radius:6px}
+input[type=range]{accent-color:#E5368C}
+</style>
+</helmet>
+<div style="height:100vh;display:flex;flex-direction:column;background:#FFF7EC;color:#2A1258;font-family:'Nunito Sans',sans-serif;font-size:13px;line-height:1.4">
+
+  <header style="height:56px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 12px;overflow:hidden;background:#2A1258;color:#FFF4E2">
+    <sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><a href="Admin Catalogo.dc.html" title="Volver al panel" style="flex-shrink:0;display:flex;align-items:center;gap:8px;color:#FFF4E2;text-decoration:none;font-weight:700">
+      <img src="assets/logo.jpg" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+      </a>
+    <span style="width:1px;height:24px;background:rgba(255,244,226,.2)"></span></sc-if>
+    <sc-if value="{{ embedded }}"><button onClick="{{ back }}" title="Volver al menú" style="flex-shrink:0;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 4px;border:0;border-radius:999px;background:rgba(255,244,226,.1);color:#FFF4E2;font-weight:800;cursor:pointer;white-space:nowrap"><img src="assets/logo.jpg" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover">← Menú</button></sc-if>
+    <span style="font-family:'Fredoka',sans-serif;font-size:17px;font-weight:600;white-space:nowrap;flex-shrink:0">Apariencia</span>
+    <div style="display:flex;gap:2px;padding:3px;border-radius:999px;background:#3A1E78;flex-shrink:0">
+      <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="2">
+        <button onClick="{{ v.pick }}" style="height:30px;padding:0 14px;border:0;border-radius:999px;background:{{ v.bg }};color:{{ v.fg }};font-weight:700;cursor:pointer">{{ v.label }}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
+      <input value="{{ tplName }}" onChange="{{ setTplName }}" aria-label="Nombre de la plantilla" style="height:34px;flex:1 1 120px;width:auto;max-width:220px;min-width:60px;padding:0 10px;border-radius:8px;border:1px solid rgba(255,244,226,.2);background:transparent;color:#FFF4E2;font-weight:700;outline:none">
+      <div style="display:flex;gap:4px">
+        <button onClick="{{ undo }}" title="Deshacer (Ctrl+Z)" style="height:34px;padding:0 10px;border:0;border-radius:8px;background:rgba(255,244,226,.08);color:{{ undoFg }};cursor:pointer;font-weight:700;font-size:17px;white-space:nowrap">↶</button>
+        <button onClick="{{ redo }}" title="Rehacer (Ctrl+Shift+Z)" style="height:34px;padding:0 10px;border:0;border-radius:8px;background:rgba(255,244,226,.08);color:{{ redoFg }};cursor:pointer;font-weight:700;font-size:17px;white-space:nowrap">↷</button>
+      </div>
+    </sc-if>
+    <div style="flex:1 1 0;min-width:0"></div>
+    <span title="{{ statusLabel }}" style="width:10px;height:10px;flex-shrink:0;border-radius:50%;background:{{ statusColor }}"></span>
+    <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ togglePreview }}" style="height:36px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,244,226,.3);background:{{ previewBg }};color:#FFF4E2;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">{{ previewLabel }}</button>
+      <button onClick="{{ makeDefault }}" style="height:36px;padding:0 14px;border-radius:10px;border:0;background:{{ defBg }};color:{{ defFg }};font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">{{ defLabel }}</button>
+    </sc-if>
+    <button onClick="{{ save }}" style="height:36px;padding:0 18px;border:0;border-radius:10px;background:{{ saveBg }};color:#FFFFFF;font-weight:800;cursor:pointer;box-shadow:0 3px 0 #8E1553;white-space:nowrap;flex-shrink:0">Guardar</button>
+  </header>
+
+  <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:72px minmax(220px,288px) minmax(0,1fr) minmax(240px,304px)">
+
+      <nav style="display:flex;flex-direction:column;gap:4px;padding:10px 6px;background:#FFFFFF;border-right:1px solid #F0DFC8">
+        <sc-for list="{{ rail }}" as="r" hint-placeholder-count="4">
+          <button onClick="{{ r.pick }}" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border:0;border-radius:12px;background:{{ r.bg }};color:{{ r.fg }};cursor:pointer;font-size:11px;font-weight:800">
+            <span style="width:20px;height:20px;border:2.5px solid currentColor;border-radius:{{ r.glyph }};transform:{{ r.glyphRot }}"></span>
+            {{ r.label }}
+          </button>
+        </sc-for>
+      </nav>
+
+      <aside style="min-height:0;overflow:auto;padding:18px 16px 32px;background:#FFFCF7;border-right:1px solid #F0DFC8;display:flex;flex-direction:column;gap:18px">
+
+        <sc-if value="{{ tabPlantillas }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-family:'Fredoka',sans-serif;font-size:17px;font-weight:600">Plantillas</span>
+            <button onClick="{{ goGallery }}" style="border:0;background:transparent;color:#C41E72;font-weight:800;cursor:pointer;padding:0">Ver todas</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ tplList }}" as="tl" hint-placeholder-count="4">
+              <button onClick="{{ tl.open }}" style="display:flex;gap:12px;align-items:center;padding:8px;border-radius:14px;border:2px solid {{ tl.border }};background:#FFFFFF;cursor:pointer;text-align:left;color:#2A1258">
+                <div style="width:62px;height:88px;flex-shrink:0"><dc-import name="Pagina Catalogo" page="{{ tl.thumb }}" hint-size="62px,88px"></dc-import></div>
+                <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                  <strong style="font-size:14px">{{ tl.name }}</strong>
+                  <div style="display:flex;gap:3px"><sc-for list="{{ tl.dots }}" as="dt"><span style="width:14px;height:14px;border-radius:50%;background:{{ dt }};box-shadow:inset 0 0 0 1px rgba(42,18,88,.15)"></span></sc-for></div>
+                  <sc-if value="{{ tl.isDefault }}"><span style="align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:#FFE9B3;color:#5C3B00">Predeterminada</span></sc-if>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+          <button onClick="{{ goGalleryNew }}" style="height:42px;border-radius:12px;border:2px dashed #F0DFC8;background:transparent;color:#C41E72;font-weight:800;cursor:pointer">Nueva plantilla</button>
+          <p style="margin:0;color:#7A6A92;font-size:12px;text-wrap:pretty">La predeterminada se usa en Generar catálogo. Allí puedes elegir otra solo para esa generación.</p>
+        </sc-if>
+
+        <sc-if value="{{ tabElementos }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Texto</span>
+            <button onClick="{{ addTitle }}" style="height:52px;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;cursor:pointer;font-family:{{ titleFont }};font-size:22px;font-weight:700">Agregar título</button>
+            <button onClick="{{ addBody }}" style="height:40px;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;cursor:pointer;font-family:{{ bodyFont }};font-size:14px">Agregar texto</button>
+            <button onClick="{{ addBadge }}" style="height:40px;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700"><span style="padding:2px 10px;border-radius:999px;background:#E5368C;color:#FFFFFF;font-size:11px;letter-spacing:.06em">NUEVO</span>Insignia</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Datos del catálogo</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ dataChips }}" as="dc" hint-placeholder-count="5">
+                <button onClick="{{ dc.add }}" style="height:32px;padding:0 12px;border-radius:999px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;font-weight:700;cursor:pointer">{{ dc.label }}</button>
+              </sc-for>
+            </div>
+            <span style="color:#7A6A92;font-size:12px">Se reemplazan por el dato real al generar.</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Formas</span>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+              <sc-for list="{{ shapeBtns }}" as="sb" hint-placeholder-count="4">
+                <button onClick="{{ sb.add }}" title="{{ sb.label }}" style="aspect-ratio:1;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF;cursor:pointer;display:grid;place-items:center">
+                  <span style="width:{{ sb.w }};height:{{ sb.h }};border-radius:{{ sb.r }};background:#E5368C"></span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Imágenes</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <sc-for list="{{ imgBtns }}" as="ib" hint-placeholder-count="2">
+                <button onClick="{{ ib.add }}" style="display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF;cursor:pointer;color:#2A1258;font-weight:700">
+                  <span style="height:70px;border-radius:8px;background-image:{{ ib.img }};background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#FFF1DE"></span>
+                  {{ ib.label }}
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <p style="margin:0;color:#7A6A92;font-size:12px;text-wrap:pretty">Los bloques de productos, políticas y pie de página se llenan solos con los datos de Alegra y de Contenido propio.</p>
+        </sc-if>
+
+        <sc-if value="{{ tabEstilo }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-family:'Fredoka',sans-serif;font-size:17px;font-weight:600">Paleta de la plantilla</span>
+            <span style="color:#7A6A92;font-size:12px">Cada elemento que usa un color de la paleta cambia a la vez.</span>
+            <sc-for list="{{ paletteRows }}" as="pr" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="color" value="{{ pr.hex }}" onChange="{{ pr.onInput }}" aria-label="{{ pr.label }}" style="width:36px;height:36px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(42,18,88,.15)">
+                <div style="display:flex;flex-direction:column;flex:1;min-width:0"><strong>{{ pr.label }}</strong><span style="font-size:11px;color:#7A6A92">{{ pr.use }}</span></div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7A6A92">{{ pr.hex }}</span>
+              </div>
+            </sc-for>
+            <button onClick="{{ restoreColors }}" style="align-self:flex-start;border:0;background:transparent;color:#C41E72;font-weight:800;cursor:pointer;padding:0">Restaurar colores originales</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Paletas sugeridas</span>
+            <sc-for list="{{ palettePresets }}" as="pp" hint-placeholder-count="5">
+              <button onClick="{{ pp.apply }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF;cursor:pointer;color:#2A1258;font-weight:700">
+                <span>{{ pp.name }}</span>
+                <span style="display:flex"><sc-for list="{{ pp.dots }}" as="d"><span style="width:18px;height:18px;margin-left:-4px;border-radius:50%;background:{{ d }};border:2px solid #FFFFFF"></span></sc-for></span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Tipografía</span>
+            <sc-for list="{{ fontPairs }}" as="fp" hint-placeholder-count="5">
+              <button onClick="{{ fp.apply }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border-radius:12px;border:2px solid {{ fp.border }};background:#FFFFFF;cursor:pointer;color:#2A1258;text-align:left">
+                <span style="font-family:{{ fp.tf }};font-size:20px;font-weight:700;line-height:1.1">{{ fp.tName }}</span>
+                <span style="font-family:{{ fp.bf }};font-size:12px;color:#7A6A92">Texto con {{ fp.bName }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ tabDatos }}">
+          <span style="font-family:'Fredoka',sans-serif;font-size:17px;font-weight:600">Textos y contacto</span>
+          <sc-for list="{{ bizFields }}" as="bf" hint-placeholder-count="5">
+            <label style="display:flex;flex-direction:column;gap:5px">
+              <span style="display:flex;justify-content:space-between;font-weight:700;font-size:12px"><span>{{ bf.label }}</span><span style="color:{{ bf.countColor }};font-weight:600">{{ bf.count }}</span></span>
+              <input value="{{ bf.value }}" onChange="{{ bf.onChange }}" style="height:38px;padding:0 10px;border-radius:10px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;outline:none">
+              <sc-if value="{{ bf.hint }}"><span style="font-size:11px;color:#7A6A92">{{ bf.hint }}</span></sc-if>
+            </label>
+          </sc-for>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Políticas de compra</span>
+            <sc-for list="{{ termRows }}" as="tr" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;border:1px solid #F0DFC8;background:#FFFFFF">
+                <input value="{{ tr.title }}" onChange="{{ tr.setTitle }}" aria-label="Título de la política" style="height:34px;padding:0 8px;border-radius:8px;border:1px solid #F0DFC8;background:#FFFCF7;color:#2A1258;font-weight:700;outline:none">
+                <textarea value="{{ tr.body }}" onChange="{{ tr.setBody }}" rows="3" aria-label="Texto de la política" style="padding:6px 8px;border-radius:8px;border:1px solid #F0DFC8;background:#FFFCF7;color:#2A1258;outline:none;resize:vertical"></textarea>
+                <button onClick="{{ tr.remove }}" style="align-self:flex-start;border:0;background:transparent;color:#B3123F;font-weight:700;cursor:pointer;padding:0">Quitar</button>
+              </div>
+            </sc-for>
+            <button onClick="{{ addTerm }}" style="align-self:flex-start;border:0;background:transparent;color:#C41E72;font-weight:800;cursor:pointer;padding:0">+ Agregar política</button>
+            <span style="font-size:12px;color:{{ termsColor }};font-weight:{{ termsWeight }}">{{ termsCount }}</span>
+          </div>
+        </sc-if>
+      </aside>
+
+      <section style="min-width:0;min-height:0;display:flex;flex-direction:column;background:#F3E6D3">
+        <div data-canvas-area="1" onPointerDown="{{ areaDown }}" style="flex:1;min-height:0;display:flex;gap:24px;overflow:auto;padding:20px;position:relative">
+          <sc-if value="{{ notPreview }}" hint-placeholder-val="{{ true }}">
+            <div data-page-wrap="1" style="width:{{ pageW }};height:{{ pageH }};flex-shrink:0;margin:auto">
+              <dc-import name="Pagina Catalogo" page="{{ canvasPage }}" hint-size="100%,100%"></dc-import>
+            </div>
+          </sc-if>
+          <sc-if value="{{ preview }}">
+            <sc-for list="{{ previewPages }}" as="pv">
+              <div style="display:flex;flex-direction:column;gap:8px;align-items:center;flex-shrink:0;margin:auto 0">
+                <div style="width:{{ pv.w }};height:{{ pv.h }}"><dc-import name="Pagina Catalogo" page="{{ pv.page }}" hint-size="100%,100%"></dc-import></div>
+                <span style="font-weight:700;color:#7A6A92">{{ pv.label }}</span>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+        <footer style="height:118px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 16px;border-top:1px solid #E6D3B8;background:#FFF7EC">
+          <div style="display:flex;gap:10px;flex:1;min-width:0;overflow-x:auto;padding:4px 2px">
+            <sc-for list="{{ strip }}" as="st" hint-placeholder-count="4">
+              <button onClick="{{ st.pick }}" style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border-radius:12px;border:2px solid {{ st.border }};background:{{ st.bg }};cursor:pointer;color:#2A1258;text-align:left;flex-shrink:0">
+                <div style="width:56px;height:79px"><dc-import name="Pagina Catalogo" page="{{ st.thumb }}" hint-size="56px,79px"></dc-import></div>
+                <div style="display:flex;flex-direction:column"><strong>{{ st.label }}</strong><span style="font-size:11px;color:#7A6A92">{{ st.note }}</span></div>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;padding:4px;border-radius:10px;background:#FFFFFF;border:1px solid #F0DFC8;flex-shrink:0">
+            <button onClick="{{ zoomOut }}" style="width:30px;height:30px;border:0;border-radius:6px;background:transparent;color:#2A1258;cursor:pointer;font-size:16px;font-weight:800">−</button>
+            <span style="min-width:44px;text-align:center;font-weight:800">{{ zoomLabel }}</span>
+            <button onClick="{{ zoomIn }}" style="width:30px;height:30px;border:0;border-radius:6px;background:transparent;color:#2A1258;cursor:pointer;font-size:16px;font-weight:800">+</button>
+            <button onClick="{{ zoomFit }}" style="height:30px;padding:0 10px;border:0;border-radius:6px;background:#FFF1DE;color:#2A1258;cursor:pointer;font-weight:700">Ajustar</button>
+          </div>
+        </footer>
+      </section>
+
+      <aside style="min-height:0;overflow:auto;padding:18px 16px 32px;background:#FFFFFF;border-left:1px solid #F0DFC8;display:flex;flex-direction:column;gap:16px">
+        <sc-if value="{{ hasSel }}">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">{{ selType }}</span>
+            <span style="font-family:'Fredoka',sans-serif;font-size:18px;font-weight:600">{{ selName }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <sc-for list="{{ selActions }}" as="sa" hint-placeholder-count="6">
+              <button onClick="{{ sa.run }}" style="height:32px;border-radius:8px;border:1px solid #F0DFC8;background:#FFFCF7;color:{{ sa.fg }};cursor:pointer;font-weight:700;font-size:12px">{{ sa.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Página</span>
+            <span style="font-family:'Fredoka',sans-serif;font-size:18px;font-weight:600">{{ pageLabel }}</span>
+            <span style="color:#7A6A92;font-size:12px">{{ pageNote }}</span>
+          </div>
+        </sc-if>
+
+        <sc-for list="{{ fields }}" as="f" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <sc-if value="{{ f.isHeading }}"><div style="padding-top:8px;border-top:1px solid #F0DFC8;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">{{ f.label }}</div></sc-if>
+            <sc-if value="{{ f.hasLabel }}"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700"><span>{{ f.label }}</span><span style="color:#7A6A92;font-weight:600">{{ f.display }}</span></div></sc-if>
+            <sc-if value="{{ f.isColor }}">
+              <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                <sc-for list="{{ f.swatches }}" as="sw"><button onClick="{{ sw.pick }}" title="{{ sw.title }}" style="width:26px;height:26px;border-radius:50%;border:0;cursor:pointer;background:{{ sw.bg }};box-shadow:{{ sw.ring }}"></button></sc-for>
+                <input type="color" value="{{ f.hex }}" onChange="{{ f.onInput }}" title="Color personalizado" style="width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(42,18,88,.2)">
+              </div>
+            </sc-if>
+            <sc-if value="{{ f.isRange }}"><input type="range" min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step }}" value="{{ f.value }}" onChange="{{ f.onInput }}" style="width:100%"></sc-if>
+            <sc-if value="{{ f.isSeg }}">
+              <div style="display:flex;gap:2px;padding:3px;border-radius:10px;background:#FFF1DE">
+                <sc-for list="{{ f.opts }}" as="o"><button onClick="{{ o.pick }}" style="flex:1;height:30px;padding:0 6px;border:0;border-radius:8px;background:{{ o.bg }};color:{{ o.fg }};font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">{{ o.label }}</button></sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ f.isSelect }}">
+              <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="height:36px;padding:0 8px;border-radius:10px;border:1px solid #F0DFC8;background:#FFFCF7;color:#2A1258">
+                <sc-for list="{{ f.options }}" as="op"><option value="{{ op.v }}">{{ op.l }}</option></sc-for>
+              </select>
+            </sc-if>
+            <sc-if value="{{ f.isArea }}"><textarea value="{{ f.value }}" onChange="{{ f.onChange }}" rows="2" style="padding:8px 10px;border-radius:10px;border:1px solid #F0DFC8;background:#FFFCF7;color:#2A1258;outline:none;resize:vertical"></textarea></sc-if>
+            <sc-if value="{{ f.isTokens }}">
+              <div style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ f.chips }}" as="ch"><button onClick="{{ ch.add }}" style="height:26px;padding:0 9px;border-radius:999px;border:1px dashed #E5368C;background:transparent;color:#C41E72;font-weight:700;font-size:11px;cursor:pointer">{{ ch.label }}</button></sc-for></div>
+            </sc-if>
+            <sc-if value="{{ f.isToggle }}">
+              <button onClick="{{ f.toggle }}" style="display:flex;justify-content:space-between;align-items:center;border:0;background:transparent;padding:0;cursor:pointer;color:#2A1258;font-weight:700;font-size:12px">
+                <span>{{ f.text }}</span>
+                <span style="width:38px;height:22px;border-radius:999px;background:{{ f.bg }};position:relative"><span style="position:absolute;top:3px;left:{{ f.knob }};width:16px;height:16px;border-radius:50%;background:#FFFFFF"></span></span>
+              </button>
+            </sc-if>
+            <sc-if value="{{ f.isNums }}">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+                <sc-for list="{{ f.items }}" as="n"><label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;color:#7A6A92">{{ n.label }}<input value="{{ n.value }}" onChange="{{ n.onChange }}" inputmode="decimal" style="height:32px;width:100%;padding:0 6px;border-radius:8px;border:1px solid #F0DFC8;background:#FFFCF7;color:#2A1258;outline:none"></label></sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid #F0DFC8">
+            <span style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7A6A92">Capas</span>
+            <sc-for list="{{ layers }}" as="ly" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:10px;background:{{ ly.bg }}">
+                <button onClick="{{ ly.pick }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:0;background:transparent;cursor:pointer;color:#2A1258;text-align:left;padding:0">
+                  <strong style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:{{ ly.op }}">{{ ly.name }}</strong>
+                  <span style="font-size:11px;color:#7A6A92">{{ ly.type }}</span>
+                </button>
+                <button onClick="{{ ly.toggleVis }}" style="height:26px;padding:0 8px;border-radius:6px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;font-size:11px;font-weight:700;cursor:pointer">{{ ly.visLabel }}</button>
+                <button onClick="{{ ly.toggleLock }}" style="height:26px;padding:0 8px;border-radius:6px;border:1px solid #F0DFC8;background:{{ ly.lockBg }};color:#2A1258;font-size:11px;font-weight:700;cursor:pointer">{{ ly.lockLabel }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:12px;border-radius:12px;background:#FFF1DE;color:#5C3B00;font-size:12px;display:flex;flex-direction:column;gap:4px">
+            <strong>Atajos</strong>
+            <span>Arrastra para mover, usa la esquina para cambiar el tamaño. Flechas para ajustar, Supr para borrar, Ctrl+D para duplicar.</span>
+          </div>
+        </sc-if>
+      </aside>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isGallery }}">
+    <div style="flex:1;min-height:0;overflow:auto;padding:32px 40px 64px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:4px;max-width:720px">
+        <h1 style="margin:0;font-family:'Fredoka',sans-serif;font-size:30px;font-weight:600">Plantillas del catálogo</h1>
+        <span style="color:#7A6A92;font-size:14px;text-wrap:pretty">Cada plantilla define portada, portada de sección, páginas de productos y políticas. La predeterminada se usa al generar; puedes guardar varias para temporadas o campañas.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px">
+        <sc-for list="{{ galleryCards }}" as="g" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;border-radius:22px;background:#FFFFFF;border:2px solid {{ g.border }};overflow:hidden">
+            <button onClick="{{ g.open }}" style="display:flex;justify-content:center;gap:12px;padding:20px;border:0;background:#FFF1DE;cursor:pointer">
+              <div style="width:130px;height:184px"><dc-import name="Pagina Catalogo" page="{{ g.cover }}" hint-size="130px,184px"></dc-import></div>
+              <div style="width:130px;height:184px"><dc-import name="Pagina Catalogo" page="{{ g.products }}" hint-size="130px,184px"></dc-import></div>
+            </button>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:16px 18px 18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <strong style="font-family:'Fredoka',sans-serif;font-size:18px;font-weight:600">{{ g.name }}</strong>
+                <sc-if value="{{ g.isDefault }}"><span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:#FFE9B3;color:#5C3B00">Predeterminada</span></sc-if>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;color:#7A6A92;font-size:12px">
+                <div style="display:flex;gap:3px"><sc-for list="{{ g.dots }}" as="d"><span style="width:14px;height:14px;border-radius:50%;background:{{ d }};box-shadow:inset 0 0 0 1px rgba(42,18,88,.15)"></span></sc-for></div>
+                <span>{{ g.meta }}</span>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button onClick="{{ g.open }}" style="height:34px;padding:0 14px;border:0;border-radius:10px;background:#E5368C;color:#FFFFFF;font-weight:800;cursor:pointer">Editar</button>
+                <button onClick="{{ g.dup }}" style="height:34px;padding:0 12px;border-radius:10px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;font-weight:700;cursor:pointer">Duplicar</button>
+                <sc-if value="{{ g.notDefault }}">
+                  <button onClick="{{ g.setDef }}" style="height:34px;padding:0 12px;border-radius:10px;border:1px solid #F0DFC8;background:#FFFFFF;color:#2A1258;font-weight:700;cursor:pointer">Usar al generar</button>
+                  <button onClick="{{ g.del }}" style="height:34px;padding:0 12px;border-radius:10px;border:1px solid #F0DFC8;background:#FFFFFF;color:#B3123F;font-weight:700;cursor:pointer">Eliminar</button>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="display:flex;flex-direction:column;gap:10px;justify-content:center;padding:24px;border-radius:22px;border:2px dashed #E6D3B8;min-height:300px">
+          <strong style="font-family:'Fredoka',sans-serif;font-size:18px;font-weight:600">Nueva plantilla</strong>
+          <span style="color:#7A6A92">Parte de un estilo base y personalízalo.</span>
+          <sc-for list="{{ newFromList }}" as="nf" hint-placeholder-count="4">
+            <button onClick="{{ nf.create }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;height:42px;padding:0 14px;border-radius:12px;border:2px solid {{ nf.border }};background:#FFFFFF;color:#2A1258;font-weight:700;cursor:pointer">
+              <span>{{ nf.name }}</span>
+              <span style="display:flex;gap:3px"><sc-for list="{{ nf.dots }}" as="d"><span style="width:12px;height:12px;border-radius:50%;background:{{ d }}"></span></sc-for></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}">
+    <div style="position:fixed;left:50%;bottom:136px;transform:translateX(-50%);z-index:60;padding:12px 18px;border-radius:12px;background:#2A1258;color:#FFF4E2;font-weight:700;box-shadow:0 8px 24px rgba(42,18,88,.3)">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;embedded&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onBack&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+const IMG = { collage:'assets/print/collage.png', coverbg:'assets/print/cover-bg.jpg', marble:'assets/print/marble.jpg', logo:'assets/logo.jpg' };
+const FONTS = { fredoka:['Fredoka',"'Fredoka',sans-serif"], poppins:['Poppins',"'Poppins',sans-serif"], bungee:['Bungee',"'Bungee',sans-serif"], zen:['Zen Maru Gothic',"'Zen Maru Gothic',sans-serif"], grotesk:['Space Grotesk',"'Space Grotesk',sans-serif"], serif:['DM Serif Display',"'DM Serif Display',serif"] };
+const PAIRS = [['fredoka','poppins'],['bungee','poppins'],['zen','zen'],['serif','grotesk'],['grotesk','grotesk']];
+const TOKENS = [['bg','Fondo','Tarjetas, precios, pie'],['a1','Acento 1','Contornos y resplandor'],['a2','Acento 2','Anillo de las fotos'],['a3','Acento 3','Bordes de precio y pie'],['ink','Texto','Textos principales'],['paper','Papel','Fondo de las páginas']];
+const TOKLABEL = Object.fromEntries(TOKENS.map(t => [t[0], t[1]]));
+const PAGES = [['portada','Portada','Primera página'],['seccion','Portada de sección','Antes de cada sección'],['productos','Productos','Hasta 3 por hoja'],['politicas','Políticas','Última página']];
+const TYPE_LABEL = { text:'Texto', image:'Imagen', shape:'Forma', badge:'Insignia', products:'Bloque de productos', terms:'Bloque de políticas', footer:'Pie de página' };
+const PRODUCTS = [
+  { name:'Buldak Carbonara', desc:'Fideos salteados picantes con salsa cremosa de queso.', price:'$9.000', pos:'69% 15%' },
+  { name:'Soon Veggie Ramyun', desc:'Caldo suave de vegetales, apto para vegetarianos.', price:'$7.000', pos:'15% 11%', sold:true },
+  { name:'Cream Tteokbokki', desc:'Pasteles de arroz en salsa cremosa, listos en 3 minutos.', price:'$15.000', pos:'28% 92%' },
+];
+const CHECK = 'repeating-conic-gradient(#E9DCCB 0% 25%, #FFFFFF 0% 50%) 50% / 10px 10px';
+const PAL_PRESETS = [
+  ['Neón Noche', { bg:'#11052C', a1:'#FF007A', a2:'#00FF66', a3:'#FF9900', ink:'#FFFFFF', paper:'#F4EFE8' }],
+  ['Pop crema', { bg:'#2A1258', a1:'#E5368C', a2:'#FFB800', a3:'#E5368C', ink:'#2A1258', paper:'#FFF7EC' }],
+  ['Kawaii', { bg:'#FFD6E5', a1:'#FF5C93', a2:'#7ED8C3', a3:'#FFB84D', ink:'#5A2E4A', paper:'#FFF3F7' }],
+  ['Kraft', { bg:'#1C1A17', a1:'#D9502F', a2:'#1C1A17', a3:'#D9502F', ink:'#1C1A17', paper:'#EFE6D6' }],
+  ['Matcha', { bg:'#1F3B2D', a1:'#8FCB5E', a2:'#F4E8C1', a3:'#E86F51', ink:'#1F3B2D', paper:'#F6F1E3' }],
+];
+let _n = 0;
+const nid = () => 'e' + (++_n) + Math.random().toString(36).slice(2, 5);
+const base = { rot:0, opacity:1, visible:true, locked:false };
+const T = o => ({ ...base, type:'text', font:'title', size:40, weight:700, color:'ink', stroke:'none', strokeW:0, glow:'none', align:'center', upper:false, ls:0, x:10, y:10, w:80, h:10, ...o, id:nid() });
+const S = o => ({ ...base, type:'shape', kind:'rect', fill:'a1', border:'none', bw:0, radius:12, glow:'none', ...o, id:nid() });
+const I = o => ({ ...base, type:'image', src:'collage', fit:'contain', radius:0, ...o, id:nid() });
+const B = o => ({ ...base, type:'badge', text:'NUEVO', fill:'a1', color:'#FFFFFF', font:'title', size:16, rot:-6, x:70, y:5, w:22, h:5, ...o, id:nid() });
+const P = o => ({ ...base, type:'products', name:'Productos', core:true, locked:true, layout:'alternado', cardFill:'bg', ring:'a2', ringW:4, cardRadius:16, bubbleFill:'#E8DFD0', bubbleRadius:20, text:'#1C1126', priceFill:'bg', priceBorder:'a3', priceText:'#FFFFFF', priceShape:'pill', sold:'sello', soldFill:'a1', x:4, y:12, w:92, h:80, ...o, id:nid() });
+const R = o => ({ ...base, type:'terms', name:'Políticas', core:true, locked:true, chipFill:'bg', chipText:'a1', boxFill:'#E8DFD0', text:'#1C1126', x:7, y:14, w:86, h:76, ...o, id:nid() });
+const F = o => ({ ...base, type:'footer', name:'Pie de página', core:true, locked:true, fill:'bg', line:'a3', text:'#FFFFFF', bw:2, content:'{telefonos} · {direccion}', x:0, y:95.5, w:100, h:4.5, ...o, id:nid() });
+const circleH = w => Math.round(w * 595 / 842 * 10) / 10;
+
+function makePresets() {
+  const neonFrame = () => S({ name:'Marco neón', fill:'transparent', border:'a1', bw:4, radius:22, glow:'a1', x:3, y:2, w:94, h:96, locked:true });
+  return [
+    { id:'neon', base:'neon', name:'Neón Noche', palette:{ ...PAL_PRESETS[0][1] }, fonts:{ title:'fredoka', body:'poppins' }, pages:{
+      portada:{ bg:{ type:'image', image:'coverbg', color:'bg', color2:'a1' }, els:[ neonFrame(),
+        I({ name:'Logo', src:'logo', fit:'cover', radius:999, x:39, y:5, w:22, h:15.5 }),
+        T({ name:'Banner', text:'{banner}', size:46, color:'bg', stroke:'a1', strokeW:3, glow:'a1', x:8, y:23, w:84, h:14 }),
+        I({ name:'Collage', x:4, y:40, w:92, h:46 }),
+        T({ name:'Teléfonos', text:'{telefonos}', font:'body', size:15, weight:600, color:'ink', x:8, y:89, w:84, h:5 }) ] },
+      seccion:{ bg:{ type:'image', image:'coverbg', color:'bg', color2:'a1' }, els:[ neonFrame(),
+        T({ name:'Nombre de sección', text:'{seccion}', size:96, color:'bg', stroke:'a1', strokeW:4, glow:'a1', x:5, y:40, w:90, h:16 }),
+        I({ name:'Logo', src:'logo', fit:'cover', radius:999, x:43, y:82, w:14, h:9.9 }) ] },
+      productos:{ bg:{ type:'image', image:'marble', color:'paper', color2:'a1' }, els:[
+        T({ name:'Título de sección', text:'{seccion}', size:52, color:'bg', stroke:'a1', strokeW:2.5, x:10, y:2.5, w:80, h:8 }), P({}), F({}) ] },
+      politicas:{ bg:{ type:'image', image:'marble', color:'paper', color2:'a1' }, els:[
+        T({ name:'Título', text:'Políticas de compra', size:40, color:'bg', stroke:'a1', strokeW:2, x:8, y:4, w:84, h:8 }), R({}), F({}) ] } } },
+    { id:'pop', base:'pop', name:'Pop crema', palette:{ ...PAL_PRESETS[1][1] }, fonts:{ title:'fredoka', body:'poppins' }, pages:{
+      portada:{ bg:{ type:'color', image:'marble', color:'paper', color2:'a2' }, els:[
+        S({ name:'Círculo', kind:'circle', fill:'a2', x:-12, y:42, w:124, h:circleH(124) }),
+        I({ name:'Logo', src:'logo', fit:'cover', radius:999, x:6, y:4, w:14, h:9.9 }),
+        T({ name:'Tienda', text:'{tienda}', font:'body', size:13, weight:800, color:'ink', ls:2, align:'left', x:23, y:6.5, w:60, h:5 }),
+        T({ name:'Banner', text:'{banner}', size:54, color:'a1', x:6, y:17, w:88, h:18 }),
+        I({ name:'Collage', x:4, y:40, w:92, h:46 }),
+        T({ name:'Teléfonos', text:'{telefonos}', font:'body', size:15, weight:700, color:'ink', x:8, y:90, w:84, h:5 }) ] },
+      seccion:{ bg:{ type:'color', image:'marble', color:'a1', color2:'a2' }, els:[
+        S({ name:'Círculo', kind:'circle', fill:'a2', x:15, y:29, w:70, h:circleH(70) }),
+        T({ name:'Nombre de sección', text:'{seccion}', size:84, color:'bg', x:5, y:42, w:90, h:16 }),
+        T({ name:'Tienda', text:'{tienda}', font:'body', size:14, weight:800, ls:3, color:'paper', x:10, y:90, w:80, h:4 }) ] },
+      productos:{ bg:{ type:'color', image:'marble', color:'paper', color2:'a2' }, els:[
+        T({ name:'Título de sección', text:'{seccion}', size:48, color:'a1', x:10, y:2.5, w:80, h:8 }),
+        P({ cardFill:'#FFFFFF', ring:'a2', ringW:5, cardRadius:28, bubbleFill:'#FFFFFF', text:'#2A1258', priceFill:'a1', priceBorder:'none', priceText:'#FFFFFF' }), F({ fill:'bg', line:'a2' }) ] },
+      politicas:{ bg:{ type:'color', image:'marble', color:'paper', color2:'a2' }, els:[
+        T({ name:'Título', text:'Políticas de compra', size:40, color:'a1', x:8, y:4, w:84, h:8 }),
+        R({ chipFill:'a1', chipText:'#FFFFFF', boxFill:'#FFFFFF', text:'#2A1258' }), F({ fill:'bg', line:'a2' }) ] } } },
+    { id:'kawaii', base:'kawaii', name:'Kawaii pastel', palette:{ ...PAL_PRESETS[2][1] }, fonts:{ title:'zen', body:'zen' }, pages:{
+      portada:{ bg:{ type:'gradient', image:'marble', color:'bg', color2:'paper' }, els:[
+        S({ name:'Círculo menta', kind:'circle', fill:'a2', x:62, y:-6, w:50, h:circleH(50) }),
+        S({ name:'Círculo ámbar', kind:'circle', fill:'a3', x:-10, y:80, w:34, h:circleH(34) }),
+        T({ name:'Banner', text:'{banner}', size:48, weight:900, color:'ink', x:8, y:14, w:84, h:18 }),
+        B({ name:'Insignia', text:'NUEVO', fill:'a1', x:70, y:33, w:20, h:4.5, rot:-8 }),
+        I({ name:'Collage', x:4, y:40, w:92, h:44 }),
+        T({ name:'Teléfonos', text:'{telefonos}', font:'body', size:15, weight:700, color:'ink', x:8, y:89, w:84, h:5 }) ] },
+      seccion:{ bg:{ type:'color', image:'marble', color:'paper', color2:'bg' }, els:[
+        S({ name:'Círculo', kind:'circle', fill:'bg', x:10, y:26, w:80, h:circleH(80) }),
+        T({ name:'Nombre de sección', text:'{seccion}', size:80, weight:900, color:'a1', x:5, y:42, w:90, h:16 }) ] },
+      productos:{ bg:{ type:'color', image:'marble', color:'paper', color2:'bg' }, els:[
+        T({ name:'Título de sección', text:'{seccion}', size:46, weight:900, color:'a1', x:10, y:3, w:80, h:8 }),
+        P({ layout:'tarjetas', y:16, h:76, cardFill:'#FFFFFF', ring:'a2', ringW:3, cardRadius:24, bubbleFill:'#FFFFFF', bubbleRadius:18, text:'#5A2E4A', priceFill:'a3', priceBorder:'none', priceText:'#5A2E4A', sold:'cinta' }),
+        F({ fill:'a1', line:'a2', text:'#FFFFFF' }) ] },
+      politicas:{ bg:{ type:'color', image:'marble', color:'paper', color2:'bg' }, els:[
+        T({ name:'Título', text:'Políticas de compra', size:38, weight:900, color:'a1', x:8, y:4, w:84, h:8 }),
+        R({ chipFill:'a1', chipText:'#FFFFFF', boxFill:'#FFFFFF', text:'#5A2E4A' }), F({ fill:'a1', line:'a2', text:'#FFFFFF' }) ] } } },
+    { id:'kraft', base:'kraft', name:'Kraft minimal', palette:{ ...PAL_PRESETS[3][1] }, fonts:{ title:'serif', body:'grotesk' }, pages:{
+      portada:{ bg:{ type:'color', image:'marble', color:'paper', color2:'a1' }, els:[
+        T({ name:'Tienda', text:'{tienda}', font:'body', size:13, weight:700, ls:3, upper:true, align:'left', x:8, y:6, w:84, h:4 }),
+        T({ name:'Banner', text:'{banner}', size:58, weight:400, align:'left', x:8, y:12, w:84, h:20 }),
+        S({ name:'Línea', fill:'ink', radius:0, x:8, y:34, w:84, h:0.3 }),
+        I({ name:'Collage', x:4, y:39, w:92, h:46 }),
+        T({ name:'Teléfonos', text:'{telefonos}', font:'body', size:14, weight:500, align:'left', x:8, y:90, w:84, h:4 }) ] },
+      seccion:{ bg:{ type:'color', image:'marble', color:'bg', color2:'a1' }, els:[
+        S({ name:'Línea', fill:'a1', radius:0, x:8, y:58, w:20, h:0.6 }),
+        T({ name:'Nombre de sección', text:'{seccion}', size:88, weight:400, color:'paper', align:'left', x:8, y:44, w:84, h:13 }) ] },
+      productos:{ bg:{ type:'color', image:'marble', color:'paper', color2:'a1' }, els:[
+        T({ name:'Título de sección', text:'{seccion}', size:44, weight:400, align:'left', x:6, y:3, w:88, h:7 }),
+        P({ layout:'lista', x:6, y:12, w:88, h:80, cardFill:'#FFFFFF', ring:'ink', ringW:0, cardRadius:0, bubbleFill:'transparent', bubbleRadius:0, text:'#1C1A17', priceFill:'transparent', priceBorder:'ink', priceText:'#1C1A17', priceShape:'square', sold:'gris' }),
+        F({ fill:'paper', line:'ink', text:'#1C1A17', bw:1 }) ] },
+      politicas:{ bg:{ type:'color', image:'marble', color:'paper', color2:'a1' }, els:[
+        T({ name:'Título', text:'Políticas de compra', size:38, weight:400, align:'left', x:7, y:4, w:86, h:8 }),
+        R({ chipFill:'transparent', chipText:'a1', boxFill:'transparent', text:'#1C1A17' }), F({ fill:'paper', line:'ink', text:'#1C1A17', bw:1 }) ] } } },
+  ];
+}
+const INITIAL = makePresets();
+const BIZ = { storeName:'ASIANPOP MARKET+', coverTitle:'Catálogo actualizado 2026', phone1:'310 555 0182', phone2:'320 555 0144', address:'Cra. 7 # 45-12, Bogotá',
+  terms:[ { title:'Pedidos y anticipación', body:'Todo pedido se realiza con 1 día de anticipación.' }, { title:'Pagos', body:'Transferencia o efectivo contra entrega.' }, { title:'Envíos', body:'Domicilios de lunes a sábado. El valor depende de la zona.' } ] };
+const clone = o => JSON.parse(JSON.stringify(o));
+const rnd = v => Math.round(v * 10) / 10;
+const px = v => Math.round(v) + 'px';
+const val = e => e && e.target ? e.target.value : e;
+
+class Component extends DCLogic {
+  state = { view:'editor', templates:INITIAL, activeId:'neon', defaultId:'neon', page:'productos', sel:null, tab:'plantillas', zoom:null, areaW:900, areaH:700,
+    past:[], future:[], saved:JSON.stringify(INITIAL), business:clone(BIZ), savedBiz:JSON.stringify(BIZ), preview:false, guideV:false, guideH:false, toast:'' };
+  pageRef = React.createRef();
+  areaRef = React.createRef();
+  measure = () => { const a = document.querySelector('[data-canvas-area]'); if (!a) return; const r = a.getBoundingClientRect(); if (r.width > 0 && (Math.abs(r.width - this.state.areaW) > 1 || Math.abs(r.height - this.state.areaH) > 1)) this.setState({ areaW:r.width, areaH:r.height }); };
+  componentDidUpdate() { this.measure(); }
+
+  componentDidMount() { window.addEventListener('keydown', this.onKey); this._mi = setInterval(this.measure, 250); this.measure(); }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearInterval(this._mi); this.onUp(); clearTimeout(this._tt); }
+  flash(m) { clearTimeout(this._tt); this.setState({ toast:m }); this._tt = setTimeout(() => this.setState({ toast:'' }), 2200); }
+
+  tpl() { return this.state.templates.find(t => t.id === this.state.activeId) || this.state.templates[0]; }
+  selEl() { const t = this.tpl(); return t.pages[this.state.page].els.find(e => e.id === this.state.sel); }
+  col(t, v) { if (!v || v === 'none') return 'transparent'; return t.palette[v] || v; }
+  font(t, k) { const key = t.fonts[k] || k; return (FONTS[key] || FONTS.poppins)[1]; }
+  sub(s) { const b = this.state.business; const map = { banner:b.coverTitle, seccion:'RAMEN', telefonos:[b.phone1, b.phone2].filter(Boolean).join(' · '), direccion:b.address, tienda:b.storeName };
+    return String(s || '').replace(/\{(\w+)\}/g, (m, k) => map[k] ?? m); }
+
+  pushHistory(key) {
+    const now = Date.now();
+    if (key && key === this._hk && now - this._ht < 800) { this._ht = now; return; }
+    this._hk = key; this._ht = now;
+    this.setState(s => ({ past:[...s.past.slice(-59), s.templates], future:[] }));
+  }
+  updTpl(fn) { this.setState(s => ({ templates: s.templates.map(t => t.id === s.activeId ? fn(clone(t)) : t) })); }
+  patchEl(id, patch, key) {
+    if (key !== false) this.pushHistory(key || null);
+    const page = this.state.page;
+    this.updTpl(t => { t.pages[page].els = t.pages[page].els.map(e => e.id === id ? { ...e, ...patch } : e); return t; });
+  }
+  setProp = (k, v) => { const el = this.selEl(); if (el) this.patchEl(el.id, { [k]: v }, el.id + ':' + k); };
+  undo = () => { this._hk = null; this.setState(s => s.past.length ? { past:s.past.slice(0, -1), future:[s.templates, ...s.future], templates:s.past[s.past.length - 1] } : null); };
+  redo = () => { this._hk = null; this.setState(s => s.future.length ? { future:s.future.slice(1), past:[...s.past, s.templates], templates:s.future[0] } : null); };
+
+  addEl(el) {
+    this.pushHistory(); const page = this.state.page;
+    const fi = this.tpl().pages[page].els.findIndex(e => e.type === 'footer');
+    this.updTpl(t => { const els = t.pages[page].els; fi >= 0 ? els.splice(fi, 0, el) : els.push(el); return t; });
+    this.setState({ sel:el.id, preview:false });
+  }
+  deleteSel = () => {
+    const el = this.selEl(); if (!el) return;
+    if (el.core) return this.flash('Este bloque es obligatorio. Puedes moverlo o cambiar su estilo.');
+    this.pushHistory(); const page = this.state.page;
+    this.updTpl(t => { t.pages[page].els = t.pages[page].els.filter(e => e.id !== el.id); return t; });
+    this.setState({ sel:null });
+  };
+  duplicateSel = () => {
+    const el = this.selEl(); if (!el) return;
+    if (el.core) return this.flash('Solo puede haber un bloque de este tipo por página.');
+    this.addEl({ ...clone(el), id:nid(), x:rnd(el.x + 3), y:rnd(el.y + 2), name:(el.name || TYPE_LABEL[el.type]) + ' copia', locked:false });
+  };
+  moveLayer(dir) {
+    const el = this.selEl(); if (!el) return; this.pushHistory(); const page = this.state.page;
+    this.updTpl(t => { const els = t.pages[page].els; const i = els.findIndex(e => e.id === el.id); const j = Math.max(0, Math.min(els.length - 1, i + dir)); els.splice(i, 1); els.splice(j, 0, el); return t; });
+  }
+
+  startDrag(e, el, mode) {
+    e.stopPropagation();
+    this.setState({ sel:el.id });
+    if (el.locked) return;
+    const pg = document.querySelector('[data-page-wrap]'); const rect = pg && pg.getBoundingClientRect(); if (!rect) return;
+    e.preventDefault && e.preventDefault();
+    this.drag = { id:el.id, mode, sx:e.clientX, sy:e.clientY, o:{ x:el.x, y:el.y, w:el.w, h:el.h }, rect, pushed:false };
+    window.addEventListener('pointermove', this.onMove); window.addEventListener('pointerup', this.onUp);
+  }
+  onMove = e => {
+    const d = this.drag; if (!d) return;
+    const dx = (e.clientX - d.sx) / d.rect.width * 100, dy = (e.clientY - d.sy) / d.rect.height * 100;
+    if (!d.pushed) { if (Math.abs(dx) + Math.abs(dy) < 0.3) return; this._hk = null; this.pushHistory(); d.pushed = true; }
+    let patch, gv = false, gh = false;
+    if (d.mode === 'move') {
+      let x = d.o.x + dx, y = d.o.y + dy;
+      if (Math.abs(x + d.o.w / 2 - 50) < 1.2) { x = 50 - d.o.w / 2; gv = true; }
+      if (Math.abs(y + d.o.h / 2 - 50) < 0.9) { y = 50 - d.o.h / 2; gh = true; }
+      patch = { x:rnd(x), y:rnd(y) };
+    } else patch = { w:Math.max(3, rnd(d.o.w + dx)), h:Math.max(0.3, rnd(d.o.h + dy)) };
+    this.patchEl(d.id, patch, false);
+    if (gv !== this.state.guideV || gh !== this.state.guideH) this.setState({ guideV:gv, guideH:gh });
+  };
+  onUp = () => { window.removeEventListener('pointermove', this.onMove); window.removeEventListener('pointerup', this.onUp); this.drag = null; if (this.state.guideV || this.state.guideH) this.setState({ guideV:false, guideH:false }); };
+  onKey = e => {
+    if (this.state.view !== 'editor') return;
+    const tag = (e.target.tagName || '').toLowerCase(); if (['input', 'textarea', 'select'].includes(tag)) return;
+    const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
+    if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); return; }
+    if (mod && k === 'y') { e.preventDefault(); this.redo(); return; }
+    const el = this.selEl(); if (!el) return;
+    if (mod && k === 'd') { e.preventDefault(); this.duplicateSel(); return; }
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); this.deleteSel(); return; }
+    if (e.key === 'Escape') { this.setState({ sel:null }); return; }
+    const st = e.shiftKey ? 2 : 0.5, mv = { ArrowLeft:[-st, 0], ArrowRight:[st, 0], ArrowUp:[0, -st], ArrowDown:[0, st] }[e.key];
+    if (mv && !el.locked) { e.preventDefault(); this.patchEl(el.id, { x:rnd(el.x + mv[0]), y:rnd(el.y + mv[1]) }, 'nudge' + el.id); }
+  };
+
+  rows(t, el) {
+    const W = el.w / 100 * 595, H = el.h / 100 * 842, L = el.layout;
+    return PRODUCTS.map((p, i) => {
+      let r;
+      if (L === 'tarjetas') { const g = W * 0.04, cw = (W - 2 * g) / 3, ch = Math.min(cw * 1.15, H * 0.5), x = i * (cw + g), bh = H * 0.3;
+        r = { cx:x, cy:0, cw, ch, bx:x, by:ch + 14, bw:cw, bh, px:x + cw / 2 - 60, py:ch + 28 + bh, a:'center' }; }
+      else if (L === 'lista') { const rh = H / 3, s = rh * 0.66, y = i * rh, top = y + (rh - s) / 2;
+        r = { cx:0, cy:top, cw:s, ch:s, bx:s + W * 0.04, by:top, bw:W - s - W * 0.04 - 140, bh:s, px:W - 124, py:y + rh / 2 - 15, a:'left', sep:i > 0, sepY:y }; }
+      else { const rh = H / 3, s = Math.min(rh * 0.8, W * 0.36), left = i % 2 === 0, cx = left ? W * 0.02 : W - s - W * 0.02, cy = i * rh + (rh - s) / 2, bw = W - s - W * 0.1, bx = left ? cx + s + W * 0.04 : W * 0.04, bh = rh * 0.44, by = cy + s * 0.1;
+        r = { cx, cy, cw:s, ch:s, bx, by, bw, bh, px:bx + bw / 2 - 60, py:by + bh + 14, a:'center' }; }
+      const sold = !!p.sold;
+      return { cx:px(r.cx), cy:px(r.cy), cw:px(r.cw), ch:px(r.ch), bx:px(r.bx), by:px(r.by), bw:px(r.bw), bh:px(r.bh), px:px(r.px), py:px(r.py), sep:!!r.sep, sepY:px(r.sepY || 0),
+        bAlign: r.a === 'left' ? 'flex-start' : 'center', bText:r.a, name:p.name, desc:p.desc, price:p.price, imgPos:p.pos,
+        seal: sold && el.sold === 'sello', ribbon: sold && el.sold === 'cinta', grayTag: sold && el.sold === 'gris', filter: sold && el.sold === 'gris' ? 'grayscale(1)' : 'none' };
+    });
+  }
+  elData(t, el, ctx) {
+    const c = v => this.col(t, v), sel = ctx.interactive && el.id === ctx.selId;
+    const d = { left:el.x + '%', top:el.y + '%', width:el.w + '%', height:el.h + '%', rot: el.rot ? `rotate(${el.rot}deg)` : 'none', display: el.visible === false ? 'none' : 'block',
+      opacity:String(el.opacity ?? 1), cursor: ctx.interactive ? (el.locked ? 'pointer' : 'move') : 'inherit', selected:sel,
+      outline: sel ? `${2 / ctx.scale}px ${el.locked ? 'dashed' : 'solid'} #6D4AFF` : 'none', showHandle: sel && !el.locked,
+      handle:(12 / ctx.scale) + 'px', handleOff:(-6 / ctx.scale) + 'px', handleBorder:`${2 / ctx.scale}px solid #6D4AFF`,
+      down: ctx.interactive ? e => this.startDrag(e, el, 'move') : undefined, resizeDown: ctx.interactive ? e => { e.stopPropagation(); this.startDrag(e, el, 'resize'); } : undefined };
+    if (el.type === 'text') Object.assign(d, { isText:true, text:this.sub(el.text), font:this.font(t, el.font), size:el.size + 'px', weight:String(el.weight), color:c(el.color),
+      stroke: el.strokeW > 0 && el.stroke !== 'none' ? `${el.strokeW}px ${c(el.stroke)}` : '0px transparent', glow: el.glow !== 'none' ? `0 0 10px ${c(el.glow)}, 0 0 24px ${c(el.glow)}` : 'none',
+      align:el.align, jc: el.align === 'left' ? 'flex-start' : el.align === 'right' ? 'flex-end' : 'center', tt: el.upper ? 'uppercase' : 'none', ls:(el.ls || 0) + 'px' });
+    if (el.type === 'badge') Object.assign(d, { isBadge:true, text:this.sub(el.text), fill:c(el.fill), color:c(el.color), font:this.font(t, el.font), size:el.size + 'px' });
+    if (el.type === 'shape') Object.assign(d, { isShape:true, fill:c(el.fill), border: el.bw > 0 && el.border !== 'none' ? `${el.bw}px solid ${c(el.border)}` : 'none',
+      radius: el.kind === 'circle' ? '50%' : el.kind === 'pill' ? '999px' : el.radius + 'px', glow: el.glow !== 'none' ? `0 0 16px ${c(el.glow)}, inset 0 0 12px ${c(el.glow)}` : 'none' });
+    if (el.type === 'image') Object.assign(d, { isImage:true, bgImg:`url(${IMG[el.src]})`, bgSize:el.fit, radius: el.radius >= 300 ? '50%' : el.radius + 'px' });
+    if (el.type === 'products') Object.assign(d, { isProducts:true, rows:this.rows(t, el), pp:{ cardFill:c(el.cardFill), ring: el.ringW > 0 ? `${el.ringW}px solid ${c(el.ring)}` : 'none', cardRadius:el.cardRadius + 'px',
+      bubbleFill:c(el.bubbleFill), bubbleRadius:el.bubbleRadius + 'px', text:c(el.text), priceFill:c(el.priceFill), priceBorder: el.priceBorder === 'none' ? 'none' : `2px solid ${c(el.priceBorder)}`, priceText:c(el.priceText),
+      priceRadius:{ pill:'999px', square:'0px', round:'8px' }[el.priceShape], soldFill:c(el.soldFill), title:this.font(t, 'title'), body:this.font(t, 'body') } });
+    if (el.type === 'terms') Object.assign(d, { isTerms:true, items:this.state.business.terms, chipFill:c(el.chipFill), chipText:c(el.chipText), boxFill:c(el.boxFill), textColor:c(el.text), body:this.font(t, 'body') });
+    if (el.type === 'footer') Object.assign(d, { isFooter:true, fill:c(el.fill), borderTop: el.bw > 0 ? `${el.bw}px solid ${c(el.line)}` : 'none', textColor:c(el.text), content:this.sub(el.content), body:this.font(t, 'body') });
+    return d;
+  }
+  pageData(t, key, scale, interactive) {
+    const pg = t.pages[key], bg = pg.bg, s = this.state;
+    return { outW:px(595 * scale), outH:px(842 * scale), transform:`scale(${scale})`, radius: interactive ? '2px' : '3px',
+      shadow: interactive ? '0 12px 40px rgba(42,18,88,.18)' : '0 1px 3px rgba(42,18,88,.2)', bgColor:this.col(t, bg.color),
+      bgImage: bg.type === 'image' ? `url(${IMG[bg.image]})` : bg.type === 'gradient' ? `linear-gradient(180deg, ${this.col(t, bg.color)}, ${this.col(t, bg.color2)})` : 'none',
+      els: pg.els.map(el => this.elData(t, el, { interactive, selId:s.sel, scale })), down: interactive ? () => this.setState({ sel:null }) : undefined,
+      guideV: interactive && s.guideV, guideH: interactive && s.guideH };
+  }
+
+  fColor(t, label, v, set, none) {
+    const sw = TOKENS.map(([k, l]) => ({ title:l, bg:t.palette[k], on:v === k, pick:() => set(k) }));
+    if (none) sw.push({ title:'Ninguno', bg:CHECK, on:v === 'none' || v === 'transparent', pick:() => set(none) });
+    const res = this.col(t, v);
+    return { isColor:true, hasLabel:true, label, display: t.palette[v] ? TOKLABEL[v] : (v === 'none' || v === 'transparent' ? 'Ninguno' : String(res).toUpperCase()),
+      swatches: sw.map(x => ({ ...x, ring: x.on ? '0 0 0 2px #FFFFFF, 0 0 0 4px #E5368C' : 'inset 0 0 0 1px rgba(42,18,88,.18)' })),
+      hex: /^#[0-9a-f]{6}$/i.test(res) ? res : '#000000', onInput: e => set(val(e).toUpperCase()) };
+  }
+  fRange(label, v, min, max, step, set, unit) { return { isRange:true, hasLabel:true, label, display:v + (unit || ''), value:v, min, max, step, onInput: e => set(Number(val(e))) }; }
+  fSeg(label, v, opts, set) { return { isSeg:true, hasLabel:!!label, label, display:'', opts: opts.map(([k, l]) => ({ label:l, bg: k === v ? '#2A1258' : 'transparent', fg: k === v ? '#FFF4E2' : '#2A1258', pick:() => set(k) })) }; }
+  fSelect(label, v, opts, set) { return { isSelect:true, hasLabel:true, label, display:'', value:v, options: opts.map(([k, l]) => ({ v:k, l })), onChange: e => set(val(e)) }; }
+  fHead(label) { return { isHeading:true, label }; }
+
+  inspector(t, el) {
+    const sp = this.setProp, f = [], C = (l, k, none) => f.push(this.fColor(t, l, el[k], v => sp(k, v), none));
+    const fontOpts = [['title', 'Título · ' + FONTS[t.fonts.title][0]], ['body', 'Cuerpo · ' + FONTS[t.fonts.body][0]], ...Object.entries(FONTS).map(([k, v]) => [k, v[0]])];
+    const tokens = { isTokens:true, hasLabel:true, label:'Insertar dato', display:'', chips:[['{banner}', 'Banner'], ['{seccion}', 'Sección'], ['{telefonos}', 'Teléfonos'], ['{direccion}', 'Dirección'], ['{tienda}', 'Tienda']].map(([tk, l]) => ({ label:l, add:() => sp('text', (el.text || '') + (el.text ? ' ' : '') + tk) })) };
+    if (el.type === 'text') {
+      f.push({ isArea:true, hasLabel:true, label:'Texto', display:'', value:el.text, onChange: e => sp('text', val(e)) }, tokens);
+      f.push(this.fHead('Tipografía'), this.fSelect('Fuente', el.font, fontOpts, v => sp('font', v)), this.fRange('Tamaño', el.size, 8, 140, 1, v => sp('size', v), ' px'));
+      f.push(this.fSeg('Peso', el.weight, [[400, 'Normal'], [600, 'Semi'], [700, 'Negrita'], [900, 'Black']], v => sp('weight', v)));
+      f.push(this.fSeg('Alineación', el.align, [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']], v => sp('align', v)));
+      f.push(this.fRange('Espaciado', el.ls || 0, -2, 12, 0.5, v => sp('ls', v), ' px'));
+      f.push({ isToggle:true, text:'Mayúsculas', toggle:() => sp('upper', !el.upper), bg: el.upper ? '#E5368C' : '#E6D3B8', knob: el.upper ? '19px' : '3px' });
+      f.push(this.fHead('Color y efectos')); C('Relleno', 'color'); C('Contorno', 'stroke', 'none');
+      if (el.stroke !== 'none') f.push(this.fRange('Grosor del contorno', el.strokeW, 0, 8, 0.5, v => sp('strokeW', v), ' px'));
+      C('Resplandor neón', 'glow', 'none');
+    }
+    if (el.type === 'badge') {
+      f.push({ isArea:true, hasLabel:true, label:'Texto', display:'', value:el.text, onChange: e => sp('text', val(e)) });
+      C('Fondo', 'fill'); C('Texto', 'color'); f.push(this.fSelect('Fuente', el.font, fontOpts, v => sp('font', v)), this.fRange('Tamaño', el.size, 8, 48, 1, v => sp('size', v), ' px'));
+    }
+    if (el.type === 'shape') {
+      f.push(this.fSeg('Forma', el.kind, [['rect', 'Rectángulo'], ['circle', 'Círculo'], ['pill', 'Píldora']], v => sp('kind', v)));
+      C('Relleno', 'fill', 'transparent'); C('Borde', 'border', 'none');
+      if (el.border !== 'none') f.push(this.fRange('Grosor del borde', el.bw, 0, 12, 1, v => sp('bw', v), ' px'));
+      if (el.kind === 'rect') f.push(this.fRange('Esquinas', el.radius, 0, 80, 1, v => sp('radius', v), ' px'));
+      C('Resplandor neón', 'glow', 'none');
+    }
+    if (el.type === 'image') {
+      f.push(this.fSeg('Imagen', el.src, [['logo', 'Logo'], ['collage', 'Collage'], ['marble', 'Mármol'], ['coverbg', 'Atardecer']], v => sp('src', v)));
+      f.push(this.fSeg('Ajuste', el.fit, [['contain', 'Contener'], ['cover', 'Cubrir']], v => sp('fit', v)));
+      f.push(this.fRange('Esquinas', Math.min(el.radius, 300), 0, 300, 2, v => sp('radius', v), el.radius >= 300 ? ' (círculo)' : ' px'));
+    }
+    if (el.type === 'products') {
+      f.push(this.fSeg('Distribución', el.layout, [['alternado', 'Alternado'], ['tarjetas', 'Tarjetas'], ['lista', 'Lista']], v => sp('layout', v)));
+      f.push(this.fHead('Foto del producto')); C('Fondo de la foto', 'cardFill', 'transparent'); C('Anillo', 'ring');
+      f.push(this.fRange('Grosor del anillo', el.ringW, 0, 10, 1, v => sp('ringW', v), ' px'), this.fRange('Esquinas', el.cardRadius, 0, 80, 1, v => sp('cardRadius', v), ' px'));
+      f.push(this.fHead('Descripción')); C('Burbuja', 'bubbleFill', 'transparent'); C('Texto', 'text');
+      f.push(this.fRange('Esquinas de la burbuja', el.bubbleRadius, 0, 40, 1, v => sp('bubbleRadius', v), ' px'));
+      f.push(this.fHead('Precio')); C('Fondo', 'priceFill', 'transparent'); C('Borde', 'priceBorder', 'none'); C('Texto del precio', 'priceText');
+      f.push(this.fSeg('Forma', el.priceShape, [['pill', 'Píldora'], ['round', 'Suave'], ['square', 'Recta']], v => sp('priceShape', v)));
+      f.push(this.fHead('Agotados'), this.fSeg('Estilo', el.sold, [['sello', 'Sello'], ['cinta', 'Cinta'], ['gris', 'Gris']], v => sp('sold', v)));
+      if (el.sold === 'cinta') C('Color de la cinta', 'soldFill');
+    }
+    if (el.type === 'terms') { C('Fondo del título', 'chipFill', 'transparent'); C('Texto del título', 'chipText'); C('Fondo de la caja', 'boxFill', 'transparent'); C('Texto', 'text'); }
+    if (el.type === 'footer') {
+      f.push({ isArea:true, hasLabel:true, label:'Contenido', display:'', value:el.content, onChange: e => sp('content', val(e)) }, tokens);
+      C('Fondo', 'fill', 'transparent'); C('Línea superior', 'line'); f.push(this.fRange('Grosor de la línea', el.bw, 0, 6, 1, v => sp('bw', v), ' px')); C('Texto', 'text');
+    }
+    f.push(this.fHead('Posición y tamaño'));
+    f.push({ isNums:true, items:[['x', 'X'], ['y', 'Y'], ['w', 'Ancho'], ['h', 'Alto']].map(([k, l]) => ({ label:l + ' %', value:String(el[k]), onChange: e => { const n = parseFloat(val(e)); if (!isNaN(n)) sp(k, n); } })) });
+    if (!el.core) f.push(this.fRange('Rotación', el.rot || 0, -180, 180, 1, v => sp('rot', v), '°'));
+    f.push(this.fRange('Opacidad', Math.round((el.opacity ?? 1) * 100), 0, 100, 1, v => sp('opacity', v / 100), ' %'));
+    return f;
+  }
+  pageFields(t) {
+    const page = this.state.page, bg = t.pages[page].bg;
+    const set = (k, v) => { this.pushHistory('bg' + page + k); this.updTpl(tt => { tt.pages[page].bg[k] = v; return tt; }); };
+    const f = [this.fSeg('Fondo', bg.type, [['color', 'Color'], ['gradient', 'Degradado'], ['image', 'Imagen']], v => set('type', v))];
+    if (bg.type === 'image') f.push(this.fSeg('Imagen de fondo', bg.image, [['marble', 'Mármol'], ['coverbg', 'Atardecer']], v => set('image', v)));
+    f.push(this.fColor(t, bg.type === 'gradient' ? 'Color superior' : 'Color', bg.color, v => set('color', v)));
+    if (bg.type === 'gradient') f.push(this.fColor(t, 'Color inferior', bg.color2, v => set('color2', v)));
+    return f;
+  }
+
+  openTpl(id) { this._hk = null; this.setState({ activeId:id, view:'editor', sel:null, past:[], future:[], preview:false }); }
+  addTpl(tpl) { this.setState(s => ({ templates:[...s.templates, tpl] })); this.openTpl(tpl.id); this.flash('Plantilla creada'); }
+
+  renderVals() {
+    const s = this.state, t = this.tpl(), el = this.selEl(), isEditor = s.view === 'editor';
+    const dirty = JSON.stringify(s.templates) !== s.saved || JSON.stringify(s.business) !== s.savedBiz;
+    const fit = Math.max(0.2, Math.min((s.areaH - 48) / 842, (s.areaW - 48) / 595));
+    const scale = s.zoom ?? fit;
+    const dots = tp => ['bg', 'a1', 'a2', 'a3', 'paper'].map(k => tp.palette[k]);
+    const meta = PAGES.find(p => p[0] === s.page);
+    const b = s.business, termsLen = b.terms.reduce((n, x) => n + x.body.length, 0);
+    const updBiz = fn => this.setState(st => ({ business:fn(clone(st.business)) }));
+    const pScale = Math.max(0.15, Math.min((s.areaW - 48 - 72) / 4 / 595, (s.areaH - 70) / 842));
+    const mk = (kind, o) => () => this.addEl(kind(o));
+    const add = (txt, o) => this.addEl(T({ name:o.name, text:txt, ...o }));
+
+    return {
+      isEditor, isGallery: s.view === 'gallery', standalone: !this.props.embedded, embedded: !!this.props.embedded, back: () => this.props.onBack && this.props.onBack(),
+      viewTabs: [['editor', 'Editor'], ['gallery', 'Plantillas']].map(([k, l]) => ({ label:l, bg: s.view === k ? '#FFB800' : 'transparent', fg: s.view === k ? '#2A1258' : '#FFF4E2', pick:() => this.setState({ view:k }) })),
+      tplName: t.name, setTplName: e => { const v = val(e); this.pushHistory('name'); this.updTpl(tt => ({ ...tt, name:v })); },
+      undo:this.undo, redo:this.redo, undoFg: s.past.length ? '#FFF4E2' : 'rgba(255,244,226,.35)', redoFg: s.future.length ? '#FFF4E2' : 'rgba(255,244,226,.35)',
+      statusLabel: dirty ? 'Cambios sin guardar' : 'Todo guardado', statusColor: dirty ? '#FFB800' : '#7FE0A8',
+      togglePreview: () => this.setState({ preview:!s.preview, sel:null }), previewLabel: s.preview ? 'Editar' : 'Vista previa', previewBg: s.preview ? 'rgba(255,244,226,.15)' : 'transparent',
+      makeDefault: () => { this.setState({ defaultId:t.id }); this.flash(t.name + ' se usará al generar'); },
+      defLabel: s.defaultId === t.id ? 'Predeterminada' : 'Usar', defBg: s.defaultId === t.id ? '#FFB800' : 'rgba(255,244,226,.12)', defFg: s.defaultId === t.id ? '#2A1258' : '#FFF4E2',
+      save: () => { this.setState(st => ({ saved:JSON.stringify(st.templates), savedBiz:JSON.stringify(st.business) })); this.flash('Guardado. Se usará en el próximo catálogo.'); },
+      saveBg: dirty ? '#E5368C' : '#B07A9A',
+
+      rail: [['plantillas', 'Plantillas', '4px', 'none'], ['elementos', 'Elementos', '50%', 'none'], ['estilo', 'Estilo', '3px', 'rotate(45deg)'], ['datos', 'Datos', '999px 999px 4px 4px', 'none']].map(([k, l, g, gr]) => ({ label:l, glyph:g, glyphRot:gr,
+        bg: s.tab === k ? '#FFE1EF' : 'transparent', fg: s.tab === k ? '#C41E72' : '#2A1258', pick:() => this.setState({ tab:k }) })),
+      tabPlantillas: s.tab === 'plantillas', tabElementos: s.tab === 'elementos', tabEstilo: s.tab === 'estilo', tabDatos: s.tab === 'datos',
+      tplList: s.templates.map(tp => ({ name:tp.name, dots:dots(tp), isDefault: tp.id === s.defaultId, border: tp.id === t.id ? '#E5368C' : '#F0DFC8', open:() => this.openTpl(tp.id), thumb:this.pageData(tp, 'portada', 62 / 595, false) })),
+      goGallery: () => this.setState({ view:'gallery' }), goGalleryNew: () => this.setState({ view:'gallery' }),
+
+      titleFont:this.font(t, 'title'), bodyFont:this.font(t, 'body'),
+      addTitle: () => add('Nuevo título', { name:'Título', size:40, color:'a1', x:15, y:44, w:70, h:9 }),
+      addBody: () => add('Escribe aquí', { name:'Texto', font:'body', size:16, weight:500, color:'ink', x:20, y:47, w:60, h:5 }),
+      addBadge: mk(B, { name:'Insignia', x:39, y:47.5, w:22, h:5 }),
+      dataChips: [['{banner}', 'Banner', 34], ['{seccion}', 'Sección', 60], ['{telefonos}', 'Teléfonos', 15], ['{direccion}', 'Dirección', 14], ['{tienda}', 'Tienda', 16]].map(([tk, l, sz]) => ({ label:l, add:() => add(tk, { name:l, size:sz, font: sz > 20 ? 'title' : 'body', color:'ink', x:10, y:45, w:80, h: sz > 20 ? 10 : 5 }) })),
+      shapeBtns: [
+        { label:'Rectángulo', w:'26px', h:'20px', r:'4px', add:mk(S, { name:'Rectángulo', fill:'a1', x:30, y:42, w:40, h:16 }) },
+        { label:'Círculo', w:'24px', h:'24px', r:'50%', add:mk(S, { name:'Círculo', kind:'circle', fill:'a2', x:35, y:40, w:30, h:circleH(30) }) },
+        { label:'Píldora', w:'30px', h:'14px', r:'999px', add:mk(S, { name:'Píldora', kind:'pill', fill:'a3', x:30, y:47, w:40, h:6 }) },
+        { label:'Línea', w:'30px', h:'3px', r:'0', add:mk(S, { name:'Línea', fill:'ink', radius:0, x:20, y:50, w:60, h:0.4 }) } ],
+      imgBtns: [['logo', 'Logo', { fit:'cover', radius:999, x:40, y:43, w:20, h:14.1 }], ['collage', 'Collage', { x:10, y:35, w:80, h:30 }]].map(([k, l, o]) => ({ label:l, img:`url(${IMG[k]})`, add:mk(I, { name:l, src:k, ...o }) })),
+
+      paletteRows: TOKENS.map(([k, l, use]) => ({ label:l, use, hex:t.palette[k], onInput: e => { const v = val(e).toUpperCase(); this.pushHistory('pal' + k); this.updTpl(tt => { tt.palette[k] = v; return tt; }); } })),
+      restoreColors: () => { const p = makePresets().find(x => x.id === t.base); if (!p) return; this.pushHistory(); this.updTpl(tt => ({ ...tt, palette:p.palette })); this.flash('Colores originales restaurados'); },
+      palettePresets: PAL_PRESETS.map(([n, p]) => ({ name:n, dots:['bg', 'a1', 'a2', 'a3', 'paper'].map(k => p[k]), apply:() => { this.pushHistory(); this.updTpl(tt => ({ ...tt, palette:{ ...p } })); } })),
+      fontPairs: PAIRS.map(([a, c]) => ({ tName:FONTS[a][0], bName:FONTS[c][0], tf:FONTS[a][1], bf:FONTS[c][1], border: t.fonts.title === a && t.fonts.body === c ? '#E5368C' : '#F0DFC8',
+        apply:() => { this.pushHistory(); this.updTpl(tt => ({ ...tt, fonts:{ title:a, body:c } })); } })),
+
+      bizFields: [['storeName', 'Nombre de la tienda'], ['coverTitle', 'Texto del banner de portada', 'Valor por defecto. En Generar catálogo se puede cambiar solo para esa vez.', 80], ['phone1', 'Teléfono 1'], ['phone2', 'Teléfono 2'], ['address', 'Dirección']].map(([k, l, h, max]) => ({
+        label:l, hint:h || '', value:b[k], count: max ? `${b[k].length}/${max}` : '', countColor: max && b[k].length > max ? '#B3123F' : '#7A6A92', onChange: e => { const v = val(e); updBiz(x => { x[k] = v; return x; }); } })),
+      termRows: b.terms.map((x, i) => ({ title:x.title, body:x.body, setTitle: e => { const v = val(e); updBiz(bb => { bb.terms[i].title = v; return bb; }); }, setBody: e => { const v = val(e); updBiz(bb => { bb.terms[i].body = v; return bb; }); },
+        remove: () => updBiz(bb => { bb.terms.splice(i, 1); return bb; }) })),
+      addTerm: () => updBiz(bb => { bb.terms.push({ title:'Nueva política', body:'' }); return bb; }),
+      termsCount: `${termsLen} / 3500 caracteres` + (termsLen > 3500 ? ' · no caben en una página' : ''), termsColor: termsLen > 3500 ? '#B3123F' : '#7A6A92', termsWeight: termsLen > 3500 ? 800 : 600,
+
+      areaRef:this.areaRef, pageRef:this.pageRef, areaDown: () => s.sel && this.setState({ sel:null }),
+      notPreview:!s.preview, preview:s.preview, pageW:px(595 * scale), pageH:px(842 * scale), canvasPage:this.pageData(t, s.page, scale, true),
+      previewPages: PAGES.map(([k, l]) => ({ label:l, w:px(595 * pScale), h:px(842 * pScale), page:this.pageData(t, k, pScale, false) })),
+      strip: PAGES.map(([k, l, n]) => ({ label:l, note:n, thumb:this.pageData(t, k, 56 / 595, false), border: k === s.page && !s.preview ? '#E5368C' : 'transparent', bg: k === s.page && !s.preview ? '#FFFFFF' : 'transparent',
+        pick:() => this.setState({ page:k, sel:null, preview:false }) })),
+      zoomLabel: Math.round(scale * 100) + '%', zoomIn: () => this.setState({ zoom:Math.min(2, rnd(scale + 0.1)) }), zoomOut: () => this.setState({ zoom:Math.max(0.2, rnd(scale - 0.1)) }), zoomFit: () => this.setState({ zoom:null }),
+
+      hasSel:!!el, noSel:!el, selType: el ? TYPE_LABEL[el.type] : '', selName: el ? (el.name || TYPE_LABEL[el.type]) : '',
+      selActions: el ? [
+        { label:'Duplicar', fg:'#2A1258', run:this.duplicateSel }, { label:'Al frente', fg:'#2A1258', run:() => this.moveLayer(1) }, { label:'Atrás', fg:'#2A1258', run:() => this.moveLayer(-1) },
+        { label: el.locked ? 'Desbloquear' : 'Bloquear', fg:'#2A1258', run:() => this.patchEl(el.id, { locked:!el.locked }) },
+        { label: el.visible === false ? 'Mostrar' : 'Ocultar', fg:'#2A1258', run:() => el.core ? this.flash('Este bloque no se puede ocultar') : this.patchEl(el.id, { visible: el.visible === false }) },
+        { label:'Eliminar', fg: el.core ? '#B9A8D9' : '#B3123F', run:this.deleteSel } ] : [],
+      pageLabel: meta[1], pageNote: meta[2] + '. Haz clic en un elemento para editarlo.',
+      fields: el ? this.inspector(t, el) : this.pageFields(t),
+      layers: t.pages[s.page].els.slice().reverse().map(x => ({ name:x.name || TYPE_LABEL[x.type], type:TYPE_LABEL[x.type] + (x.core ? ' · automático' : ''), op: x.visible === false ? 0.45 : 1, bg:'#FFFCF7',
+        pick:() => this.setState({ sel:x.id }), visLabel: x.visible === false ? 'Oculto' : 'Visible', lockLabel: x.locked ? 'Fijo' : 'Libre', lockBg: x.locked ? '#FFF1DE' : '#FFFFFF',
+        toggleVis:() => x.core ? this.flash('Este bloque no se puede ocultar') : this.patchEl(x.id, { visible: x.visible === false }), toggleLock:() => this.patchEl(x.id, { locked:!x.locked }) })),
+
+      galleryCards: s.templates.map(tp => ({ name:tp.name, dots:dots(tp), isDefault: tp.id === s.defaultId, notDefault: tp.id !== s.defaultId, border: tp.id === s.defaultId ? '#FFB800' : '#F0DFC8',
+        meta: FONTS[tp.fonts.title][0] + ' + ' + FONTS[tp.fonts.body][0], cover:this.pageData(tp, 'portada', 130 / 595, false), products:this.pageData(tp, 'productos', 130 / 595, false),
+        open:() => this.openTpl(tp.id),
+        dup:() => { const c = clone(tp); c.id = 't' + Date.now().toString(36); c.name = tp.name + ' (copia)'; this.addTpl(c); },
+        setDef:() => { this.setState({ defaultId:tp.id }); this.flash(tp.name + ' se usará al generar'); },
+        del:() => { this.setState(st => { const rest = st.templates.filter(x => x.id !== tp.id); return { templates:rest, activeId: st.activeId === tp.id ? st.defaultId : st.activeId, past:[], future:[] }; }); this.flash('Plantilla eliminada'); } })),
+      newFromList: makePresets().map(p => ({ name:p.name, dots:dots(p), border:'#F0DFC8', create:() => { p.id = 't' + Date.now().toString(36); p.name = 'Nueva · ' + p.name; this.addTpl(p); } })),
+      toast:s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

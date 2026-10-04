@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:{{ page.outW }};height:{{ page.outH }};position:relative;overflow:hidden;border-radius:{{ page.radius }};box-shadow:{{ page.shadow }};background:#FFFFFF">
+  <div onPointerDown="{{ page.down }}" style="position:absolute;left:0;top:0;width:595px;height:842px;transform:{{ page.transform }};transform-origin:0 0;background-color:{{ page.bgColor }};background-image:{{ page.bgImage }};background-size:cover;background-position:center;overflow:hidden;font-family:'Poppins',sans-serif">
+    <sc-for list="{{ page.els }}" as="el" hint-placeholder-count="0">
+      <div onPointerDown="{{ el.down }}" style="position:absolute;left:{{ el.left }};top:{{ el.top }};width:{{ el.width }};height:{{ el.height }};transform:{{ el.rot }};display:{{ el.display }};cursor:{{ el.cursor }};touch-action:none;user-select:none">
+        <div style="position:absolute;inset:0;opacity:{{ el.opacity }}">
+          <sc-if value="{{ el.isText }}">
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:{{ el.jc }};text-align:{{ el.align }};font-family:{{ el.font }};font-size:{{ el.size }};font-weight:{{ el.weight }};line-height:1.05;color:{{ el.color }};-webkit-text-stroke:{{ el.stroke }};paint-order:stroke fill;text-shadow:{{ el.glow }};letter-spacing:{{ el.ls }};text-transform:{{ el.tt }};white-space:pre-wrap;overflow-wrap:anywhere">{{ el.text }}</div>
+          </sc-if>
+          <sc-if value="{{ el.isBadge }}">
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:999px;background:{{ el.fill }};color:{{ el.color }};font-family:{{ el.font }};font-size:{{ el.size }};font-weight:700;letter-spacing:.06em;white-space:nowrap;overflow:hidden">{{ el.text }}</div>
+          </sc-if>
+          <sc-if value="{{ el.isShape }}">
+            <div style="width:100%;height:100%;box-sizing:border-box;background:{{ el.fill }};border:{{ el.border }};border-radius:{{ el.radius }};box-shadow:{{ el.glow }}"></div>
+          </sc-if>
+          <sc-if value="{{ el.isImage }}">
+            <div style="width:100%;height:100%;background-image:{{ el.bgImg }};background-size:{{ el.bgSize }};background-position:center;background-repeat:no-repeat;border-radius:{{ el.radius }}"></div>
+          </sc-if>
+          <sc-if value="{{ el.isProducts }}">
+            <div style="position:relative;width:100%;height:100%">
+              <sc-for list="{{ el.rows }}" as="r">
+                <sc-if value="{{ r.sep }}"><div style="position:absolute;left:0;right:0;top:{{ r.sepY }};height:1px;background:{{ el.pp.text }};opacity:.25"></div></sc-if>
+                <div style="position:absolute;left:{{ r.cx }};top:{{ r.cy }};width:{{ r.cw }};height:{{ r.ch }};box-sizing:border-box;border-radius:{{ el.pp.cardRadius }};background:{{ el.pp.cardFill }};border:{{ el.pp.ring }};overflow:hidden">
+                  <div style="position:absolute;inset:7%;background-image:url(assets/print/collage.png);background-size:300% auto;background-position:{{ r.imgPos }};background-repeat:no-repeat;filter:{{ r.filter }}"></div>
+                  <sc-if value="{{ r.seal }}"><img src="assets/print/sold-out.png" alt="" style="position:absolute;right:4%;bottom:4%;width:48%"></sc-if>
+                  <sc-if value="{{ r.ribbon }}"><div style="position:absolute;left:-25%;right:-25%;top:42%;transform:rotate(-18deg);background:{{ el.pp.soldFill }};color:#FFFFFF;text-align:center;font-weight:800;font-size:14px;letter-spacing:.14em;padding:4px 0">AGOTADO</div></sc-if>
+                  <sc-if value="{{ r.grayTag }}"><div style="position:absolute;left:8px;top:8px;padding:2px 8px;background:{{ el.pp.text }};color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:.12em">AGOTADO</div></sc-if>
+                </div>
+                <div style="position:absolute;left:{{ r.bx }};top:{{ r.by }};width:{{ r.bw }};height:{{ r.bh }};box-sizing:border-box;border-radius:{{ el.pp.bubbleRadius }};background:{{ el.pp.bubbleFill }};color:{{ el.pp.text }};display:flex;flex-direction:column;justify-content:center;align-items:{{ r.bAlign }};text-align:{{ r.bText }};gap:5px;padding:10px 16px;font-family:{{ el.pp.body }}">
+                  <div style="font-family:{{ el.pp.title }};font-size:17px;font-weight:700;line-height:1.1">{{ r.name }}</div>
+                  <div style="font-size:12px;line-height:1.35">{{ r.desc }}</div>
+                </div>
+                <div style="position:absolute;left:{{ r.px }};top:{{ r.py }};width:120px;height:30px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:{{ el.pp.priceRadius }};background:{{ el.pp.priceFill }};border:{{ el.pp.priceBorder }};color:{{ el.pp.priceText }};font-family:{{ el.pp.body }};font-weight:700;font-size:16px">{{ r.price }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ el.isTerms }}">
+            <div style="width:100%;height:100%;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+              <sc-for list="{{ el.items }}" as="it">
+                <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 16px;border-radius:18px;background:{{ el.boxFill }};color:{{ el.textColor }};font-family:{{ el.body }}">
+                  <span style="padding:2px 12px;border-radius:999px;background:{{ el.chipFill }};color:{{ el.chipText }};font-weight:700;font-size:13px">{{ it.title }}</span>
+                  <span style="font-size:11.5px;font-weight:500;line-height:1.4">{{ it.body }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ el.isFooter }}">
+            <div style="width:100%;height:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:0 12px;background:{{ el.fill }};border-top:{{ el.borderTop }};color:{{ el.textColor }};font-family:{{ el.body }};font-size:11px;white-space:nowrap;overflow:hidden">{{ el.content }}</div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ el.selected }}">
+          <div style="position:absolute;inset:0;outline:{{ el.outline }};pointer-events:none"></div>
+        </sc-if>
+        <sc-if value="{{ el.showHandle }}">
+          <div onPointerDown="{{ el.resizeDown }}" style="position:absolute;right:{{ el.handleOff }};bottom:{{ el.handleOff }};width:{{ el.handle }};height:{{ el.handle }};border-radius:50%;background:#FFFFFF;border:{{ el.handleBorder }};box-sizing:border-box;cursor:nwse-resize"></div>
+        </sc-if>
+      </div>
+    </sc-for>
+    <sc-if value="{{ page.guideV }}"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#FF3DA8;pointer-events:none"></div></sc-if>
+    <sc-if value="{{ page.guideH }}"><div style="position:absolute;top:50%;left:0;right:0;height:1px;background:#FF3DA8;pointer-events:none"></div></sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;page&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}"></script>
+</body>
+</html>

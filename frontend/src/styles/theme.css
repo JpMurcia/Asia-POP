@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+@import '@fontsource/fredoka/500.css';
+@import '@fontsource/fredoka/600.css';
+@import '@fontsource/fredoka/700.css';
+@import '@fontsource/nunito-sans/400.css';
+@import '@fontsource/nunito-sans/600.css';
+@import '@fontsource/nunito-sans/700.css';
+
+/* Dirección visual 1b "Pop" del mockup de administración (docs/Diseño de catálogo y administración). */
+@theme {
+  --color-pop-bg: #fff7ec;
+  --color-pop-surface: #ffffff;
+  --color-pop-surface2: #fff1de;
+  --color-pop-stripe: #fbe7cc;
+  --color-pop-line: #f0dfc8;
+  --color-pop-ink: #2a1258;
+  --color-pop-muted: #7a6a92;
+  --color-pop-accent: #e5368c;
+  --color-pop-accent-dark: #8e1553;
+  --color-pop-link: #c41e72;
+  --color-pop-amber: #ffb800;
+  --color-pop-side: #2a1258;
+  --color-pop-side-card: #3a1e78;
+  --color-pop-side-text: #fff4e2;
+  --color-pop-side-muted: #b9a8d9;
+  --color-pop-input: #fffcf7;
+  --color-pop-ok-bg: #e2f7ea;
+  --color-pop-ok-text: #16653a;
+  --color-pop-warn-bg: #ffe9b3;
+  --color-pop-warn-text: #5c3b00;
+  --color-pop-err-bg: #ffe1ea;
+  --color-pop-err-text: #b3123f;
+  --color-pop-alegra-bg: #e6e9ff;
+  --color-pop-alegra-text: #2a3ba8;
+  --color-pop-custom-bg: #ffe1ef;
+  --color-pop-custom-text: #a01460;
+
+  --radius-pop: 14px;
+  --radius-pop-lg: 22px;
+
+  --shadow-pop-card: 0 6px 0 #2a1258;
+  --shadow-pop-button: 0 4px 0 #8e1553;
+
+  --font-display: 'Fredoka', system-ui, sans-serif;
+  --font-sans: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+/* En la capa base para que las utilidades de Tailwind (por ejemplo `text-white` en un enlace-botón) las superen */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-pop-bg);
+    color: var(--color-pop-ink);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
+
+  a {
+    color: var(--color-pop-link);
+  }
+
+  input,
+  select,
+  button,
+  textarea {
+    font: inherit;
+  }
+}
+
+/* Las páginas A4 del catálogo viven en src/print/print.css */

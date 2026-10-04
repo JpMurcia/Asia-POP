@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+a{color:#FF2E8A}
+a:hover{color:#FFC93C}
+input,select,button,textarea{font:inherit}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;background:{{ t.bg }};color:{{ t.text }};font-family:{{ t.body }};font-size:14px;line-height:1.45;position:relative">
+
+<!-- Direction switcher -->
+<div style="position:fixed;right:16px;bottom:16px;z-index:50;display:flex;gap:4px;padding:4px;border-radius:999px;background:#0B0618;box-shadow:0 6px 24px rgba(0,0,0,.35);font-family:'IBM Plex Mono',monospace;font-size:12px">
+  <sc-for list="{{ dirs }}" as="d" hint-placeholder-count="3">
+    <button id="{{ d.id }}" onClick="{{ d.pick }}" style="border:0;cursor:pointer;padding:6px 12px;border-radius:999px;background:{{ d.bg }};color:{{ d.fg }}">{{ d.id }} · {{ d.label }}</button>
+  </sc-for>
+</div>
+
+<sc-if value="{{ showLogin }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;display:grid;place-items:center;padding:40px 20px;background:{{ t.loginBg }}">
+    <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:24px;padding:40px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }};box-shadow:{{ t.shadow }}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+        <img src="assets/logo.jpg" alt="ASIANPOP MARKET" style="width:96px;height:96px;border-radius:50%;object-fit:cover">
+        <div style="font-family:{{ t.display }};font-size:24px;font-weight:600">Generador de catálogo</div>
+        <div style="color:{{ t.muted }}">Panel de administración · ASIANPOP MARKET+</div>
+      </div>
+      <form onSubmit="{{ doLogin }}" style="display:flex;flex-direction:column;gap:14px">
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Usuario</span>
+          <input value="{{ loginUser }}" onChange="{{ setLoginUser }}" placeholder="admin" style="height:44px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Contraseña</span>
+          <input type="password" value="{{ loginPass }}" onChange="{{ setLoginPass }}" placeholder="••••••••" style="height:44px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+        </label>
+        <sc-if value="{{ loginError }}"><div style="padding:10px 12px;border-radius:{{ t.radius }};background:{{ t.errBg }};color:{{ t.errText }};font-size:13px">{{ loginError }}</div></sc-if>
+        <button type="submit" style="height:46px;border:0;cursor:pointer;border-radius:{{ t.radius }};background:{{ t.accent }};color:{{ t.accentInk }};font-weight:700;box-shadow:{{ t.glow }}">Entrar</button>
+        <div style="text-align:center;color:{{ t.muted }};font-size:12px">Usuario único. Cualquier contraseña de 4+ caracteres funciona en este prototipo.</div>
+      </form>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showApp }}">
+  <sc-if value="{{ notAppearance }}" hint-placeholder-val="{{ true }}"><aside style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:24px;padding:20px 14px;background:{{ t.sideBg }};color:{{ t.sideText }};border-right:1px solid {{ t.sideLine }};position:sticky;top:0;height:100vh">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 6px">
+      <img src="assets/logo.jpg" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
+      <div style="display:flex;flex-direction:column;line-height:1.15">
+        <span style="font-family:{{ t.display }};font-weight:600;font-size:15px">AsianPop</span>
+        <span style="font-size:12px;color:{{ t.sideMuted }}">Catálogo PDF</span>
+      </div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+        <button onClick="{{ n.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;cursor:pointer;text-align:left;padding:10px 12px;border-radius:{{ t.radius }};background:{{ n.bg }};color:{{ n.fg }};font-weight:{{ n.weight }}">
+          <span>{{ n.label }}</span>
+          <sc-if value="{{ n.badge }}"><span style="min-width:22px;height:22px;padding:0 7px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:700;background:{{ t.accent2 }};color:{{ t.accent2Ink }}">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:{{ t.radius }};background:{{ t.sideCard }}">
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="width:8px;height:8px;border-radius:50%;background:{{ connDot }}"></span>{{ connLabel }}</div>
+      <button onClick="{{ logout }}" style="border:0;background:transparent;color:{{ t.sideMuted }};cursor:pointer;text-align:left;padding:0;font-size:13px">Cerrar sesión</button>
+    </div>
+  </aside></sc-if>
+
+  <sc-if value="{{ isAppearance }}">
+    <div style="flex:1;min-width:0;height:100vh;position:sticky;top:0">
+      <dc-import name="Apariencia Editor" embedded="{{ true }}" on-back="{{ goHome }}" hint-size="100%,100vh"></dc-import>
+    </div>
+  </sc-if>
+  <sc-if value="{{ notAppearance }}" hint-placeholder-val="{{ true }}">
+  <main style="flex:1;min-width:0;padding:32px 40px 80px;display:flex;flex-direction:column;gap:24px">
+    <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.muted }}">{{ crumb }}</div>
+        <h1 style="margin:0;font-family:{{ t.display }};font-size:30px;font-weight:600;letter-spacing:-.01em;text-shadow:{{ t.titleGlow }}">{{ title }}</h1>
+      </div>
+      <sc-if value="{{ showHeaderCta }}">
+        <button onClick="{{ goGenerate }}" style="height:42px;padding:0 18px;border:0;cursor:pointer;border-radius:{{ t.radius }};background:{{ t.accent }};color:{{ t.accentInk }};font-weight:700;box-shadow:{{ t.glow }}">Generar catálogo</button>
+      </sc-if>
+    </header>
+
+    <!-- INICIO -->
+    <sc-if value="{{ isHome }}">
+      <sc-if value="{{ hasUncat }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px 20px;border-radius:{{ t.radiusLg }};background:{{ t.warnBg }};color:{{ t.warnText }};border:1px solid {{ t.warnLine }}">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <strong>{{ uncatCount }} productos de Alegra sin categoría</strong>
+            <span style="font-size:13px">Quedan fuera del PDF hasta que les asignes una sección.</span>
+          </div>
+          <button onClick="{{ goUncat }}" style="height:38px;padding:0 16px;border-radius:{{ t.radius }};border:1px solid currentColor;background:transparent;color:inherit;font-weight:700;cursor:pointer">Asignar secciones</button>
+        </div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:20px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+            <span style="color:{{ t.muted }};font-size:13px">{{ s.label }}</span>
+            <span style="font-family:{{ t.display }};font-size:32px;font-weight:600;color:{{ s.color }}">{{ s.value }}</span>
+            <span style="color:{{ t.muted }};font-size:12px">{{ s.note }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px">
+        <div style="display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="font-family:{{ t.display }};font-size:17px;font-weight:600">Secciones del catálogo</div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ sectionRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:1fr 90px 90px 80px;gap:8px;align-items:center;padding:10px 0;border-top:1px solid {{ t.line }}">
+                <span style="font-weight:700;letter-spacing:.02em">{{ r.name }}</span>
+                <span style="color:{{ t.muted }};font-size:13px">{{ r.count }} prod.</span>
+                <span style="color:{{ r.outColor }};font-size:13px">{{ r.out }}</span>
+                <span style="justify-self:end;font-size:12px;padding:2px 8px;border-radius:999px;background:{{ r.srcBg }};color:{{ r.srcFg }}">{{ r.src }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="font-family:{{ t.display }};font-size:17px;font-weight:600">Último catálogo</div>
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="width:84px;aspect-ratio:210/297;flex-shrink:0;border-radius:4px;background:#11052C;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(255,46,138,.6),0 0 18px rgba(255,46,138,.35)"><span style="font-family:'Fredoka',sans-serif;color:#FFC93C;font-size:11px;text-align:center;line-height:1.1">Catálogo<br>de productos</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;word-break:break-all">{{ lastJob.file }}</span>
+              <span style="color:{{ t.muted }};font-size:13px">{{ lastJob.pages }} páginas · {{ lastJob.when }}</span>
+              <a href="#" onClick="{{ fakeDownload }}" style="color:{{ t.link }};font-weight:700;font-size:13px">Descargar PDF</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- CONEXION -->
+    <sc-if value="{{ isConn }}">
+      <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:18px;padding:24px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="font-family:{{ t.display }};font-size:17px;font-weight:600">Credenciales de Alegra</div>
+            <span style="color:{{ t.muted }};font-size:13px">Se prueban antes de guardar. El token se almacena cifrado y no se vuelve a mostrar.</span>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Correo de la cuenta</span>
+            <input value="{{ credEmail }}" onChange="{{ setCredEmail }}" placeholder="usuario@dominio.com" style="height:44px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Token de API</span>
+            <div style="display:flex;gap:8px">
+              <input type="{{ tokenType }}" value="{{ credToken }}" onChange="{{ setCredToken }}" placeholder="Pega el token de Alegra" style="flex:1;min-width:0;height:44px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none;font-family:'IBM Plex Mono',monospace;font-size:13px">
+              <button onClick="{{ toggleToken }}" style="height:44px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.text }};cursor:pointer">{{ tokenToggleLabel }}</button>
+            </div>
+          </label>
+          <sc-if value="{{ testMsg }}">
+            <div style="padding:12px 14px;border-radius:{{ t.radius }};background:{{ testBg }};color:{{ testFg }};font-size:13px;display:flex;flex-direction:column;gap:2px">
+              <strong>{{ testMsg }}</strong><span>{{ testDetail }}</span>
+            </div>
+          </sc-if>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button onClick="{{ runTest }}" style="height:42px;padding:0 18px;border-radius:{{ t.radius }};border:1px solid {{ t.accent }};background:transparent;color:{{ t.link }};font-weight:700;cursor:pointer">{{ testBtnLabel }}</button>
+            <button onClick="{{ saveCreds }}" style="height:42px;padding:0 18px;border:0;border-radius:{{ t.radius }};background:{{ saveBg }};color:{{ saveFg }};font-weight:700;cursor:{{ saveCursor }}">Guardar credenciales</button>
+            <span style="color:{{ t.muted }};font-size:12px;margin-left:auto">Intentos de prueba: {{ attemptsLeft }}/5 por minuto</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="font-family:{{ t.display }};font-size:17px;font-weight:600">Estado actual</div>
+          <sc-for list="{{ connRows }}" as="c" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid {{ t.line }}">
+              <span style="color:{{ t.muted }}">{{ c.k }}</span><span style="font-weight:600;text-align:right">{{ c.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- SIN CATEGORIA -->
+    <sc-if value="{{ isUncat }}">
+      <div style="display:flex;flex-direction:column;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }};overflow:hidden">
+        <div style="display:grid;grid-template-columns:minmax(0,2fr) 110px 90px minmax(0,1.4fr) 110px;gap:12px;padding:12px 20px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:{{ t.muted }};border-bottom:1px solid {{ t.line }}">
+          <span>Producto en Alegra</span><span>Precio</span><span>Stock</span><span>Sección</span><span></span>
+        </div>
+        <sc-if value="{{ uncatEmpty }}"><div style="padding:40px 20px;text-align:center;color:{{ t.muted }}">Todos los productos tienen sección. Puedes generar el catálogo.</div></sc-if>
+        <sc-for list="{{ uncatRows }}" as="u" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:minmax(0,2fr) 110px 90px minmax(0,1.4fr) 110px;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid {{ t.line }}">
+            <div style="display:flex;flex-direction:column;min-width:0"><strong>{{ u.name }}</strong><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ t.muted }}">ID {{ u.id }}</span></div>
+            <span>{{ u.price }}</span>
+            <span style="color:{{ u.stockColor }}">{{ u.stock }}</span>
+            <select value="{{ u.sel }}" onChange="{{ u.onSel }}" style="height:38px;padding:0 10px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }}">
+              <option value="">Elegir sección…</option>
+              <sc-for list="{{ sectionNames }}" as="sn"><option value="{{ sn }}">{{ sn }}</option></sc-for>
+            </select>
+            <button onClick="{{ u.assign }}" style="height:38px;border:0;border-radius:{{ t.radius }};background:{{ u.btnBg }};color:{{ u.btnFg }};font-weight:700;cursor:pointer">Asignar</button>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ hasOverrides }}">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <div style="font-family:{{ t.display }};font-size:17px;font-weight:600">Asignaciones locales</div>
+            <span style="color:{{ t.muted }};font-size:13px">Solo afectan el PDF. Corrige la categoría también en Alegra.</span>
+          </div>
+          <sc-for list="{{ overrideRows }}" as="o">
+            <div style="display:flex;align-items:center;gap:12px;padding-top:10px;border-top:1px solid {{ t.line }}">
+              <span style="flex:1">{{ o.name }}</span>
+              <span style="font-weight:700">{{ o.section }}</span>
+              <button onClick="{{ o.undo }}" style="border:0;background:transparent;color:{{ t.link }};cursor:pointer;font-weight:600">Deshacer</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <!-- CONTENIDO PROPIO -->
+    <sc-if value="{{ isCustom }}">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <sc-for list="{{ customTabs }}" as="ct" hint-placeholder-count="2">
+          <button onClick="{{ ct.pick }}" style="height:38px;padding:0 16px;border-radius:999px;border:1px solid {{ ct.border }};background:{{ ct.bg }};color:{{ ct.fg }};font-weight:700;cursor:pointer">{{ ct.name }} · {{ ct.count }}</button>
+        </sc-for>
+        <div style="display:flex;gap:6px;margin-left:auto">
+          <input value="{{ newSectionName }}" onChange="{{ setNewSectionName }}" placeholder="Nueva sección" style="height:38px;width:160px;padding:0 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+          <button onClick="{{ addSection }}" style="height:38px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.text }};cursor:pointer;font-weight:600">Crear</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="color:{{ t.muted }}">Productos bajo pedido: sin stock ni badge AGOTADO. Entran al PDF después de las secciones de Alegra.</span>
+        <div style="display:flex;gap:8px">
+          <button onClick="{{ deleteSection }}" style="height:38px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.errText }};cursor:pointer">Eliminar sección</button>
+          <button onClick="{{ newProduct }}" style="height:38px;padding:0 16px;border:0;border-radius:{{ t.radius }};background:{{ t.accent }};color:{{ t.accentInk }};font-weight:700;cursor:pointer">Nuevo producto</button>
+        </div>
+      </div>
+      <sc-if value="{{ customEmpty }}"><div style="padding:48px 20px;text-align:center;color:{{ t.muted }};border:1px dashed {{ t.line }};border-radius:{{ t.radiusLg }}">Esta sección no tiene productos. Si queda vacía, no aparece en el PDF.</div></sc-if>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+        <sc-for list="{{ customProducts }}" as="p" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }};overflow:hidden">
+            <div style="height:120px;display:grid;place-items:center;background:repeating-linear-gradient(135deg,{{ t.stripeA }} 0 10px,{{ t.stripeB }} 10px 20px);font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ t.muted }}">foto del producto</div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:16px">
+              <div style="display:flex;justify-content:space-between;gap:8px"><strong style="font-size:16px">{{ p.name }}</strong></div>
+              <span style="color:{{ t.muted }};font-size:13px">{{ p.description }}</span>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <sc-for list="{{ p.options }}" as="op">
+                  <div style="display:flex;justify-content:space-between;font-size:13px"><span>{{ op.label }} <span style="color:{{ t.muted }}">{{ op.max }}</span></span><strong>{{ op.price }}</strong></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ p.flavors }}" as="f"><span style="font-size:11px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:{{ t.chipBg }};color:{{ t.chipFg }}">{{ f }}</span></sc-for>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:6px">
+                <button onClick="{{ p.edit }}" style="flex:1;height:36px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.text }};cursor:pointer;font-weight:600">Editar</button>
+                <button onClick="{{ p.del }}" style="height:36px;padding:0 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.errText }};cursor:pointer">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- COMBOS -->
+    <sc-if value="{{ isCombos }}">
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+        <div style="flex:1 1 220px;max-width:100%;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ bundleList }}" as="b" hint-placeholder-count="2">
+            <button onClick="{{ b.pick }}" style="display:flex;flex-direction:column;gap:2px;text-align:left;padding:14px;border-radius:{{ t.radius }};border:1px solid {{ b.border }};background:{{ b.bg }};color:{{ t.text }};cursor:pointer">
+              <strong>{{ b.name }}</strong>
+              <span style="font-size:13px;color:{{ t.muted }}">{{ b.price }} · {{ b.count }} productos</span>
+              <sc-if value="{{ b.unavailable }}"><span style="font-size:12px;font-weight:700;color:{{ t.errText }}">No disponible</span></sc-if>
+            </button>
+          </sc-for>
+          <button onClick="{{ newBundle }}" style="height:40px;border-radius:{{ t.radius }};border:1px dashed {{ t.line }};background:transparent;color:{{ t.link }};cursor:pointer;font-weight:700">Nuevo combo</button>
+        </div>
+        <sc-if value="{{ hasBundle }}">
+          <div style="flex:999 1 480px;min-width:0;display:flex;flex-direction:column;gap:18px;padding:24px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+              <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Nombre</span>
+                <input value="{{ bundle.name }}" onChange="{{ setBundleName }}" style="height:42px;padding:0 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Descripción</span>
+                <input value="{{ bundle.description }}" onChange="{{ setBundleDesc }}" style="height:42px;padding:0 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+              </label>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-weight:600;font-size:13px">Componentes</span>
+              <sc-for list="{{ bundleComps }}" as="bc" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px;align-items:center;padding:10px 12px;border-radius:{{ t.radius }};background:{{ t.surface2 }}">
+                  <div style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-weight:600">{{ bc.name }}</span><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="font-size:11px;padding:1px 6px;border-radius:999px;background:{{ bc.srcBg }};color:{{ bc.srcFg }}">{{ bc.src }}</span><span style="font-size:12px;color:{{ bc.stockColor }}">{{ bc.stockLabel }}</span></div></div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <button onClick="{{ bc.dec }}" style="width:28px;height:28px;border-radius:6px;border:1px solid {{ t.line }};background:transparent;color:{{ t.text }};cursor:pointer">−</button>
+                    <span style="min-width:18px;text-align:center;font-weight:700">{{ bc.qty }}</span>
+                    <button onClick="{{ bc.inc }}" style="width:28px;height:28px;border-radius:6px;border:1px solid {{ t.line }};background:transparent;color:{{ t.text }};cursor:pointer">+</button>
+                  </div>
+                  <span style="text-align:right;white-space:nowrap">{{ bc.subtotal }}</span>
+                  <button onClick="{{ bc.remove }}" title="Quitar" style="width:28px;height:28px;border:0;background:transparent;color:{{ t.muted }};cursor:pointer;font-size:16px">×</button>
+                </div>
+              </sc-for>
+              <select value="" onChange="{{ addComp }}" style="height:40px;padding:0 10px;border-radius:{{ t.radius }};border:1px dashed {{ t.line }};background:transparent;color:{{ t.text }}">
+                <option value="">Agregar producto…</option>
+                <sc-for list="{{ addableItems }}" as="ai"><option value="{{ ai.id }}">{{ ai.label }}</option></sc-for>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;align-items:end">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-weight:600;font-size:13px">Precio del combo</span>
+                <div style="display:flex;gap:4px;padding:4px;border-radius:{{ t.radius }};background:{{ t.surface2 }};width:max-content">
+                  <sc-for list="{{ pricingOpts }}" as="po"><button onClick="{{ po.pick }}" style="height:34px;padding:0 14px;border:0;border-radius:6px;background:{{ po.bg }};color:{{ po.fg }};font-weight:600;cursor:pointer">{{ po.label }}</button></sc-for>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input value="{{ pricingValue }}" onChange="{{ setPricingValue }}" inputmode="numeric" style="width:140px;height:42px;padding:0 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+                  <span style="color:{{ t.muted }}">{{ pricingUnit }}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:{{ t.radius }};background:{{ t.surface2 }}">
+                <div style="display:flex;justify-content:space-between;color:{{ t.muted }};font-size:13px"><span>Suma de componentes</span><span>{{ bundleSum }}</span></div>
+                <div style="display:flex;justify-content:space-between;color:{{ t.muted }};font-size:13px"><span>Ahorro</span><span>{{ bundleSaving }}</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:6px"><span style="font-weight:700">Precio en catálogo</span><span style="font-family:{{ t.display }};font-size:26px;font-weight:600;color:{{ t.priceColor }}">{{ bundleFinal }}</span></div>
+              </div>
+            </div>
+            <sc-if value="{{ bundleUnavailable }}">
+              <div style="padding:12px 14px;border-radius:{{ t.radius }};background:{{ t.errBg }};color:{{ t.errText }};font-size:13px"><strong>Combo no disponible.</strong> {{ bundleOutNames }} está agotado en Alegra; el combo saldrá con badge AGOTADO.</div>
+            </sc-if>
+            <div style="display:flex;gap:8px;justify-content:space-between">
+              <button onClick="{{ deleteBundle }}" style="height:40px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.errText }};cursor:pointer">Eliminar combo</button>
+              <span style="align-self:center;color:{{ t.muted }};font-size:13px">{{ bundleSavedLabel }}</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- GENERAR -->
+    <sc-if value="{{ isGenerate }}">
+      <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:20px;padding:24px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600;font-size:13px">Secciones a incluir</span><button onClick="{{ toggleAllCats }}" style="border:0;background:transparent;color:{{ t.link }};cursor:pointer;font-weight:600;font-size:13px">{{ allCatsLabel }}</button></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ genCats }}" as="g" hint-placeholder-count="6">
+                <button onClick="{{ g.toggle }}" style="height:36px;padding:0 14px;border-radius:999px;border:1px solid {{ g.border }};background:{{ g.bg }};color:{{ g.fg }};font-weight:700;letter-spacing:.02em;cursor:pointer">{{ g.name }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div onClick="{{ toggleHideOut }}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border-radius:{{ t.radius }};background:{{ t.surface2 }};cursor:pointer">
+            <div style="display:flex;flex-direction:column"><strong>Ocultar productos agotados</strong><span style="color:{{ t.muted }};font-size:13px">{{ hideOutNote }}</span></div>
+            <div style="width:44px;height:26px;border-radius:999px;background:{{ switchBg }};position:relative;flex-shrink:0"><div style="position:absolute;top:3px;left:{{ switchLeft }};width:20px;height:20px;border-radius:50%;background:#fff"></div></div>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Texto del banner de portada</span>
+            <input value="{{ bannerText }}" onChange="{{ setBannerText }}" style="height:44px;padding:0 14px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+          </label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button onClick="{{ startGenerate }}" style="height:46px;padding:0 22px;border:0;border-radius:{{ t.radius }};background:{{ genBtnBg }};color:{{ t.accentInk }};font-weight:700;cursor:pointer;box-shadow:{{ t.glow }}">{{ genBtnLabel }}</button>
+            <span style="color:{{ t.muted }};font-size:13px">{{ uncatWarn }}</span>
+          </div>
+          <sc-if value="{{ jobRunning }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:{{ t.radius }};background:{{ t.surface2 }}">
+              <div style="height:6px;border-radius:999px;background:{{ t.line }};overflow:hidden"><div style="height:100%;width:{{ jobPct }};background:{{ t.accent }};transition:width .4s"></div></div>
+              <sc-for list="{{ jobSteps }}" as="js">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:{{ js.color }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ js.dot }};animation:{{ js.anim }}"></span>{{ js.label }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ jobDone }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:{{ t.radius }};background:{{ t.okBg }};color:{{ t.okText }}">
+              <div style="display:flex;flex-direction:column"><strong>Catálogo generado</strong><span style="font-family:'IBM Plex Mono',monospace;font-size:12px">{{ lastJob.file }} · {{ lastJob.pages }} págs.</span></div>
+              <a href="#" onClick="{{ fakeDownload }}" style="color:inherit;font-weight:700">Descargar</a>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }}">
+          <div style="font-family:{{ t.display }};font-size:17px;font-weight:600">Vista previa de estructura</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ previewPages }}" as="pp" hint-placeholder-count="12">
+              <div title="{{ pp.title }}" style="width:30px;aspect-ratio:210/297;border-radius:2px;background:{{ pp.bg }};box-shadow:{{ pp.ring }}"></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:{{ t.muted }}">
+            <span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:2px;background:#FF2E8A"></span>Portadas</span>
+            <span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:2px;background:#3A1E78"></span>Productos (máx. 3)</span>
+            <span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:2px;background:#FFC93C"></span>Contenido propio / políticas</span>
+          </div>
+          <sc-for list="{{ genSummary }}" as="gs">
+            <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid {{ t.line }}"><span style="color:{{ t.muted }}">{{ gs.k }}</span><strong>{{ gs.v }}</strong></div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- HISTORIAL -->
+    <sc-if value="{{ isHistory }}">
+      <div style="display:flex;flex-direction:column;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }};overflow:hidden">
+        <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.6fr) 80px 110px 90px;gap:12px;padding:12px 20px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:{{ t.muted }};border-bottom:1px solid {{ t.line }}">
+          <span>Archivo</span><span>Fecha</span><span>Secciones</span><span>Págs.</span><span>Origen</span><span></span>
+        </div>
+        <sc-for list="{{ historyRows }}" as="h" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.6fr) 80px 110px 90px;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid {{ t.line }}">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;overflow:hidden;text-overflow:ellipsis">{{ h.file }}</span>
+            <span style="color:{{ t.muted }}">{{ h.when }}</span>
+            <span style="font-size:13px">{{ h.cats }}</span>
+            <span>{{ h.pages }}</span>
+            <span style="font-size:12px;padding:2px 8px;border-radius:999px;justify-self:start;background:{{ t.chipBg }};color:{{ t.chipFg }}">{{ h.origin }}</span>
+            <a href="#" onClick="{{ fakeDownload }}" style="color:{{ t.link }};font-weight:700;justify-self:end">Descargar</a>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </main>
+  </sc-if>
+
+  <!-- Modal producto propio -->
+  <sc-if value="{{ editing }}">
+    <div onClick="{{ closeEdit }}" style="position:fixed;inset:0;z-index:40;background:rgba(8,3,20,.6);display:grid;place-items:center;padding:24px">
+      <div onClick="{{ stop }}" style="width:100%;max-width:560px;max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:16px;padding:28px;border-radius:{{ t.radiusLg }};background:{{ t.surface }};border:1px solid {{ t.line }};color:{{ t.text }}">
+        <div style="font-family:{{ t.display }};font-size:20px;font-weight:600">{{ editTitle }}</div>
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Nombre</span>
+          <input value="{{ draft.name }}" onChange="{{ setDraftName }}" style="height:42px;padding:0 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:13px">Descripción</span>
+          <textarea value="{{ draft.description }}" onChange="{{ setDraftDesc }}" rows="3" style="padding:10px 12px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none;resize:vertical"></textarea>
+        </label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-weight:600;font-size:13px">Presentaciones</span>
+          <sc-for list="{{ draftOptions }}" as="d">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 120px 110px 28px;gap:8px;align-items:center">
+              <input value="{{ d.label }}" onChange="{{ d.setLabel }}" placeholder="Caja x 6 UND" style="height:38px;padding:0 10px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+              <input value="{{ d.price }}" onChange="{{ d.setPrice }}" placeholder="Precio" style="height:38px;padding:0 10px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+              <input value="{{ d.max }}" onChange="{{ d.setMax }}" placeholder="Máx. sabores" style="height:38px;padding:0 10px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:{{ t.inputBg }};color:{{ t.text }};outline:none">
+              <button onClick="{{ d.remove }}" style="border:0;background:transparent;color:{{ t.muted }};cursor:pointer;font-size:16px">×</button>
+            </div>
+          </sc-for>
+          <button onClick="{{ addOption }}" style="align-self:flex-start;border:0;background:transparent;color:{{ t.link }};cursor:pointer;font-weight:700;padding:0">+ Agregar presentación</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-weight:600;font-size:13px">Sabores</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <sc-for list="{{ draftFlavors }}" as="df"><button onClick="{{ df.remove }}" style="font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;border:0;background:{{ t.chipBg }};color:{{ t.chipFg }};cursor:pointer">{{ df.name }} ×</button></sc-for>
+            <input value="{{ flavorInput }}" onChange="{{ setFlavorInput }}" onKeyDown="{{ flavorKey }}" placeholder="Escribe y Enter" style="height:32px;width:150px;padding:0 10px;border-radius:999px;border:1px dashed {{ t.line }};background:transparent;color:{{ t.text }};outline:none">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
+          <button onClick="{{ closeEdit }}" style="height:40px;padding:0 16px;border-radius:{{ t.radius }};border:1px solid {{ t.line }};background:transparent;color:{{ t.text }};cursor:pointer">Cancelar</button>
+          <button onClick="{{ saveDraft }}" style="height:40px;padding:0 18px;border:0;border-radius:{{ t.radius }};background:{{ t.accent }};color:{{ t.accentInk }};font-weight:700;cursor:pointer">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}">
+    <div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;padding:12px 18px;border-radius:{{ t.radius }};background:{{ t.text }};color:{{ t.bg }};font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3)">{{ toast }}</div>
+  </sc-if>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;direction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;1a&quot;,&quot;1b&quot;,&quot;1c&quot;],&quot;default&quot;:&quot;1a&quot;,&quot;tsType&quot;:&quot;'1a'|'1b'|'1c'&quot;},&quot;startLoggedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const THEMES = {
+  '1a': { label:'Neón', bg:'#0E0524', loginBg:'radial-gradient(ellipse at 50% 0%,#2A0D5C 0%,#0E0524 65%)', surface:'#170A36', surface2:'#211048', line:'rgba(190,160,255,.16)', text:'#F3EEFF', muted:'#A99BCB', accent:'#FF2E8A', accentInk:'#fff', accent2:'#FFC93C', accent2Ink:'#2A0F00', link:'#FF6FB0',
+    sideBg:'#0A031B', sideText:'#EDE6FF', sideMuted:'#9283B8', sideLine:'rgba(190,160,255,.12)', sideCard:'#170A36', sideActiveBg:'rgba(255,46,138,.16)', sideActiveText:'#FF6FB0',
+    display:"'Fredoka',sans-serif", body:"'Nunito Sans',sans-serif", radius:'10px', radiusLg:'16px', shadow:'0 0 0 1px rgba(255,46,138,.25),0 20px 60px rgba(0,0,0,.5)', glow:'0 0 18px rgba(255,46,138,.45)', titleGlow:'0 0 18px rgba(255,46,138,.35)',
+    okBg:'rgba(60,220,140,.14)', okText:'#7FF0B4', warnBg:'rgba(255,201,60,.12)', warnText:'#FFD76A', warnLine:'rgba(255,201,60,.35)', errBg:'rgba(255,80,100,.14)', errText:'#FF8A9A', inputBg:'#0E0524',
+    chipBg:'rgba(255,201,60,.14)', chipFg:'#FFD76A', stripeA:'#1B0C3E', stripeB:'#211048', priceColor:'#FFC93C', srcAlegraBg:'rgba(120,170,255,.16)', srcAlegraFg:'#A9C6FF', srcCustomBg:'rgba(255,46,138,.16)', srcCustomFg:'#FF8CC0' },
+  '1b': { label:'Pop', bg:'#FFF7EC', loginBg:'#FFF7EC', surface:'#FFFFFF', surface2:'#FFF1DE', line:'#F0DFC8', text:'#2A1258', muted:'#7A6A92', accent:'#E5368C', accentInk:'#fff', accent2:'#FFB800', accent2Ink:'#2A1258', link:'#C41E72',
+    sideBg:'#2A1258', sideText:'#FFF4E2', sideMuted:'#B9A8D9', sideLine:'#2A1258', sideCard:'#3A1E78', sideActiveBg:'#FFB800', sideActiveText:'#2A1258',
+    display:"'Fredoka',sans-serif", body:"'Nunito Sans',sans-serif", radius:'14px', radiusLg:'22px', shadow:'0 6px 0 #2A1258', glow:'0 4px 0 #8E1553', titleGlow:'none',
+    okBg:'#E2F7EA', okText:'#16653A', warnBg:'#FFE9B3', warnText:'#5C3B00', warnLine:'#FFB800', errBg:'#FFE1EA', errText:'#B3123F', inputBg:'#FFFCF7',
+    chipBg:'#FFE9B3', chipFg:'#5C3B00', stripeA:'#FFF1DE', stripeB:'#FBE7CC', priceColor:'#E5368C', srcAlegraBg:'#E6E9FF', srcAlegraFg:'#2A3BA8', srcCustomBg:'#FFE1EF', srcCustomFg:'#A01460' },
+  '1c': { label:'Sobrio', bg:'#F6F5F8', loginBg:'#F6F5F8', surface:'#FFFFFF', surface2:'#F3F1F6', line:'#E4E1EA', text:'#16131D', muted:'#6B6577', accent:'#3B1A78', accentInk:'#fff', accent2:'#E5368C', accent2Ink:'#fff', link:'#3B1A78',
+    sideBg:'#FFFFFF', sideText:'#16131D', sideMuted:'#6B6577', sideLine:'#E4E1EA', sideCard:'#F6F5F8', sideActiveBg:'#EFEAF8', sideActiveText:'#3B1A78',
+    display:"'Space Grotesk',sans-serif", body:"'IBM Plex Sans',sans-serif", radius:'6px', radiusLg:'8px', shadow:'0 1px 2px rgba(0,0,0,.06)', glow:'none', titleGlow:'none',
+    okBg:'#E7F5EC', okText:'#1C5E36', warnBg:'#FFF4DC', warnText:'#6B4500', warnLine:'#F2D49A', errBg:'#FCE8EC', errText:'#A3173C', inputBg:'#FFFFFF',
+    chipBg:'#EFEAF8', chipFg:'#3B1A78', stripeA:'#F3F1F6', stripeB:'#ECE9F1', priceColor:'#3B1A78', srcAlegraBg:'#EEF1F6', srcAlegraFg:'#3A4A66', srcCustomBg:'#FBE9F2', srcCustomFg:'#9B1659' },
+};
+const ALEGRA_SECTIONS = ['RAMEN','TTEOKBOKKI','SNACKS','DULCES','BEBIDAS'];
+const COUNTS = { RAMEN:[24,3], TTEOKBOKKI:[8,1], SNACKS:[6,0], DULCES:[17,2], BEBIDAS:[23,3] };
+const ITEMS = [
+  { id:'A-201', name:'Buldak Carbonara', price:9000, stock:14 },
+  { id:'A-202', name:'Shin Ramyun', price:7000, stock:0 },
+  { id:'A-305', name:'Tteokbokki Topokki picante', price:15000, stock:6 },
+  { id:'A-411', name:'Pepero Original', price:5000, stock:22 },
+  { id:'A-412', name:'Choco Pie x12', price:18000, stock:4 },
+  { id:'A-520', name:'Milkis Melón', price:6000, stock:10 },
+  { id:'A-523', name:'Soju Jinro Durazno', price:16000, stock:0 },
+  { id:'A-530', name:'Palillos', price:800, stock:40 },
+];
+const fmt = n => '$' + new Intl.NumberFormat('es-CO').format(Math.round(n || 0));
+const uid = () => 'c' + Math.random().toString(36).slice(2, 8);
+const ev = e => e && e.target ? e.target.value : e;
+
+class Component extends DCLogic {
+  state = {
+    dir: null, loggedIn: !!this.props.startLoggedIn, loginUser: 'admin', loginPass: '', loginError: '',
+    screen: 'home',
+    savedEmail: 'pedidos@asianpopmarket.co', configured: true, credSource: 'Almacenado cifrado', lastTested: 'Hoy, 9:12 a. m.',
+    credEmail: 'pedidos@asianpopmarket.co', credToken: '', showToken: false, testState: null, attempts: 5,
+    uncat: [
+      { id:'A-1042', name:'Pepero Almendra', price:5000, stock:12, sel:'' },
+      { id:'A-1057', name:'Samyang Buldak 2x Spicy', price:9500, stock:8, sel:'' },
+      { id:'A-1063', name:'Bon Bon Mango', price:6000, stock:0, sel:'' },
+      { id:'A-1071', name:'Honey Butter Chips', price:8500, stock:5, sel:'' },
+    ],
+    overrides: [],
+    sections: [
+      { id:'s1', name:'MOCHIS', products:[
+        { id:'p1', name:'Mochi artesanal', description:'Pastelito japonés de arroz glutinoso relleno de crema y fruta. Bajo pedido, con 1 día de anticipación.', options:[{label:'Caja x 6 UND',price:30000,max:2},{label:'Caja x 12 UND',price:50000,max:4}], flavors:['FRESA','ARANDANO','MANGO','DURAZNO'] },
+      ]},
+      { id:'s2', name:'REGALOS', products:[] },
+    ],
+    activeSection: 's1', newSectionName: '',
+    editing: null, draft: null, flavorInput: '',
+    bundles: [
+      { id:'b1', name:'Kit Ramen Night', description:'Para una noche de K-drama', comps:[{id:'A-201',qty:2},{id:'A-411',qty:1},{id:'A-520',qty:1}], pricing:{type:'discount',value:10} },
+      { id:'b2', name:'Caja Brindis', description:'Soju y snacks para compartir', comps:[{id:'A-523',qty:1},{id:'A-412',qty:1},{id:'p1',qty:1,custom:true}], pricing:{type:'fixed',value:60000} },
+    ],
+    activeBundle: 'b1',
+    genCats: ['RAMEN','TTEOKBOKKI','SNACKS','DULCES','BEBIDAS','MOCHIS'], hideOut: false, bannerText: 'Catálogo actualizado 2026',
+    job: null, jobStep: 0,
+    history: [
+      { file:'catalogo-2026-09-28.pdf', when:'28 sep 2026, 4:10 p. m.', cats:'Todas', pages:38, origin:'Panel' },
+      { file:'catalogo-2026-09-14.pdf', when:'14 sep 2026, 11:02 a. m.', cats:'Todas', pages:36, origin:'CLI' },
+      { file:'catalogo-2026-09-01.pdf', when:'1 sep 2026, 8:00 a. m.', cats:'RAMEN, SNACKS', pages:9, origin:'API' },
+    ],
+    toast: '',
+  };
+
+  componentWillUnmount() { clearInterval(this._timer); clearTimeout(this._toastT); }
+  flash(msg) { clearTimeout(this._toastT); this.setState({ toast: msg }); this._toastT = setTimeout(() => this.setState({ toast: '' }), 2200); }
+  go = s => this.setState({ screen: s, editing: null });
+
+  itemById(id) {
+    const a = ITEMS.find(i => i.id === id); if (a) return { ...a, src:'Alegra' };
+    for (const s of this.state.sections) { const p = s.products.find(x => x.id === id); if (p) return { id, name:p.name, price:(p.options && p.options[0] ? p.options[0].price : p.price || 0), stock:null, src:'Propio' }; }
+    return { id, name:id, price:0, stock:null, src:'?' };
+  }
+  bundleCalc(b) {
+    const sum = b.comps.reduce((a, c) => a + this.itemById(c.id).price * c.qty, 0);
+    const final = b.pricing.type === 'fixed' ? Number(b.pricing.value) || 0 : sum * (1 - (Number(b.pricing.value) || 0) / 100);
+    const out = b.comps.map(c => this.itemById(c.id)).filter(i => i.stock === 0);
+    return { sum, final, out };
+  }
+  updBundle(fn) { this.setState(s => ({ bundles: s.bundles.map(b => b.id === s.activeBundle ? fn(b) : b) })); }
+
+  startGenerate = () => {
+    if (this.state.job === 'running') return;
+    if (!this.state.genCats.length) return this.flash('Elige al menos una sección');
+    this.setState({ job:'running', jobStep:0 });
+    clearInterval(this._timer);
+    this._timer = setInterval(() => {
+      const n = this.state.jobStep + 1;
+      if (n >= 4) {
+        clearInterval(this._timer);
+        const d = new Date(); const pad = x => String(x).padStart(2, '0');
+        const file = `catalogo-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.pdf`;
+        const all = this.state.genCats.length === this.allSectionNames().length;
+        this.setState(s => ({ job:'done', jobStep:4, history:[{ file, when:'Ahora', cats: all ? 'Todas' : s.genCats.join(', '), pages: this.pageCount(), origin:'Panel' }, ...s.history] }));
+      } else this.setState({ jobStep: n });
+    }, 900);
+  };
+  allSectionNames() { return [...ALEGRA_SECTIONS, ...this.state.sections.map(s => s.name)]; }
+  sectionCount(name) {
+    const s = this.state;
+    if (COUNTS[name]) { const [n, o] = COUNTS[name]; const extra = s.overrides.filter(x => x.section === name).length; return { n: n + extra - (s.hideOut ? o : 0), o }; }
+    const cs = s.sections.find(x => x.name === name); if (!cs) return { n:0, o:0 };
+    const nb = name === 'REGALOS' ? s.bundles.length : 0;
+    return { n: cs.products.length + nb, o:0 };
+  }
+  buildPages() {
+    const pages = [{ k:'cover', title:'Portada' }];
+    this.allSectionNames().filter(n => this.state.genCats.includes(n)).forEach(n => {
+      const { n:c } = this.sectionCount(n); if (!c) return;
+      const custom = !COUNTS[n];
+      pages.push({ k:'cover', title:'Portada ' + n });
+      const np = custom ? Math.max(1, Math.ceil(c / 1.5)) + (n === 'MOCHIS' ? 1 : 0) : Math.ceil(c / 3);
+      for (let i = 0; i < np; i++) pages.push({ k: custom ? 'custom' : 'prod', title: n + ' · pág. ' + (i + 1) });
+    });
+    pages.push({ k:'custom', title:'Políticas' });
+    return pages;
+  }
+  pageCount() { return this.buildPages().length; }
+
+  renderVals() {
+    const s = this.state;
+    const dirId = s.dir || this.props.direction || '1a';
+    const t = THEMES[dirId] || THEMES['1a'];
+    const dirs = Object.keys(THEMES).map(id => ({ id, label: THEMES[id].label, bg: id === dirId ? '#FF2E8A' : 'transparent', fg: id === dirId ? '#fff' : '#CFC4EA', pick: () => this.setState({ dir: id }) }));
+    const titles = { home:['Resumen','Inicio'], conn:['Configuración','Conexión con Alegra'], uncat:['Alegra','Productos sin categoría'], custom:['Catálogo','Contenido propio'], combos:['Catálogo','Combos de regalo'], generate:['PDF','Generar catálogo'], history:['PDF','Historial'], apariencia:['Catálogo','Apariencia'] };
+    const navDef = [['home','Inicio'],['conn','Conexión Alegra'],['uncat','Sin categoría', s.uncat.length || ''],['custom','Contenido propio'],['combos','Combos'],['generate','Generar catálogo'],['history','Historial'],['apariencia','Apariencia']];
+    const nav = navDef.map(([id, label, badge]) => { const on = s.screen === id; return { label, badge, go: () => this.go(id), bg: on ? t.sideActiveBg : 'transparent', fg: on ? t.sideActiveText : t.sideText, weight: on ? 700 : 500 }; });
+
+    const totals = ALEGRA_SECTIONS.reduce((a, n) => { a.n += COUNTS[n][0]; a.o += COUNTS[n][1]; return a; }, { n:0, o:0 });
+    const stats = [
+      { label:'Productos activos en Alegra', value: totals.n + s.uncat.length + s.overrides.length, note:'Sincronizado hace 4 min', color:t.text },
+      { label:'Agotados', value: totals.o, note:'Salen con badge AGOTADO', color:t.errText },
+      { label:'Sin categoría', value: s.uncat.length, note: s.uncat.length ? 'Fuera del PDF' : 'Todo asignado', color: s.uncat.length ? t.warnText : t.okText },
+      { label:'Páginas estimadas', value: this.pageCount(), note:'A4, máx. 3 productos por hoja', color:t.priceColor },
+    ];
+    const sectionRows = this.allSectionNames().map(n => { const c = this.sectionCount(n); const al = !!COUNTS[n]; return { name:n, count:c.n, out: al ? (c.o ? c.o + ' agotados' : 'Sin agotados') : 'Bajo pedido', outColor: c.o ? t.errText : t.muted, src: al ? 'Alegra' : 'Propio', srcBg: al ? t.srcAlegraBg : t.srcCustomBg, srcFg: al ? t.srcAlegraFg : t.srcCustomFg }; });
+    const lastJob = s.history[0] || { file:'—', pages:0, when:'' };
+
+    const ts = s.testState;
+    const testMap = { loading:['Probando conexión…','GET /company', t.surface2, t.text], ok:['Conexión correcta','ASIANPOP MARKET SAS · NIT 901.234.567', t.okBg, t.okText], err:['Alegra respondió 401','Correo o token inválido. Revisa el token en Alegra → Configuración → API.', t.errBg, t.errText], limit:['Demasiados intentos','Espera un minuto antes de volver a probar.', t.errBg, t.errText] };
+    const tm = ts ? testMap[ts] : null;
+    const canSave = ts === 'ok';
+    const connRows = [
+      { k:'Estado', v: s.configured ? 'Configurado' : 'Sin configurar' },
+      { k:'Correo', v: s.savedEmail },
+      { k:'Token', v:'Oculto · AES-256-GCM' },
+      { k:'Origen', v: s.credSource },
+      { k:'Última prueba', v: s.lastTested },
+    ];
+
+    const sectionNames = this.allSectionNames();
+    const uncatRows = s.uncat.map((u, i) => ({ ...u, price: fmt(u.price), stock: u.stock ? u.stock + ' und' : 'Agotado', stockColor: u.stock ? t.text : t.errText,
+      btnBg: u.sel ? t.accent : t.surface2, btnFg: u.sel ? t.accentInk : t.muted,
+      onSel: e => { const v = ev(e); this.setState(st => ({ uncat: st.uncat.map((x, j) => j === i ? { ...x, sel: v } : x) })); },
+      assign: () => { if (!u.sel) return this.flash('Elige una sección primero'); this.setState(st => ({ uncat: st.uncat.filter((_, j) => j !== i), overrides: [...st.overrides, { ...u, section: u.sel }] })); this.flash(u.name + ' → ' + u.sel); } }));
+    const overrideRows = s.overrides.map((o, i) => ({ name:o.name, section:o.section, undo: () => this.setState(st => ({ overrides: st.overrides.filter((_, j) => j !== i), uncat: [...st.uncat, { ...o, sel:'' }] })) }));
+
+    const activeSec = s.sections.find(x => x.id === s.activeSection) || s.sections[0];
+    const customTabs = s.sections.map(x => { const on = activeSec && x.id === activeSec.id; return { name:x.name, count:x.products.length, pick: () => this.setState({ activeSection:x.id }), bg: on ? t.accent : 'transparent', fg: on ? t.accentInk : t.text, border: on ? t.accent : t.line }; });
+    const customProducts = (activeSec ? activeSec.products : []).map(p => ({ name:p.name, description:p.description, flavors:p.flavors || [],
+      options:(p.options || []).map(o => ({ label:o.label, price:fmt(o.price), max: o.max ? '· máx. ' + o.max + ' sabores' : '' })),
+      edit: () => this.setState({ editing:p.id, draft: JSON.parse(JSON.stringify(p)), flavorInput:'' }),
+      del: () => { this.setState(st => ({ sections: st.sections.map(x => x.id === activeSec.id ? { ...x, products: x.products.filter(y => y.id !== p.id) } : x) })); this.flash('Producto eliminado'); } }));
+    const d = s.draft;
+    const updDraft = fn => this.setState(st => ({ draft: fn(st.draft) }));
+    const draftOptions = d ? d.options.map((o, i) => ({ label:o.label, price:String(o.price ?? ''), max:String(o.max ?? ''),
+      setLabel: e => { const v = ev(e); updDraft(dd => ({ ...dd, options: dd.options.map((x, j) => j === i ? { ...x, label:v } : x) })); },
+      setPrice: e => { const v = ev(e).replace(/\D/g, ''); updDraft(dd => ({ ...dd, options: dd.options.map((x, j) => j === i ? { ...x, price: v ? Number(v) : '' } : x) })); },
+      setMax: e => { const v = ev(e).replace(/\D/g, ''); updDraft(dd => ({ ...dd, options: dd.options.map((x, j) => j === i ? { ...x, max: v ? Number(v) : '' } : x) })); },
+      remove: () => updDraft(dd => ({ ...dd, options: dd.options.filter((_, j) => j !== i) })) })) : [];
+    const draftFlavors = d ? d.flavors.map((f, i) => ({ name:f, remove: () => updDraft(dd => ({ ...dd, flavors: dd.flavors.filter((_, j) => j !== i) })) })) : [];
+
+    const bundle = s.bundles.find(b => b.id === s.activeBundle);
+    const bc = bundle ? this.bundleCalc(bundle) : null;
+    const bundleList = s.bundles.map(b => { const c = this.bundleCalc(b); const on = b.id === s.activeBundle; return { name:b.name, price:fmt(c.final), count:b.comps.reduce((a, x) => a + x.qty, 0), unavailable: c.out.length > 0, pick: () => this.setState({ activeBundle:b.id }), bg: on ? t.surface : 'transparent', border: on ? t.accent : t.line }; });
+    const bundleComps = bundle ? bundle.comps.map((c, i) => { const it = this.itemById(c.id); const al = it.src === 'Alegra';
+      return { name:it.name, qty:c.qty, subtotal:fmt(it.price * c.qty), src:it.src, srcBg: al ? t.srcAlegraBg : t.srcCustomBg, srcFg: al ? t.srcAlegraFg : t.srcCustomFg,
+        stockLabel: it.stock === null ? 'Bajo pedido' : it.stock === 0 ? 'Agotado en Alegra' : it.stock + ' en stock', stockColor: it.stock === 0 ? t.errText : t.muted,
+        inc: () => this.updBundle(b => ({ ...b, comps: b.comps.map((x, j) => j === i ? { ...x, qty: x.qty + 1 } : x) })),
+        dec: () => this.updBundle(b => ({ ...b, comps: b.comps.map((x, j) => j === i ? { ...x, qty: Math.max(1, x.qty - 1) } : x) })),
+        remove: () => this.updBundle(b => ({ ...b, comps: b.comps.filter((_, j) => j !== i) })) }; }) : [];
+    const customAll = s.sections.flatMap(x => x.products);
+    const addableItems = [...ITEMS.map(i => ({ id:i.id, label: i.name + ' · ' + fmt(i.price) + (i.stock === 0 ? ' (agotado)' : '') })), ...customAll.map(p => ({ id:p.id, label: p.name + ' · propio' }))].filter(x => !bundle || !bundle.comps.some(c => c.id === x.id));
+    const pricingOpts = [['discount','% descuento'],['fixed','Precio fijo']].map(([k, l]) => { const on = bundle && bundle.pricing.type === k; return { label:l, bg: on ? t.surface : 'transparent', fg: on ? t.text : t.muted, pick: () => this.updBundle(b => ({ ...b, pricing:{ type:k, value: k === 'fixed' ? Math.round(this.bundleCalc(b).sum * 0.9 / 100) * 100 : 10 } })) }; });
+
+    const genCats = sectionNames.map(n => { const on = s.genCats.includes(n); return { name:n, toggle: () => this.setState(st => ({ genCats: on ? st.genCats.filter(x => x !== n) : [...st.genCats, n] })), bg: on ? t.accent : 'transparent', fg: on ? t.accentInk : t.muted, border: on ? t.accent : t.line }; });
+    const allOn = s.genCats.length === sectionNames.length;
+    const steps = ['Sincronizando productos de Alegra','Descargando y cacheando imágenes','Renderizando páginas A4','Generando PDF con Puppeteer'];
+    const jobSteps = steps.map((l, i) => { const done = i < s.jobStep, cur = i === s.jobStep; return { label:l, color: done || cur ? t.text : t.muted, dot: done ? t.okText : cur ? t.accent : t.line, anim: cur ? 'pulse 1s infinite' : 'none' }; });
+    const pages = this.buildPages();
+    const colors = { cover:'#FF2E8A', prod:'#3A1E78', custom:'#FFC93C' };
+    const previewPages = pages.map(p => ({ title:p.title, bg:colors[p.k], ring: p.k === 'prod' ? 'inset 0 0 0 1px rgba(255,255,255,.15)' : 'none' }));
+    const prodCount = s.genCats.reduce((a, n) => a + this.sectionCount(n).n, 0);
+    const genSummary = [
+      { k:'Secciones', v: s.genCats.length },
+      { k:'Productos', v: prodCount },
+      { k:'Páginas', v: pages.length },
+      { k:'Agotados', v: s.hideOut ? 'Ocultos' : 'Con badge' },
+    ];
+
+    return {
+      t, dirs, showLogin: !s.loggedIn, showApp: s.loggedIn,
+      loginUser: s.loginUser, loginPass: s.loginPass, loginError: s.loginError,
+      setLoginUser: e => this.setState({ loginUser: ev(e) }), setLoginPass: e => this.setState({ loginPass: ev(e) }),
+      doLogin: e => { e && e.preventDefault && e.preventDefault(); if (!s.loginUser || s.loginPass.length < 4) return this.setState({ loginError:'Usuario o contraseña incorrectos.' }); this.setState({ loggedIn:true, loginError:'', loginPass:'' }); },
+      logout: () => this.setState({ loggedIn:false, screen:'home' }),
+      nav, crumb: titles[s.screen][0], title: titles[s.screen][1], showHeaderCta: s.screen !== 'generate',
+      goGenerate: () => this.go('generate'), goHome: () => this.go('home'), goUncat: () => this.go('uncat'),
+      connDot: s.configured ? t.okText : t.errText, connLabel: s.configured ? 'Alegra conectado' : 'Alegra sin configurar',
+      isHome: s.screen === 'home', isConn: s.screen === 'conn', isUncat: s.screen === 'uncat', isCustom: s.screen === 'custom', isCombos: s.screen === 'combos', isGenerate: s.screen === 'generate', isHistory: s.screen === 'history', isAppearance: s.screen === 'apariencia', notAppearance: s.screen !== 'apariencia',
+      hasUncat: s.uncat.length > 0, uncatCount: s.uncat.length, stats, sectionRows, lastJob,
+      fakeDownload: e => { e && e.preventDefault && e.preventDefault(); this.flash('Descarga simulada: ' + lastJob.file); },
+      credEmail: s.credEmail, credToken: s.credToken, tokenType: s.showToken ? 'text' : 'password', tokenToggleLabel: s.showToken ? 'Ocultar' : 'Mostrar',
+      setCredEmail: e => this.setState({ credEmail: ev(e), testState:null }), setCredToken: e => this.setState({ credToken: ev(e), testState:null }),
+      toggleToken: () => this.setState({ showToken: !s.showToken }),
+      testMsg: tm ? tm[0] : '', testDetail: tm ? tm[1] : '', testBg: tm ? tm[2] : 'transparent', testFg: tm ? tm[3] : t.text,
+      testBtnLabel: ts === 'loading' ? 'Probando…' : 'Probar conexión', attemptsLeft: s.attempts,
+      runTest: () => { if (s.attempts <= 0) return this.setState({ testState:'limit' }); this.setState({ testState:'loading', attempts: s.attempts - 1 }); setTimeout(() => this.setState(st => ({ testState: st.credToken.trim().length >= 8 && /@/.test(st.credEmail) ? 'ok' : 'err' })), 1100); },
+      saveBg: canSave ? t.accent : t.surface2, saveFg: canSave ? t.accentInk : t.muted, saveCursor: canSave ? 'pointer' : 'not-allowed',
+      saveCreds: () => { if (!canSave) return this.flash('Prueba la conexión antes de guardar'); this.setState({ savedEmail: s.credEmail, configured:true, credSource:'Almacenado cifrado', lastTested:'Ahora', credToken:'', testState:null }); this.flash('Credenciales guardadas'); },
+      connRows,
+      uncatRows, uncatEmpty: s.uncat.length === 0, sectionNames, overrideRows, hasOverrides: s.overrides.length > 0,
+      customTabs, customProducts, customEmpty: customProducts.length === 0, newSectionName: s.newSectionName,
+      setNewSectionName: e => this.setState({ newSectionName: ev(e) }),
+      addSection: () => { const n = s.newSectionName.trim().toUpperCase(); if (!n) return; const id = uid(); this.setState(st => ({ sections:[...st.sections, { id, name:n, products:[] }], activeSection:id, newSectionName:'', genCats:[...st.genCats, n] })); this.flash('Sección ' + n + ' creada'); },
+      deleteSection: () => { if (!activeSec) return; this.setState(st => { const rest = st.sections.filter(x => x.id !== activeSec.id); return { sections: rest, activeSection: rest[0] ? rest[0].id : null, genCats: st.genCats.filter(x => x !== activeSec.name) }; }); this.flash('Sección eliminada'); },
+      newProduct: () => { if (!activeSec) return this.flash('Crea una sección primero'); this.setState({ editing:'new', draft:{ id:uid(), name:'', description:'', options:[{ label:'', price:'', max:'' }], flavors:[] }, flavorInput:'' }); },
+      editing: !!s.editing && !!d, editTitle: s.editing === 'new' ? 'Nuevo producto · ' + (activeSec ? activeSec.name : '') : 'Editar producto',
+      draft: d || { name:'', description:'' }, draftOptions, draftFlavors, flavorInput: s.flavorInput,
+      setDraftName: e => { const v = ev(e); updDraft(dd => ({ ...dd, name:v })); }, setDraftDesc: e => { const v = ev(e); updDraft(dd => ({ ...dd, description:v })); },
+      addOption: () => updDraft(dd => ({ ...dd, options:[...dd.options, { label:'', price:'', max:'' }] })),
+      setFlavorInput: e => this.setState({ flavorInput: ev(e) }),
+      flavorKey: e => { if (e.key === 'Enter' && s.flavorInput.trim()) { e.preventDefault(); const f = s.flavorInput.trim().toUpperCase(); updDraft(dd => ({ ...dd, flavors:[...dd.flavors, f] })); this.setState({ flavorInput:'' }); } },
+      closeEdit: () => this.setState({ editing:null, draft:null }), stop: e => e.stopPropagation(),
+      saveDraft: () => { if (!d.name.trim()) return this.flash('El producto necesita un nombre'); const clean = { ...d, options: d.options.filter(o => o.label && o.price) };
+        this.setState(st => ({ sections: st.sections.map(x => x.id !== activeSec.id ? x : { ...x, products: st.editing === 'new' ? [...x.products, clean] : x.products.map(p => p.id === clean.id ? clean : p) }), editing:null, draft:null })); this.flash('Producto guardado'); },
+      bundleList, hasBundle: !!bundle, bundle: bundle || { name:'', description:'' }, bundleComps, addableItems, pricingOpts,
+      setBundleName: e => { const v = ev(e); this.updBundle(b => ({ ...b, name:v })); }, setBundleDesc: e => { const v = ev(e); this.updBundle(b => ({ ...b, description:v })); },
+      addComp: e => { const v = ev(e); if (!v) return; const custom = !ITEMS.some(i => i.id === v); this.updBundle(b => ({ ...b, comps:[...b.comps, { id:v, qty:1, custom }] })); },
+      pricingValue: bundle ? String(bundle.pricing.value) : '', pricingUnit: bundle && bundle.pricing.type === 'fixed' ? 'COP' : '% sobre la suma',
+      setPricingValue: e => { const v = ev(e).replace(/\D/g, ''); this.updBundle(b => ({ ...b, pricing:{ ...b.pricing, value: v } })); },
+      bundleSum: bc ? fmt(bc.sum) : '', bundleFinal: bc ? fmt(bc.final) : '', bundleSaving: bc ? fmt(Math.max(0, bc.sum - bc.final)) : '',
+      bundleUnavailable: !!(bc && bc.out.length), bundleOutNames: bc ? bc.out.map(o => o.name).join(', ') : '', bundleSavedLabel:'Cambios guardados automáticamente',
+      newBundle: () => { const id = uid(); this.setState(st => ({ bundles:[...st.bundles, { id, name:'Nuevo combo', description:'', comps:[], pricing:{ type:'discount', value:10 } }], activeBundle:id })); },
+      deleteBundle: () => { this.setState(st => { const rest = st.bundles.filter(b => b.id !== st.activeBundle); return { bundles:rest, activeBundle: rest[0] ? rest[0].id : null }; }); this.flash('Combo eliminado'); },
+      genCats, allCatsLabel: allOn ? 'Quitar todas' : 'Seleccionar todas', toggleAllCats: () => this.setState({ genCats: allOn ? [] : sectionNames }),
+      toggleHideOut: () => this.setState({ hideOut: !s.hideOut }), hideOutNote: s.hideOut ? 'No aparecen en el PDF' : 'Aparecen con badge AGOTADO',
+      switchBg: s.hideOut ? t.accent : t.line, switchLeft: s.hideOut ? '21px' : '3px',
+      bannerText: s.bannerText, setBannerText: e => this.setState({ bannerText: ev(e) }),
+      startGenerate: this.startGenerate, genBtnLabel: s.job === 'running' ? 'Generando…' : s.job === 'done' ? 'Generar de nuevo' : 'Generar PDF', genBtnBg: s.job === 'running' ? t.muted : t.accent,
+      uncatWarn: s.uncat.length ? s.uncat.length + ' productos sin categoría quedarán fuera' : '',
+      jobRunning: s.job === 'running', jobDone: s.job === 'done', jobPct: (s.jobStep / 4 * 100) + '%', jobSteps,
+      previewPages, genSummary,
+      historyRows: s.history, toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

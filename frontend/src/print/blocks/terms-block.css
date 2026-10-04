@@ -1,0 +1,36 @@
+/*
+ * Bloque de políticas (px lógicos: los valores de 002 × 0,75). `--fit` lo escribe useFit; `--tb-space` y `--tb-lh`
+ * son el último recurso (espacios e interlineado más apretados) cuando la letra ya está en su mínimo.
+ */
+.tb {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: calc(10.5px * var(--fit, 1) * var(--tb-space, 1));
+}
+.tb-item {
+  flex: none;
+  border-radius: 21px;
+  padding: calc(12px * var(--fit, 1) * var(--tb-space, 1)) calc(18px * var(--fit, 1));
+}
+.tb-chip {
+  display: inline-block;
+  margin: 0 0 calc(6px * var(--fit, 1) * var(--tb-space, 1));
+  padding: 2px 12px;
+  line-height: var(--tb-lh, 1.45);
+  border-radius: 999px;
+  font-size: calc(15px * var(--fit, 1));
+  font-weight: 700;
+}
+.tb-item p {
+  margin: 0 0 calc(4.5px * var(--fit, 1) * var(--tb-space, 1));
+  font-size: calc(11.25px * var(--fit, 1));
+  font-weight: 500;
+  line-height: var(--tb-lh, 1.4);
+}
+.tb-item p:last-child {
+  margin-bottom: 0;
+}

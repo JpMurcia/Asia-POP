@@ -1,0 +1,154 @@
+/*
+ * Bloque de productos. Las medidas están en px lógicos (la hoja mide 595,28 px de ancho): los valores de 002 en
+ * px de 794 de ancho se multiplicaron por 0,75. `--fit` lo escribe useFit en la burbuja y reduce todos sus textos.
+ */
+.pb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.pb-row {
+  position: absolute;
+  inset: 0;
+}
+
+.pb-photo {
+  position: absolute;
+  box-sizing: border-box;
+  box-shadow: 0 4.5px 13.5px rgba(0, 0, 0, 0.35);
+}
+.pb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-repeat: no-repeat;
+}
+
+/* Etiqueta AGOTADO original de Cat.pdf: centrada en la tarjeta, ocupa 2,5 x 1,67 veces su tamaño */
+.pb-seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 238%;
+  height: 77%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  pointer-events: none;
+  z-index: 3;
+}
+/* Texto real (invisible) para que el PDF sea buscable */
+.pb-sold-label {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  font-size: 7px;
+  color: transparent;
+  z-index: 3;
+}
+.pb-ribbon {
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  top: 42%;
+  transform: rotate(-18deg);
+  color: #fff;
+  text-align: center;
+  font-weight: 800;
+  font-size: 11px;
+  /* Sin espaciado entre letras: el texto del PDF debe poder buscarse como "AGOTADO" */
+  padding: 3px 0;
+  z-index: 3;
+}
+.pb-gray-tag {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  z-index: 3;
+}
+
+.pb-bubble {
+  position: absolute;
+  box-sizing: border-box;
+  padding: calc(13.5px * var(--fit, 1)) calc(16.5px * var(--fit, 1));
+  font-weight: 500;
+  font-size: calc(12.75px * var(--fit, 1)); /* useFit baja --fit si el texto no cabe */
+  line-height: 1.38;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(4.5px * var(--fit, 1));
+  overflow: hidden;
+}
+/* Sin esto los bloques con overflow oculto se encogen hasta desaparecer dentro de la columna flex */
+.pb-bubble > * {
+  flex: none;
+  max-width: 100%;
+}
+.pb-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: var(--desc-lines, 5); /* líneas completas con "…": el texto largo nunca se corta a media línea */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pb-name {
+  font-weight: 700;
+  font-size: calc(13.5px * var(--fit, 1));
+  display: -webkit-box;
+  -webkit-line-clamp: var(--name-lines, 3);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pb-extra {
+  font-size: calc(10.5px * var(--fit, 1));
+  font-weight: 600;
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--extra-lines, 3);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pb-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: calc(11.25px * var(--fit, 1));
+  font-weight: 600;
+}
+.pb-options li {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+.pb-opt-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-opt-price {
+  flex: none;
+}
+
+.pb-price {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  font-weight: 600;
+  font-size: 18px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.pb-sep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  opacity: 0.25;
+}

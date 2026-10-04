@@ -1,0 +1,24 @@
+/*
+ * Pie de página (px lógicos: los valores de 002 × 0,75). `--fit` lo escribe useFit sobre `.fb`.
+ * Una línea cuando cabe; con datos largos pasa a dos y, si aún no cabe, reduce la letra hasta 6 pt.
+ */
+.fb {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: 0 21px;
+  overflow: hidden;
+  font-size: calc(9.75px * var(--fit, 1));
+  font-weight: 600;
+  line-height: 1.2;
+}
+.fb-text {
+  /* Márgenes automáticos: centra en vertical y, si no cabe, el exceso queda abajo (así se mide bien) */
+  margin: auto 0;
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

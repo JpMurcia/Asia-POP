@@ -1,0 +1,404 @@
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+@import '@fontsource/fredoka-one/400.css';
+
+/*
+ * Páginas A4 del catálogo (210mm x 297mm = 794 x 1123 px a 96 dpi).
+ * Diseño calcado de docs/Cat.pdf: portadas con degradado + marco morado, páginas de producto sobre mármol.
+ */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.print-root {
+  font-family: 'Poppins', system-ui, sans-serif;
+  background: #1a1a1a;
+}
+
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  break-after: page;
+  page-break-after: always;
+  color: #1c1126;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.a4-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+@media screen {
+  .print-root {
+    padding: 16px 0;
+  }
+  .a4-page {
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ---------- Portadas ---------- */
+.page-cover {
+  background: url('../assets/print/cover-bg.jpg') center / cover no-repeat;
+}
+.page-cover .frame {
+  position: absolute;
+  inset: 0 1.4%;
+  background: url('../assets/print/frame.png') center / 100% 100% no-repeat;
+}
+.cover-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 29.5%;
+  box-sizing: border-box;
+  padding: 0 6%;
+  margin: 0;
+  max-height: 8.2%; /* hasta dos líneas: debajo empieza el collage; useFit reduce la letra si el banner no cabe */
+  line-height: 1.15;
+  text-align: center;
+  font-weight: 700;
+  font-size: calc(40px * var(--fit, 1));
+  /* Tema: relleno = fondo, resplandor = acento 1 */
+  color: var(--pdf-bg, #11052c);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--pdf-accent-1, #ff007a) 55%, transparent);
+}
+.cover-collage {
+  position: absolute;
+  left: 14.9%;
+  width: 78.8%;
+  top: 37.9%;
+  height: 41%;
+  object-fit: contain;
+}
+.section-title {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 36%;
+  margin: 0;
+  max-height: 18%; /* debajo va la introducción: useFit reduce la letra de los nombres largos */
+  text-align: center;
+  font-family: 'Fredoka One', 'Poppins', sans-serif;
+  font-size: calc(118px * var(--fit, 1));
+  line-height: 1;
+  /* Tema: relleno = fondo, contorno = acento 1 */
+  color: var(--pdf-bg, #11052c);
+  -webkit-text-stroke: calc(4px * var(--fit, 1)) var(--pdf-accent-1, #ff007a);
+  paint-order: stroke fill;
+  word-break: break-word;
+}
+.section-title.long {
+  font-size: calc(74px * var(--fit, 1));
+  -webkit-text-stroke: calc(3px * var(--fit, 1)) var(--pdf-accent-1, #ff007a);
+}
+.section-intro {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 56%;
+  box-sizing: border-box;
+  max-height: 26%; /* termina antes del bloque de contacto; useFit reduce la letra de los textos largos */
+  overflow: hidden;
+  padding: 18px 26px;
+  border-radius: 30px;
+  background: rgba(232, 223, 208, 0.9);
+  text-align: center;
+  font-weight: 500;
+  font-size: calc(17px * var(--fit, 1));
+  line-height: 1.4;
+  white-space: pre-line;
+}
+.contact {
+  position: absolute;
+  right: 11%;
+  bottom: 6.5%;
+  text-align: left;
+  color: #3a0f4d;
+}
+.contact .label {
+  font-weight: 700;
+  font-size: 22px;
+  margin-left: 62px;
+  margin-bottom: 4px;
+}
+.contact .phone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+.contact svg {
+  width: 38px;
+  height: 38px;
+  flex: none;
+}
+
+/* ---------- Páginas de producto ---------- */
+.page-marble {
+  background: #fff url('../assets/print/marble.jpg') center / cover no-repeat;
+}
+.page-logo {
+  position: absolute;
+  top: 1.2%;
+  right: 3.5%;
+  width: 17%;
+}
+.page-heading {
+  position: absolute;
+  top: 3.2%;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  padding: 0 21%; /* deja libre el logo de la derecha sin descentrar el título */
+  margin: 0;
+  max-height: 6.8%; /* hasta dos líneas: debajo empieza la primera tarjeta; useFit reduce la letra de los nombres largos */
+  line-height: 1.1;
+  text-align: center;
+  font-weight: 700;
+  font-size: calc(34px * var(--fit, 1));
+  letter-spacing: 0.5px;
+  color: #111;
+  text-transform: uppercase;
+}
+
+.product-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 27%;
+}
+.product-row .image-card {
+  position: absolute;
+  top: 0;
+  width: 29%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 22px;
+  /* Tema: tarjeta del color de fondo con un anillo de acento 2 pegado a ella */
+  background: var(--pdf-bg, #11052c);
+  border: 4px solid var(--pdf-accent-2, #00ff66);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.product-row .image-card img.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 18px;
+}
+.product-row.left .image-card {
+  left: 14.7%;
+}
+.product-row.right .image-card {
+  right: 20.5%;
+}
+.product-row .bubble {
+  position: absolute;
+  top: 19%;
+  width: 40%;
+  min-height: 50%;
+  max-height: 61%; /* termina antes de la etiqueta de precio (que empieza al 82 % de la fila) */
+  padding: calc(18px * var(--fit, 1)) calc(22px * var(--fit, 1));
+  box-sizing: border-box;
+  border-radius: 38px;
+  background: #e8dfd0;
+  text-align: center;
+  font-weight: 500;
+  font-size: calc(17px * var(--fit, 1)); /* useFit baja --fit si el texto no cabe */
+  line-height: 1.38;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(6px * var(--fit, 1));
+  overflow: hidden;
+}
+.product-row.left .bubble {
+  left: 40%;
+}
+.product-row.right .bubble {
+  left: 12.5%;
+}
+/* Sin esto los bloques con overflow oculto se encogen hasta desaparecer dentro de la columna flex */
+.product-row .bubble > * {
+  flex: none;
+}
+.product-row .bubble .desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 5; /* líneas completas con "…": el texto largo nunca se corta a media línea */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-row .bubble .name {
+  font-weight: 700;
+  font-size: calc(18px * var(--fit, 1));
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-row .bubble .extra {
+  font-size: calc(14px * var(--fit, 1));
+  font-weight: 600;
+  color: #4b3a58;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-row .bubble ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: calc(15px * var(--fit, 1));
+  font-weight: 600;
+}
+.product-row .bubble ul li {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.product-row .bubble ul li .opt-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-row .bubble ul li .opt-price {
+  flex: none;
+}
+.product-row .price {
+  position: absolute;
+  top: 82%;
+  padding: 4px 24px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  /* Tema: etiqueta del color de fondo con borde de acento 3 y texto blanco */
+  background: var(--pdf-bg, #11052c);
+  border: 2px solid var(--pdf-accent-3, #ff9900);
+  color: #fff;
+  font-weight: 600;
+  font-size: 24px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+.product-row.left .price {
+  left: 56%;
+}
+.product-row.right .price {
+  left: 32.5%;
+}
+
+/* Etiqueta AGOTADO original de Cat.pdf: centrada en la tarjeta, ocupa 2,5 x 1,67 veces su tamaño */
+.sold-out {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 238%;
+  height: 77%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  pointer-events: none;
+  z-index: 3;
+}
+/* Texto real (invisible) para que el PDF sea buscable y accesible */
+.sold-out-label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  font-size: 9px;
+  color: transparent;
+  z-index: 3;
+}
+
+/* ---------- Políticas ---------- */
+.terms-heading {
+  position: absolute;
+  top: 5%;
+  left: 6%;
+  right: 24%;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.15;
+  color: #111;
+}
+.terms-body {
+  position: absolute;
+  top: 15%;
+  bottom: 5.4%; /* deja libre el pie; useFit reduce la letra de las políticas largas */
+  left: 7%;
+  right: 7%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: calc(14px * var(--fit, 1));
+}
+.terms-block {
+  flex: none;
+  background: rgba(232, 223, 208, 0.92);
+  border-radius: 28px;
+  padding: calc(16px * var(--fit, 1)) calc(24px * var(--fit, 1));
+}
+.terms-block h3 {
+  /* Tema: chip del color de fondo con el texto en acento 1 */
+  display: inline-block;
+  margin: 0 0 calc(8px * var(--fit, 1));
+  padding: 3px 16px;
+  border-radius: 999px;
+  background: var(--pdf-bg, #11052c);
+  font-size: calc(20px * var(--fit, 1));
+  font-weight: 700;
+  color: var(--pdf-accent-1, #ff007a);
+}
+.terms-block p {
+  margin: 0 0 calc(6px * var(--fit, 1));
+  font-size: calc(15px * var(--fit, 1));
+  font-weight: 500;
+  line-height: 1.4;
+}
+.terms-block p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Pie de las páginas de producto y de políticas ---------- */
+.page-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3.2%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 28px;
+  /* Tema: franja del color de fondo con línea de acento 3 y texto blanco */
+  background: var(--pdf-bg, #11052c);
+  border-top: 2px solid var(--pdf-accent-3, #ff9900);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.page-footer .phones {
+  flex: none;
+}
+/* Una sola línea: una dirección larga se corta con puntos suspensivos */
+.page-footer .address {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
