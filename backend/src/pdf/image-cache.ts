@@ -6,7 +6,17 @@ import { sniffImage } from './image-sniff';
 
 const EXTENSIONS = ['.jpg', '.png', '.webp', '.gif'];
 const MAX_BYTES = 10 * 1024 * 1024;
+/** Una copia se reutiliza mientras tenga menos de una hora: pasada esa ventana la foto se descarga de nuevo. */
 const FRESH_MS = 60 * 60 * 1000;
+/**
+ * Una copia que lleva más de esto sin renovarse se borra al terminar una preparación. Pasada `FRESH_MS` ya nadie la
+ * reutiliza y una preparación abierta (dura 15 min) la usa a lo sumo poco después de descargarla: un día deja holgura.
+ */
+const STALE_MS = 24 * 60 * 60 * 1000;
+/** Parámetros con los que el CDN de Alegra firma cada dirección: cambian en cada listado y no identifican la foto. */
+const SIGNATURE_PARAMS = new Set(['expires', 'signature', 'key-pair-id']);
+/** Los nombres que escribe este caché (copia o descarga a medias); la poda no toca nada más. */
+const CACHE_FILE = /^[0-9a-f]{40}\.(jpg|png|webp|gif)(\.part)?$/;
 
 /** Resultado de descargar una foto: la URL local `/media/cache/<archivo>` o el motivo del fallo. */
 export type DownloadResult = { ok: true; url: string } | { ok: false; reason: PhotoFailureReason };
@@ -30,6 +40,9 @@ function reasonForStatus(status: number): PhotoFailureReason {
  * JPG, PNG, WebP o GIF: el tipo de contenido declarado no cuenta, porque el CDN de Alegra sirve todas sus fotos
  * como `binary/octet-stream`. Un fallo nunca lanza ni deja archivos a medias, y nunca expone la URL de origen
  * (las fotos de Alegra son direcciones firmadas): solo devuelve el motivo.
+ *
+ * La copia local se nombra por la foto y no por la dirección firmada (que cambia en cada listado de ítems), así que
+ * se reutiliza entre preparaciones, y `downloadAll` borra al terminar las copias abandonadas: el caché no crece sin límite.
  */
 export class ImageCache {
   constructor(
@@ -39,8 +52,23 @@ export class ImageCache {
     private maxBytes = MAX_BYTES,
   ) {}
 
+  /**
+   * Nombre estable de la foto: la dirección sin los parámetros de firma. La ruta es la misma mientras la foto no
+   * cambie; cualquier otro parámetro sigue distinguiendo fotos (no se sirve la de otro producto).
+   */
   private hash(url: string): string {
-    return crypto.createHash('sha1').update(url).digest('hex');
+    let key = url;
+    try {
+      const u = new URL(url);
+      for (const name of [...u.searchParams.keys()]) {
+        if (SIGNATURE_PARAMS.has(name.toLowerCase())) u.searchParams.delete(name);
+      }
+      u.hash = '';
+      key = u.href;
+    } catch {
+      // No es una dirección web válida: se usa tal cual
+    }
+    return crypto.createHash('sha1').update(key).digest('hex');
   }
 
   /** Descarga una foto. Las fotos se piden sin credenciales: la dirección ya viene firmada. */
@@ -96,7 +124,33 @@ export class ImageCache {
     return { status: 'failed', reason: firstReason! };
   }
 
-  /** Descarga en paralelo con concurrencia limitada: un resultado por producto (`id` → candidatas). */
+  /**
+   * Borra las copias (y descargas a medias) con más de `STALE_MS` sin renovarse; incluye las de antes de que el
+   * nombre fuera estable. Nunca lanza: lo que no se pueda borrar (en uso, sin permiso) queda para la próxima poda.
+   */
+  prune(): void {
+    let names: string[];
+    try {
+      names = fs.readdirSync(this.dir);
+    } catch {
+      return; // la carpeta aún no existe
+    }
+    const cutoff = Date.now() - STALE_MS;
+    for (const name of names) {
+      if (!CACHE_FILE.test(name)) continue;
+      const file = path.join(this.dir, name);
+      try {
+        if (fs.statSync(file).mtimeMs < cutoff) fs.rmSync(file, { force: true });
+      } catch {
+        // se reintenta en la próxima preparación
+      }
+    }
+  }
+
+  /**
+   * Descarga en paralelo con concurrencia limitada: un resultado por producto (`id` → candidatas). Al terminar
+   * poda el caché; las fotos de esta tanda son recientes, así que nunca se borran.
+   */
   async downloadAll(
     candidates: Map<string, string[]>,
     concurrency = 6,
@@ -114,6 +168,7 @@ export class ImageCache {
       }
     };
     await Promise.all(Array.from({ length: Math.min(concurrency, entries.length) }, worker));
+    this.prune();
     return out;
   }
 }

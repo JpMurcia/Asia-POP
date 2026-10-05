@@ -22,7 +22,7 @@ Decisiones y alternativas en [research.md](./research.md). La causa raíz y las 
 
 **Primary Dependencies**: Backend: Express, better-sqlite3, Puppeteer, zod, multer. Frontend: React, Vite, Tailwind CSS v4, React Router. **Sin dependencias nuevas**: reconocer 4 formatos por sus primeros bytes no justifica una librería (research §1)
 
-**Storage**: copias de fotos en `data/image-cache/` (archivos nombrados por hash de la URL + extensión real); **sin cambios de esquema** ni migraciones. El informe de revisión vive en la preparación en memoria, no en SQLite
+**Storage**: copias de fotos en `data/image-cache/` (archivos nombrados por hash de la URL sin sus parámetros de firma + extensión real; se reutilizan 1 h y se podan a las 24 h, ver [research.md](./research.md) §10); **sin cambios de esquema** ni migraciones. El informe de revisión vive en la preparación en memoria, no en SQLite
 
 **Testing**: Vitest (backend y frontend), supertest, servidor Alegra simulado (`backend/tests/fixtures/alegra-mock.ts`, ampliado con fotos con la forma real y respuestas de fallo), Puppeteer para el aborto por foto rota; revisión visual manual con la cuenta real (quickstart). Nunca se prueba contra la cuenta real de forma automática (principio V)
 

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import type { CatalogPayload } from '../../src/catalog/types';
@@ -10,10 +12,10 @@ afterEach(async () => mock?.close());
 const creds = { email: 'tienda@example.com', apiToken: 'tok_valido' };
 
 /** Foto con la forma real de Alegra: `{ id, name, url, favorite }`. */
-const photo = (route: string, favorite: boolean, id = 1) => ({
+const photo = (route: string, favorite: boolean, id = 1, signature = 'firma-secreta') => ({
   id,
   name: `foto-${id}.jpg`,
-  url: `${mock.url}${route}?Expires=9999999999&Signature=firma-secreta&Key-Pair-Id=K1`,
+  url: `${mock.url}${route}?Expires=9999999999&Signature=${signature}&Key-Pair-Id=K1`,
   favorite,
 });
 
@@ -105,6 +107,40 @@ describe('preparar con las fotos tal como las entrega Alegra (tipo genérico, fa
     expect(itemCalls.every((r) => new URLSearchParams(r.search).get('mode') === 'advanced')).toBe(true);
     // No se usa el servicio de adjuntos ni el detalle de cada ítem
     expect(toAlegra.some((r) => /\/items\/[^/]+/.test(r.path))).toBe(false);
+  });
+});
+
+describe('el caché de fotos no crece entre preparaciones (Alegra firma de nuevo cada dirección en cada listado)', () => {
+  const catalog = (signature: string) => [
+    item('1', { images: [photo('/img/generic.png', true, 1, signature)] }),
+    item('2', { images: [photo('/img/generic.jpg', true, 2, signature)] }),
+    // El producto 3 tiene la favorita prohibida: se prueba primero y luego se usa la otra foto
+    item('3', { images: [photo('/img/forbidden', true, 3, signature), photo('/img/ok.png', false, 4, signature)] }),
+  ];
+  const photoRequests = () => mock.requests.filter((r) => r.path.startsWith('/img/')).length;
+  const imagesOf = async (agent: Agent, prepareId: string) => {
+    const payload = await payloadOf(agent, prepareId);
+    return ['1', '2', '3'].map((id) => imageOf(payload, id));
+  };
+
+  it('preparar otra vez con direcciones de otra firma reutiliza las copias: mismos archivos, mismas fotos, sin descargar de nuevo', async () => {
+    const { agent, ctx } = await setup(() => catalog('firma-A'));
+    const cacheDir = path.join(ctx.config.dataDir, 'image-cache');
+
+    const first = await prepare(agent);
+    const filesAfterFirst = fs.readdirSync(cacheDir).sort();
+    const requestsAfterFirst = photoRequests();
+    const imagesFirst = await imagesOf(agent, first.prepareId);
+    expect(filesAfterFirst).toHaveLength(3);
+    expect(imagesFirst.every(Boolean)).toBe(true);
+
+    mock.setItems(catalog('firma-B')); // mismas fotos, direcciones re-firmadas por Alegra
+    const second = await prepare(agent);
+    expect(fs.readdirSync(cacheDir).sort()).toEqual(filesAfterFirst);
+    // Lo único que se vuelve a pedir es la favorita prohibida del producto 3, que nunca se guarda
+    expect(photoRequests() - requestsAfterFirst).toBe(1);
+    expect(await imagesOf(agent, second.prepareId)).toEqual(imagesFirst);
+    expect(second.report.photos).toEqual(first.report.photos);
   });
 });
 

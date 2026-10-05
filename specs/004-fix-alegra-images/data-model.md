@@ -81,6 +81,7 @@ PhotoOutcome   = { status: 'ok',     url: string }          // alguna candidata 
 5. **Motivo de un producto**: el de su primera candidata (la favorita).
 6. **Variantes**: los padres (`variantParent`) se siguen ignorando y no cuentan en `informed`; una variante sin foto propia no hereda la del padre (fuera de alcance).
 7. **Sin credenciales ni URLs firmadas** (FR-007): el informe lleva el nombre del producto y el código de motivo; nunca la dirección de la foto.
+8. **Nombre y vida de la copia local** (`data/image-cache/`): `<sha1>.<ext>`, donde el hash es el de la dirección **sin** `Expires`, `Signature` ni `Key-Pair-Id` (cambian en cada listado); el resto de la consulta cuenta. Se reutiliza si tiene menos de 1 h; al terminar `downloadAll`, `prune()` borra las copias y `.part` con más de 24 h sin renovarse y no toca archivos con otro nombre. Un fallo al borrar no afecta a la preparación. Ver [research.md](./research.md) §10.
 
 ## Estados de la foto de un producto
 

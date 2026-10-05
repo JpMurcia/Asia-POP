@@ -203,7 +203,7 @@ Ejemplo (valores ficticios):
 - **Orden de secciones:** definido en configuración (`sectionOrder`), por defecto el del catálogo de referencia: RAMEN, TTEOKBOKKI, SNACKS, DULCES, BEBIDAS, MOCHIS. Dentro de cada sección, orden alfabético o por `sortIndex` configurable.
 - **Imagen:** la foto marcada `favorite` del arreglo `images` del ítem; si ninguna lo está, la primera; si la elegida no se puede descargar, se prueban las demás. Un ítem sin ninguna foto utilizable **queda fuera del PDF y se informa** en la revisión (con el motivo: sin foto en Alegra, o foto no obtenida); **no se usa imagen de respaldo** (ver 5.2.1 y la spec 004).
 - **Precio:** formateado con `Intl.NumberFormat('es-CO')` y prefijo `$` (ej. `$9.000`).
-- **Descarga de imágenes:** se descargan/cachean antes de renderizar (con timeout y tope de tamaño) para no depender de `networkidle0` con URLs externas. Se piden sin credenciales (la URL ya viene firmada) y se aceptan por su contenido (JPG, PNG, WebP, GIF). Una foto que no carga al renderizar aborta la generación.
+- **Descarga de imágenes:** se descargan/cachean antes de renderizar (con timeout y tope de tamaño) para no depender de `networkidle0` con URLs externas. Se piden sin credenciales (la URL ya viene firmada) y se aceptan por su contenido (JPG, PNG, WebP, GIF). La copia local se nombra por la dirección **sin su firma** (`Expires`, `Signature`, `Key-Pair-Id` cambian en cada listado), así que se reutiliza entre preparaciones durante 1 h, y al terminar cada preparación se borran las copias con más de 24 h sin renovarse (el caché no crece sin límite). Una foto que no carga al renderizar aborta la generación.
 
 ### 5.4. DTO normalizado (`CatalogPayload`)
 

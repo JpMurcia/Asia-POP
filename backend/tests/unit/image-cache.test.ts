@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../../src/pdf/image-cache';
 import { JPEG_2X2, PNG_1X1, startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 
@@ -19,6 +19,16 @@ afterEach(async () => {
 
 const files = () => (fs.existsSync(dir) ? fs.readdirSync(dir) : []);
 const LOCAL = /^\/media\/cache\/[0-9a-f]{40}\.(jpg|png|webp|gif)$/;
+
+const HOUR = 60 * 60 * 1000;
+/** Dirección firmada como las del CDN de Alegra: la firma cambia en cada listado, la ruta no. */
+const signed = (route: string, sig: string) => `${mock.url}${route}?Expires=${sig}&Signature=firma-${sig}&Key-Pair-Id=K1`;
+const requestsTo = (route: string) => mock.requests.filter((r) => r.path === route).length;
+/** Envejece un archivo del caché como si se hubiera descargado hace `ms`. */
+const age = (name: string, ms: number) => {
+  const t = new Date(Date.now() - ms);
+  fs.utimesSync(path.join(dir, name), t, t);
+};
 
 describe('ImageCache.download: acepta la foto por su contenido', () => {
   it('acepta una foto con tipo genérico binary/octet-stream (comportamiento real de Alegra) y fija la extensión real', async () => {
@@ -46,6 +56,137 @@ describe('ImageCache.download: acepta la foto por su contenido', () => {
     await cache.download(`${mock.url}/img/generic.png`);
     expect(mock.requests.filter((r) => r.path === '/img/generic.png')).toHaveLength(1);
     expect(files()).toHaveLength(1);
+  });
+});
+
+describe('ImageCache.download: la copia sobrevive a los cambios de firma de la dirección', () => {
+  it('la misma foto con otra firma (Expires/Signature) reutiliza la copia: no se vuelve a descargar ni se duplica', async () => {
+    const cache = new ImageCache(dir);
+    const first = await cache.download(signed('/img/generic.png', 'A'));
+    const second = await cache.download(signed('/img/generic.png', 'B'));
+    expect(first).toMatchObject({ ok: true });
+    expect(second).toEqual(first);
+    expect(requestsTo('/img/generic.png')).toBe(1);
+    expect(files()).toHaveLength(1);
+  });
+
+  it('otra foto (otra ruta) se descarga aparte aunque lleve la misma firma', async () => {
+    const cache = new ImageCache(dir);
+    const png = await cache.download(signed('/img/generic.png', 'A'));
+    const jpg = await cache.download(signed('/img/generic.jpg', 'A'));
+    expect(png).toMatchObject({ ok: true });
+    expect(jpg).toMatchObject({ ok: true });
+    expect(png).not.toEqual(jpg);
+    expect(files()).toHaveLength(2);
+  });
+
+  it('un parámetro que no es de firma sigue distinguiendo fotos: no se sirve la foto de otro producto', async () => {
+    const cache = new ImageCache(dir);
+    const one = await cache.download(`${mock.url}/img/generic.png?foto=1&Signature=A`);
+    const two = await cache.download(`${mock.url}/img/generic.png?foto=2&Signature=A`);
+    expect(one).toMatchObject({ ok: true });
+    expect(two).toMatchObject({ ok: true });
+    expect(one).not.toEqual(two);
+    expect(requestsTo('/img/generic.png')).toBe(2);
+  });
+
+  it('pasada la hora la copia se descarga de nuevo y se renueva (una foto cambiada en la misma ruta no se queda vieja)', async () => {
+    const cache = new ImageCache(dir);
+    const first = await cache.download(signed('/img/generic.png', 'A'));
+    if (!first.ok) throw new Error('no debería fallar');
+    const name = path.basename(first.url);
+    fs.writeFileSync(path.join(dir, name), Buffer.from('copia vieja'));
+    age(name, 2 * HOUR);
+
+    const again = await cache.download(signed('/img/generic.png', 'B'));
+    expect(again).toEqual(first);
+    expect(requestsTo('/img/generic.png')).toBe(2);
+    expect(fs.readFileSync(path.join(dir, name))).toEqual(PNG_1X1);
+    expect(files()).toHaveLength(1);
+  });
+});
+
+describe('ImageCache.prune: el caché no crece sin límite', () => {
+  const OLD = 48 * HOUR; // mucho más viejo que la ventana de reutilización y que cualquier preparación vigente
+  const seed = (name: string, ageMs: number) => {
+    fs.writeFileSync(path.join(dir, name), 'x');
+    age(name, ageMs);
+  };
+  const sha = (c: string) => c.repeat(40);
+
+  it('borra las copias que llevan más de un día sin renovarse y conserva las recientes', () => {
+    seed(`${sha('a')}.png`, OLD);
+    seed(`${sha('b')}.jpg`, OLD);
+    seed(`${sha('c')}.png`, 2 * HOUR); // fuera de la ventana de reutilización, pero la puede estar usando una preparación abierta
+    seed(`${sha('d')}.webp`, 60_000);
+    new ImageCache(dir).prune();
+    expect(files().sort()).toEqual([`${sha('c')}.png`, `${sha('d')}.webp`]);
+  });
+
+  it('borra también los .part abandonados por una descarga interrumpida, pero no el de una descarga en curso', () => {
+    seed(`${sha('a')}.png.part`, OLD);
+    seed(`${sha('b')}.png.part`, 1_000);
+    new ImageCache(dir).prune();
+    expect(files()).toEqual([`${sha('b')}.png.part`]);
+  });
+
+  it('no toca archivos que no son del caché', () => {
+    seed('notas.txt', OLD);
+    seed(`${sha('a')}.svg`, OLD);
+    seed(`${sha('a')}.png`, OLD);
+    new ImageCache(dir).prune();
+    expect(files().sort()).toEqual([`${sha('a')}.svg`, 'notas.txt']);
+  });
+
+  it('con la carpeta inexistente no falla', () => {
+    expect(() => new ImageCache(path.join(dir, 'no-existe')).prune()).not.toThrow();
+  });
+
+  it('un archivo que no se puede borrar (en uso, sin permiso) no impide borrar los demás ni lanza', () => {
+    seed(`${sha('a')}.png`, OLD);
+    seed(`${sha('b')}.png`, OLD);
+    seed(`${sha('c')}.jpg`, OLD);
+    const rm = vi.spyOn(fs, 'rmSync').mockImplementationOnce(() => {
+      throw Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' });
+    });
+    try {
+      expect(() => new ImageCache(dir).prune()).not.toThrow();
+    } finally {
+      rm.mockRestore();
+    }
+    expect(files()).toHaveLength(1); // el que falló queda para la próxima poda
+  });
+});
+
+describe('ImageCache.downloadAll: poda al terminar la preparación', () => {
+  it('borra lo viejo, conserva lo reciente y las fotos de esta preparación', async () => {
+    const stale = `${'a'.repeat(40)}.png`;
+    const recent = `${'b'.repeat(40)}.png`;
+    fs.writeFileSync(path.join(dir, stale), 'x');
+    fs.writeFileSync(path.join(dir, recent), 'x');
+    age(stale, 48 * HOUR);
+    age(recent, 10 * 60_000);
+
+    const out = await new ImageCache(dir).downloadAll(new Map([['p', [signed('/img/generic.png', 'A')]]]));
+    const mine = out.get('p');
+    if (mine?.status !== 'ok') throw new Error('debería haber descargado la foto');
+    expect(files().sort()).toEqual([recent, path.basename(mine.url)].sort());
+  });
+
+  it('preparar dos veces con firmas distintas deja los mismos archivos y no vuelve a descargar (el caso real)', async () => {
+    const cache = new ImageCache(dir);
+    const batch = (sig: string) =>
+      new Map([
+        ['1', [signed('/img/generic.png', sig)]],
+        ['2', [signed('/img/generic.jpg', sig)]],
+      ]);
+    const first = await cache.downloadAll(batch('A'));
+    const afterFirst = files().sort();
+    const second = await cache.downloadAll(batch('B'));
+    expect(afterFirst).toHaveLength(2);
+    expect(files().sort()).toEqual(afterFirst);
+    expect(second).toEqual(first);
+    expect(requestsTo('/img/generic.png') + requestsTo('/img/generic.jpg')).toBe(2);
   });
 });
 
