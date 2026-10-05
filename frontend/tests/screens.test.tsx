@@ -271,6 +271,32 @@ describe('Historial', () => {
     expect(rows[1]).toHaveTextContent('—'); // catálogo de 001 sin páginas guardadas
   });
 
+  it('muestra el tamaño de cada catálogo entre Páginas e Incluidos, y «—» cuando no hay dato (FR-011)', async () => {
+    mockApi({
+      'GET /api/catalog/history': () =>
+        json(200, [
+          { id: 'c3', createdAt: '2026-10-04T23:32:00Z', includedCount: 182, omittedCount: 14, pages: 66, sizeBytes: 19320118 },
+          { id: 'c2', createdAt: '2026-10-03T10:00:00Z', includedCount: 30, omittedCount: 2, pages: 18, sizeBytes: 163999000 },
+          // el archivo ya no existe: el servidor omite el tamaño
+          { id: 'c1', createdAt: '2026-10-01T10:00:00Z', includedCount: 25, omittedCount: 0, pages: 4 },
+        ]),
+    });
+    renderAt(<History />);
+    await screen.findAllByRole('link', { name: 'Descargar' });
+    expect(screen.getAllByRole('columnheader').map((h) => h.textContent).slice(0, 5)).toEqual([
+      'Fecha',
+      'Páginas',
+      'Tamaño',
+      'Incluidos',
+      'Omitidos',
+    ]);
+    const rows = screen.getAllByRole('row').slice(1);
+    const sizeOf = (row: HTMLElement) => within(row).getAllByRole('cell')[2]!.textContent;
+    expect(sizeOf(rows[0]!)).toBe('18,4 MB');
+    expect(sizeOf(rows[1]!)).toBe('156,4 MB');
+    expect(sizeOf(rows[2]!)).toBe('—');
+  });
+
   it('sin catálogos invita a generar', async () => {
     mockApi({ 'GET /api/catalog/history': () => json(200, []) });
     renderAt(<History />);

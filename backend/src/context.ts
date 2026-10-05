@@ -5,6 +5,7 @@ import { PrepareStore } from './catalog/prepare-store';
 import type { AppConfig } from './config/env';
 import type { Db } from './db/database';
 import { ImageCache } from './pdf/image-cache';
+import { PhotoOptimizer } from './pdf/image-optimizer';
 import { JobManager } from './pdf/job';
 import { HistoryRepo } from './pdf/history.repo';
 import { PuppeteerRenderer, type PdfRenderer } from './pdf/pdf.service';
@@ -17,6 +18,8 @@ export interface AppContext {
   jobs: JobManager;
   prepares: PrepareStore;
   imageCache: ImageCache;
+  /** Copias reducidas de las fotos para el PDF en calidad Optimizada (carpeta temporal por generación). */
+  photoOptimizer: PhotoOptimizer;
   history: HistoryRepo;
   panelSummary: PanelSummaryService;
   renderer: PdfRenderer;
@@ -37,6 +40,10 @@ export function createContext(
     jobs: new JobManager(),
     prepares: new PrepareStore(),
     imageCache: new ImageCache(path.join(config.dataDir, 'image-cache')),
+    photoOptimizer: new PhotoOptimizer(path.join(config.dataDir, 'pdf-photos'), {
+      cacheDir: path.join(config.dataDir, 'image-cache'),
+      uploadsDir: path.join(config.dataDir, 'uploads'),
+    }),
     history: new HistoryRepo(db, path.join(config.dataDir, 'output')),
     renderer: new PuppeteerRenderer(config.chromePath),
     uploadsDir: path.join(config.dataDir, 'uploads'),

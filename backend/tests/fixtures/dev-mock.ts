@@ -1,10 +1,13 @@
 /**
  * Alegra simulado para probar la app a mano:
- *   MOCK_IMG=ruta.png npx tsx backend/tests/fixtures/dev-mock.ts
+ *   npx tsx backend/tests/fixtures/dev-mock.ts
  * Credenciales: tienda@example.com / tok_valido. Escucha en el puerto 3920.
  *
  * Las fotos se sirven como las de Alegra: `images: [{ id, name, url, favorite }]` y la descarga con
- * `Content-Type: binary/octet-stream`. Casos para revisar en la pantalla Generar:
+ * `Content-Type: binary/octet-stream`. Por defecto son fotos sintéticas pesadas (PNG y JPEG de varios MB, una con
+ * transparencia real) para que se vea la diferencia de peso entre las calidades Optimizada y Original del PDF. Con
+ * `MOCK_IMG=ruta.png` todas las fotos son esa imagen (para revisar el diseño con una foto real). Casos para revisar en
+ * la pantalla Generar:
  *   - «Doble foto» (id 8): dos fotos y la favorita es la segunda; debe verse la favorita (un JPEG rojo de 2×2 px).
  *   - «Foto prohibida» (id 9): la foto responde 403; aparece como «foto en Alegra que no se pudo obtener».
  *   - «Sin foto» (id 6): Alegra no informa fotos; aparece como «omitido por no tener imagen».
@@ -33,22 +36,25 @@ const photo = (route: string, favorite: boolean, id = 1) => ({
   url: `${mock.url}${allFail ? '/img/forbidden' : route}?Expires=9999999999&Signature=simulada&Key-Pair-Id=SIM`,
   favorite,
 });
-const base = {
+// Fotos sintéticas pesadas por defecto (feature 005); con MOCK_IMG todas son esa imagen
+const HEAVY_ROUTES = ['/img/heavy.png', '/img/heavy.jpg', '/img/alpha.png'];
+const routeFor = (n: number) => (process.env.MOCK_IMG ? '/img/generic.png' : HEAVY_ROUTES[n % HEAVY_ROUTES.length]!);
+const base = (n: number) => ({
   status: 'active',
-  images: [photo('/img/generic.png', true)],
+  images: [photo(routeFor(n), true, n)],
   description: 'Fideos instantáneos coreanos con caldo intenso y picante. Ideal para preparar rápido.',
-};
+});
 mock.setItems([
-  { ...base, id: '1', name: 'Shin Ramyun', price: 9000, category: { id: 'c1', name: 'RAMEN' } },
-  { ...base, id: '2', name: 'Champong', price: 9000, category: { id: 'c1', name: 'RAMEN' }, inventory: { availableQuantity: 0, trackInventory: true } },
-  { ...base, id: '3', name: 'Soon Veggie', price: 9000, category: { id: 'c1', name: 'RAMEN' } },
-  { ...base, id: '4', name: 'Kimchi Bowl', price: 12000, category: { id: 'c1', name: 'RAMEN' } },
-  { ...base, id: '5', name: 'Pepero', price: 15000, category: { id: 'c2', name: 'SNACKS' }, inventory: { availableQuantity: 8, trackInventory: true } },
-  { ...base, id: '6', name: 'Sin foto', price: 5000, category: { id: 'c2', name: 'SNACKS' }, images: [] },
-  { ...base, id: '7', name: 'Palillos', price: 800, category: null },
+  { ...base(1), id: '1', name: 'Shin Ramyun', price: 9000, category: { id: 'c1', name: 'RAMEN' } },
+  { ...base(2), id: '2', name: 'Champong', price: 9000, category: { id: 'c1', name: 'RAMEN' }, inventory: { availableQuantity: 0, trackInventory: true } },
+  { ...base(3), id: '3', name: 'Soon Veggie', price: 9000, category: { id: 'c1', name: 'RAMEN' } },
+  { ...base(4), id: '4', name: 'Kimchi Bowl', price: 12000, category: { id: 'c1', name: 'RAMEN' } },
+  { ...base(5), id: '5', name: 'Pepero', price: 15000, category: { id: 'c2', name: 'SNACKS' }, inventory: { availableQuantity: 8, trackInventory: true } },
+  { ...base(6), id: '6', name: 'Sin foto', price: 5000, category: { id: 'c2', name: 'SNACKS' }, images: [] },
+  { ...base(7), id: '7', name: 'Palillos', price: 800, category: null },
   // Dos fotos y la favorita es la segunda: debe verse la favorita, no la primera de la lista
   {
-    ...base,
+    ...base(8),
     id: '8',
     name: 'Doble foto',
     price: 7000,
@@ -56,7 +62,7 @@ mock.setItems([
     images: [photo('/img/generic.png', false, 1), photo('/img/generic.jpg', true, 2)],
   },
   // La foto responde 403: Alegra la informa pero no se puede obtener
-  { ...base, id: '9', name: 'Foto prohibida', price: 6000, category: { id: 'c2', name: 'SNACKS' }, images: [photo('/img/forbidden', true)] },
+  { ...base(9), id: '9', name: 'Foto prohibida', price: 6000, category: { id: 'c2', name: 'SNACKS' }, images: [photo('/img/forbidden', true)] },
 ]);
 
 // Reenvía el puerto fijo 3920 al servidor simulado

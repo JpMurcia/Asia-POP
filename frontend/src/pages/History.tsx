@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatMegabytes } from '../../../backend/src/catalog/pdf-quality';
 import { Card, PageHeader } from '../components/ui';
 import { api } from '../services/api';
 
@@ -8,6 +9,8 @@ interface Entry {
   includedCount: number;
   omittedCount: number;
   pages?: number;
+  /** Tamaño del archivo; ausente si ya no existe (se muestra «—»). */
+  sizeBytes?: number;
 }
 
 export default function History() {
@@ -30,6 +33,7 @@ export default function History() {
               <tr className="text-left text-pop-muted border-b border-pop-line">
                 <th className="p-3 font-semibold">Fecha</th>
                 <th className="p-3 font-semibold">Páginas</th>
+                <th className="p-3 font-semibold">Tamaño</th>
                 <th className="p-3 font-semibold">Incluidos</th>
                 <th className="p-3 font-semibold">Omitidos</th>
                 <th className="p-3" />
@@ -40,6 +44,7 @@ export default function History() {
                 <tr key={e.id} className={i % 2 ? 'bg-pop-surface2' : ''}>
                   <td className="p-3">{new Date(e.createdAt).toLocaleString('es-CO')}</td>
                   <td className="p-3">{e.pages ?? '—'}</td>
+                  <td className="p-3">{e.sizeBytes !== undefined ? formatMegabytes(e.sizeBytes) : '—'}</td>
                   <td className="p-3">{e.includedCount}</td>
                   <td className="p-3">{e.omittedCount}</td>
                   <td className="p-3 text-right">

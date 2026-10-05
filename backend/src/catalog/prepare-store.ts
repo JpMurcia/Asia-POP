@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { PhotoVariants } from '../pdf/photo-variants';
 import type { BuildResult } from './catalog-builder';
 import type { Template } from './template';
 import type { BundleDecision, CatalogPayload, GenerationOptions } from './types';
@@ -17,6 +18,11 @@ export interface PrepareEntry {
   params: unknown;
   /** Opciones vigentes de esta preparación (secciones, ocultar agotados, banner). */
   options: GenerationOptions;
+  /**
+   * Copias reducidas de las fotos (dirección original → dirección de la copia). Solo existen mientras se renderiza
+   * en calidad Optimizada: las usa `GET /catalog/payload/:id?quality=optimized` y se eliminan al terminar el trabajo.
+   */
+  variants?: PhotoVariants;
 }
 
 /** Instantáneas de "preparar" válidas durante 15 minutos. */
@@ -45,6 +51,16 @@ export class PrepareStore {
   setOptions(id: string, options: GenerationOptions): void {
     const e = this.entries.get(id);
     if (e) e.options = options;
+  }
+
+  setVariants(id: string, variants: PhotoVariants): void {
+    const e = this.entries.get(id);
+    if (e) e.variants = variants;
+  }
+
+  clearVariants(id: string): void {
+    const e = this.entries.get(id);
+    if (e) delete e.variants;
   }
 
   private sweep(): void {

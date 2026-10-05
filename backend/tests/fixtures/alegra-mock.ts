@@ -2,6 +2,30 @@ import fs from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { AlegraCategoryRaw, AlegraItemRaw } from '../../src/alegra/alegra.types';
+import {
+  brokenJpeg,
+  exifJpeg,
+  heavyJpeg,
+  heavyPng,
+  lightJpeg,
+  opaqueAlphaPng,
+  staticGif,
+  tinyPng,
+  transparentPng,
+} from './photos';
+
+/** Fotos sintéticas pesadas (feature 005): ruta del simulador → bytes. Se sirven como las de Alegra: `binary/octet-stream`. */
+const HEAVY_PHOTOS: Record<string, () => Promise<Buffer>> = {
+  '/img/heavy.png': heavyPng,
+  '/img/heavy.jpg': heavyJpeg,
+  '/img/alpha.png': transparentPng,
+  '/img/opaque-alpha.png': opaqueAlphaPng,
+  '/img/tiny.png': tinyPng,
+  '/img/light.jpg': lightJpeg,
+  '/img/exif.jpg': exifJpeg,
+  '/img/broken.jpg': brokenJpeg,
+  '/img/photo.gif': staticGif,
+};
 
 export interface AlegraMockOptions {
   email?: string;
@@ -87,6 +111,18 @@ export async function startAlegraMock(opts: AlegraMockOptions = {}): Promise<Ale
         // Mayor que el tope bajo (1 KB) con el que se prueba `too_large`
         res.writeHead(200, { 'Content-Type': 'binary/octet-stream' });
         return res.end(Buffer.concat([PNG_1X1, Buffer.alloc(2048)]));
+    }
+    // Fotos sintéticas pesadas para las pruebas del PDF liviano
+    const heavy = HEAVY_PHOTOS[url.pathname];
+    if (heavy) {
+      heavy().then(
+        (bytes) => {
+          res.writeHead(200, { 'Content-Type': 'binary/octet-stream' });
+          res.end(bytes);
+        },
+        () => send(500, { message: 'no se pudo crear la foto de prueba' }),
+      );
+      return;
     }
     // Cualquier otra /img/* no existe
     if (url.pathname.startsWith('/img/')) return send(404, { message: 'no image' });

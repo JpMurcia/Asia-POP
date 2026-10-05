@@ -15,6 +15,7 @@ import { createApp } from '../../src/app';
 import { ROOT_DIR } from '../../src/config/env';
 import { resolveChromePath, type PdfRenderer } from '../../src/pdf/pdf.service';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
+import type { PdfQuality } from '../../src/catalog/pdf-quality';
 import type { CatalogPayload, CatalogStructure } from '../../src/catalog/types';
 import type { Template, WorkspaceState } from '../../src/catalog/template';
 import { startAlegraMock, type AlegraMock } from './alegra-mock';
@@ -84,6 +85,9 @@ export interface GenerationResult {
   text: string;
   /** Resultado del script de medición. */
   measure: unknown;
+  /** Los bytes del PDF y su longitud (para comparar el peso entre calidades). */
+  pdf: Buffer;
+  sizeBytes: number;
 }
 
 export interface Harness {
@@ -96,8 +100,8 @@ export interface Harness {
   save(edit: (ws: WorkspaceState) => Partial<Pick<WorkspaceState, 'templates' | 'defaultId' | 'business'>>): Promise<WorkspaceState>;
   /** Secciones disponibles para generar (consulta `prepare`). */
   sections(): Promise<{ key: string; name: string; source: 'alegra' | 'custom'; items: number }[]>;
-  /** Prepara, genera con las decisiones indicadas y devuelve el PDF medido. */
-  generate(options?: { prepare?: object; decision?: 'keep' | 'omit'; measure?: string }): Promise<GenerationResult>;
+  /** Prepara, genera con las decisiones indicadas y devuelve el PDF medido. Sin `quality` se usa la de siempre (Optimizada). */
+  generate(options?: { prepare?: object; decision?: 'keep' | 'omit'; measure?: string; quality?: PdfQuality }): Promise<GenerationResult>;
   close(): Promise<void>;
 }
 
@@ -148,14 +152,17 @@ export async function startHarness(opts: HarnessOptions): Promise<Harness> {
     async sections() {
       return (await agent.post('/api/catalog/prepare').send({}).expect(200)).body.availableSections;
     },
-    async generate({ prepare = {}, decision = 'keep', measure } = {}) {
+    async generate({ prepare = {}, decision = 'keep', measure, quality } = {}) {
       if (measure !== undefined) renderer.measure = measure;
       renderer.result = undefined;
       const prep = (await agent.post('/api/catalog/prepare').send(prepare).expect(200)).body;
       const bundleDecisions = Object.fromEntries(
         (prep.report.soldOutBundles as { bundleId: string }[]).map((b) => [b.bundleId, decision]),
       );
-      const gen = await agent.post('/api/catalog/generate').send({ prepareId: prep.prepareId, bundleDecisions }).expect(202);
+      const gen = await agent
+        .post('/api/catalog/generate')
+        .send({ prepareId: prep.prepareId, bundleDecisions, ...(quality ? { quality } : {}) })
+        .expect(202);
       let job: { status: string; catalogId?: string; error?: string } = { status: 'rendering' };
       for (let i = 0; i < 480 && (job.status === 'rendering' || job.status === 'preparing'); i++) {
         await new Promise((r) => setTimeout(r, 250));
@@ -180,6 +187,8 @@ export async function startHarness(opts: HarnessOptions): Promise<Harness> {
         pageTexts: parsed.pages.map((p) => p.text),
         text: parsed.text,
         measure: renderer.result,
+        pdf: res.body as Buffer,
+        sizeBytes: (res.body as Buffer).length,
       };
     },
     async close() {

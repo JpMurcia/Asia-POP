@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import type { Template } from '../../../backend/src/catalog/template';
 import type { CatalogPayload } from '../../../backend/src/catalog/types';
 import { countBrokenProductImages } from '../print/broken-images';
@@ -37,15 +37,19 @@ async function whenAssetsReady(template: Template): Promise<void> {
  */
 export default function Print({ preview = false }: { preview?: boolean }) {
   const { prepareId } = useParams();
+  const [search] = useSearchParams();
+  // Solo el navegador de la generación en calidad Optimizada pide las fotos reducidas; la vista previa y cualquier otro
+  // valor piden siempre las originales
+  const optimized = !preview && search.get('quality') === 'optimized';
   const [payload, setPayload] = useState<CatalogPayload | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api
-      .get<CatalogPayload>(`/api/catalog/payload/${prepareId}`)
+      .get<CatalogPayload>(`/api/catalog/payload/${prepareId}${optimized ? '?quality=optimized' : ''}`)
       .then(setPayload)
       .catch((e) => setError(e instanceof ApiError ? e.message : 'No se pudo cargar el catálogo.'));
-  }, [prepareId]);
+  }, [prepareId, optimized]);
 
   useEffect(() => {
     if (!payload) return;

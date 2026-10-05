@@ -12,6 +12,8 @@ export interface HistoryEntry {
   omittedCount: number;
   /** Páginas del PDF (guardadas en `params_json` desde la feature 002); ausente en catálogos anteriores. */
   pages?: number;
+  /** Tamaño del archivo guardado, en bytes; ausente si el archivo ya no existe o no se puede leer (FR-011). */
+  sizeBytes?: number;
 }
 
 interface Row {
@@ -27,6 +29,15 @@ function pagesOf(paramsJson: string): number | undefined {
   try {
     const pages = (JSON.parse(paramsJson) as { pages?: unknown }).pages;
     return typeof pages === 'number' ? pages : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** El tamaño se lee del archivo (no se guarda en la base): así también lo tienen los catálogos anteriores. */
+function sizeOf(file: string): number | undefined {
+  try {
+    return fs.statSync(file).size;
   } catch {
     return undefined;
   }
@@ -58,6 +69,7 @@ export class HistoryRepo {
       includedCount: included,
       omittedCount: omitted,
       pages: pagesOf(JSON.stringify(params)),
+      sizeBytes: pdf.length,
     };
   }
 
@@ -66,13 +78,17 @@ export class HistoryRepo {
       this.db
         .prepare('SELECT * FROM generated_catalog ORDER BY created_at DESC LIMIT ?')
         .all(HISTORY_LIMIT) as Row[]
-    ).map((r) => ({
-      id: r.id,
-      createdAt: r.created_at,
-      includedCount: r.included_count,
-      omittedCount: r.omitted_count,
-      pages: pagesOf(r.params_json),
-    }));
+    ).map((r) => {
+      const sizeBytes = sizeOf(r.file_path);
+      return {
+        id: r.id,
+        createdAt: r.created_at,
+        includedCount: r.included_count,
+        omittedCount: r.omitted_count,
+        pages: pagesOf(r.params_json),
+        ...(sizeBytes !== undefined ? { sizeBytes } : {}),
+      };
+    });
   }
 
   filePath(id: string): string | null {

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  DEFAULT_PDF_QUALITY,
+  exceedsTarget,
+  formatMegabytes,
+  PDF_QUALITIES,
+  PDF_QUALITY_OPTIONS,
+  type PdfQuality,
+} from '../../../backend/src/catalog/pdf-quality';
 import { PHOTO_REASON_LABEL } from '../../../backend/src/catalog/photo-reasons';
 import type { TemplateSummary } from '../../../backend/src/catalog/template';
 import type {
@@ -20,6 +28,9 @@ interface Job {
   progress?: number;
   error?: string;
   catalogId?: string;
+  /** Solo al terminar: tamaño del PDF en bytes y la calidad con la que se generó. */
+  sizeBytes?: number;
+  quality?: PdfQuality;
 }
 
 interface Prepared {
@@ -50,6 +61,8 @@ export default function Generate() {
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   /** Plantilla de ESTA generación: parte de la predeterminada y no la cambia. `null` = sin elegir. */
   const [templateId, setTemplateId] = useState<string | null>(null);
+  /** Calidad del PDF de ESTA generación: parte siempre de Optimizada, solo se envía al generar y no se recuerda. */
+  const [quality, setQuality] = useState<PdfQuality>(DEFAULT_PDF_QUALITY);
   const [fallbackNotice, setFallbackNotice] = useState('');
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [decisions, setDecisions] = useState<Record<string, BundleDecision>>({});
@@ -178,6 +191,7 @@ export default function Generate() {
       const res = await api.post<{ jobId: string; template?: UsedTemplate }>('/api/catalog/generate', {
         prepareId: prepared.prepareId,
         bundleDecisions: decisions,
+        quality,
       });
       // La plantilla elegida se pudo eliminar (p. ej. desde otra pestaña): se usó la predeterminada
       if (res.template?.fallback) {
@@ -272,6 +286,37 @@ export default function Generate() {
             </p>
           </fieldset>
         )}
+
+        <fieldset className="flex flex-col gap-2" disabled={working}>
+          <legend className="text-[13px] font-semibold mb-1">Calidad del PDF</legend>
+          <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+            {PDF_QUALITIES.map((q) => {
+              const option = PDF_QUALITY_OPTIONS[q];
+              return (
+                <label
+                  key={q}
+                  className={`flex items-start gap-2 text-sm px-3 py-2 rounded-pop border cursor-pointer ${
+                    quality === q ? 'border-pop-accent bg-pop-stripe' : 'border-pop-line bg-pop-surface2'
+                  }`}
+                >
+                  <input type="radio" name="quality" className="mt-1" checked={quality === q} onChange={() => setQuality(q)} />
+                  <span className="flex-1 min-w-0">
+                    <span className="font-bold flex items-center gap-2">
+                      {option.label}
+                      {option.recommended && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-pop-warn-bg text-pop-warn-text">
+                          Recomendada
+                        </span>
+                      )}
+                    </span>
+                    <span className="block text-xs text-pop-muted">{option.hint}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-xs text-pop-muted">Solo cambia esta generación.</p>
+        </fieldset>
 
         {prepared && available.length > 0 && (
           <fieldset className="relative flex flex-col gap-2">
@@ -412,12 +457,25 @@ export default function Generate() {
       )}
 
       {job.status === 'done' && job.catalogId && (
-        <Alert tone="success">
-          Catálogo generado.{' '}
-          <a className="font-bold" href={`/api/catalog/history/${job.catalogId}/pdf`}>
-            Descargar PDF
-          </a>
-        </Alert>
+        <>
+          <Alert tone="success">
+            <strong>
+              {job.sizeBytes !== undefined ? `Catálogo generado · ${formatMegabytes(job.sizeBytes)}.` : 'Catálogo generado.'}
+            </strong>{' '}
+            <a className="font-bold" href={`/api/catalog/history/${job.catalogId}/pdf`}>
+              Descargar PDF
+            </a>
+          </Alert>
+          {/* Solo con Optimizada: con Original la persona eligió conservar las fotos y no se le avisa del peso */}
+          {job.quality === 'optimized' && job.sizeBytes !== undefined && exceedsTarget(job.sizeBytes) && (
+            <Alert
+              tone="warning"
+              title={`El PDF pesa ${formatMegabytes(job.sizeBytes)} y supera los 25 MB que admite un correo habitual.`}
+            >
+              Para hacerlo más liviano, genera de nuevo con menos secciones.
+            </Alert>
+          )}
+        </>
       )}
       {job.status === 'failed' && <Alert tone="error">No se pudo generar el PDF: {job.error}</Alert>}
     </section>

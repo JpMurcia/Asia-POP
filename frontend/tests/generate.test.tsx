@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PDF_QUALITY_OPTIONS, PDF_TARGET_BYTES } from '../../backend/src/catalog/pdf-quality';
 import { PHOTO_REASON_LABEL } from '../../backend/src/catalog/photo-reasons';
 import Generate from '../src/pages/Generate';
 
@@ -254,7 +255,7 @@ describe('pantalla Generar catálogo', () => {
 
     await waitFor(() => expect(calls.some((c) => c.url === '/api/catalog/generate')).toBe(true));
     const gen = calls.find((c) => c.url === '/api/catalog/generate')!;
-    expect(gen.body).toEqual({ prepareId: 'p1', bundleDecisions: { b1: 'omit' } });
+    expect(gen.body).toEqual({ prepareId: 'p1', bundleDecisions: { b1: 'omit' }, quality: 'optimized' });
   });
 
   it('permite mantener el combo con badge AGOTADO', async () => {
@@ -269,6 +270,7 @@ describe('pantalla Generar catálogo', () => {
     expect(calls.find((c) => c.url === '/api/catalog/generate')!.body).toEqual({
       prepareId: 'p1',
       bundleDecisions: { b1: 'keep' },
+      quality: 'optimized',
     });
   });
 
@@ -308,6 +310,147 @@ describe('pantalla Generar catálogo', () => {
     renderPage();
     const link = await screen.findByRole('link', { name: 'Descargar PDF' });
     expect(link).toHaveAttribute('href', '/api/catalog/history/c1/pdf');
+  });
+
+  describe('tamaño del catálogo generado (FR-011, FR-012)', () => {
+    const done = (extra: Record<string, unknown> = {}) =>
+      mockApi({ 'GET /api/catalog/jobs/current': () => json(200, { status: 'done', catalogId: 'c1', ...extra }) });
+    const download = () => screen.findByRole('link', { name: 'Descargar PDF' });
+
+    it('muestra el tamaño junto al enlace de descarga y no avisa si el PDF optimizado cabe', async () => {
+      done({ sizeBytes: 19320118, quality: 'optimized' });
+      renderPage();
+      expect(await screen.findByText('Catálogo generado · 18,4 MB.')).toBeInTheDocument();
+      expect(await download()).toHaveAttribute('href', '/api/catalog/history/c1/pdf');
+      expect(screen.queryByText(/supera los 25 MB/)).not.toBeInTheDocument();
+    });
+
+    it('avisa cuando el PDF optimizado supera 25 MB, con su tamaño real y la sugerencia, sin quitar la descarga', async () => {
+      done({ sizeBytes: 32700000, quality: 'optimized' });
+      renderPage();
+      expect(await screen.findByText('Catálogo generado · 31,2 MB.')).toBeInTheDocument();
+      expect(screen.getByText(/El PDF pesa 31,2 MB y supera los 25 MB que admite un correo habitual/)).toBeInTheDocument();
+      expect(screen.getByText(/genera de nuevo con menos secciones/)).toBeInTheDocument();
+      expect(await download()).toBeInTheDocument();
+    });
+
+    it('con Original no avisa aunque el archivo sea grande: la persona eligió conservar las fotos', async () => {
+      done({ sizeBytes: 163999000, quality: 'original' });
+      renderPage();
+      expect(await screen.findByText('Catálogo generado · 156,4 MB.')).toBeInTheDocument();
+      expect(screen.queryByText(/supera los 25 MB/)).not.toBeInTheDocument();
+    });
+
+    it('con exactamente 25 MB no avisa; con un byte más, sí', async () => {
+      done({ sizeBytes: PDF_TARGET_BYTES, quality: 'optimized' });
+      const first = renderPage();
+      expect(await screen.findByText('Catálogo generado · 25,0 MB.')).toBeInTheDocument();
+      expect(screen.queryByText(/supera los 25 MB/)).not.toBeInTheDocument();
+      first.unmount();
+
+      done({ sizeBytes: PDF_TARGET_BYTES + 1, quality: 'optimized' });
+      renderPage();
+      expect(await screen.findByText(/supera los 25 MB/)).toBeInTheDocument();
+    });
+
+    it('sin tamaño en la respuesta se ve el texto de antes y ningún aviso', async () => {
+      done();
+      renderPage();
+      expect(await screen.findByText('Catálogo generado.')).toBeInTheDocument();
+      expect(await download()).toBeInTheDocument();
+      expect(screen.queryByText(/MB/)).not.toBeInTheDocument();
+    });
+
+    it('durante el trabajo muestra el paso «Optimizando fotos» cuando el servidor lo informa', async () => {
+      mockApi({ 'GET /api/catalog/jobs/current': () => json(200, { status: 'rendering', step: 'Optimizando fotos', progress: 12 }) });
+      renderPage();
+      expect(await screen.findByText('Optimizando fotos')).toBeInTheDocument();
+    });
+  });
+
+  describe('calidad del PDF (FR-001, FR-002)', () => {
+    const group = () => screen.getByRole('group', { name: 'Calidad del PDF' });
+    const radio = (name: RegExp) => within(group()).getByRole('radio', { name });
+    const generateNow = async (calls: ReturnType<typeof mockApi>) => {
+      await prepareNow();
+      fireEvent.click(screen.getByLabelText(/Omitir del catálogo/));
+      const button = screen.getByRole('button', { name: /Generar PDF/ });
+      await waitFor(() => expect(button).toBeEnabled());
+      fireEvent.click(button);
+      await waitFor(() => expect(calls.some((c) => c.url === '/api/catalog/generate')).toBe(true));
+      return calls.find((c) => c.url === '/api/catalog/generate')!;
+    };
+
+    it('muestra Optimizada (marcada y recomendada) y Original, cada una con su ayuda en lenguaje claro', () => {
+      mockApi();
+      renderPage();
+      expect(radio(/Optimizada/)).toBeChecked();
+      expect(radio(/Original/)).not.toBeChecked();
+      expect(within(group()).getAllByRole('radio')).toHaveLength(2);
+      expect(within(group()).getByText('Recomendada')).toBeInTheDocument();
+      expect(within(group()).getByText(PDF_QUALITY_OPTIONS.optimized.hint)).toBeInTheDocument();
+      expect(within(group()).getByText(PDF_QUALITY_OPTIONS.original.hint)).toBeInTheDocument();
+      expect(screen.getByText('Solo cambia esta generación.')).toBeInTheDocument();
+    });
+
+    it('la opción está antes de las secciones y después de la plantilla', async () => {
+      mockApi();
+      renderPage();
+      await prepareNow();
+      const template = await screen.findByRole('group', { name: 'Plantilla del catálogo' });
+      const sections = await screen.findByRole('group', { name: 'Secciones a incluir' });
+      expect(template.compareDocumentPosition(group()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(group().compareDocumentPosition(sections) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('sin tocar la opción, generate envía quality: optimized', async () => {
+      const calls = mockApi();
+      renderPage();
+      expect((await generateNow(calls)).body).toMatchObject({ quality: 'optimized' });
+    });
+
+    it('elegir Original envía quality: original', async () => {
+      const calls = mockApi();
+      renderPage();
+      fireEvent.click(radio(/Original/));
+      expect(radio(/Original/)).toBeChecked();
+      expect((await generateNow(calls)).body).toMatchObject({ quality: 'original' });
+    });
+
+    it('cambiar la calidad no dispara ninguna petición: no prepara de nuevo ni toca las opciones', async () => {
+      const calls = mockApi();
+      renderPage();
+      await prepareNow();
+      await new Promise((r) => setTimeout(r, 450)); // deja pasar el retardo de sincronización de opciones
+      // El sondeo del estado del trabajo no cuenta: ocurre solo, haya o no un cambio de calidad
+      const requests = () => calls.filter((c) => c.url !== '/api/catalog/jobs/current').length;
+      const before = requests();
+      const putsBefore = optionPuts(calls).length;
+      fireEvent.click(radio(/Original/));
+      fireEvent.click(radio(/Optimizada/));
+      fireEvent.click(radio(/Original/));
+      await new Promise((r) => setTimeout(r, 450));
+      expect(requests()).toBe(before);
+      expect(optionPuts(calls).length).toBe(putsBefore);
+      expect(calls.filter((c) => c.url === '/api/catalog/prepare')).toHaveLength(1);
+    });
+
+    it('se deshabilita mientras hay un trabajo en curso', async () => {
+      mockApi({ 'GET /api/catalog/jobs/current': () => json(200, { status: 'rendering', step: 'Generando PDF', progress: 10 }) });
+      renderPage();
+      await screen.findByRole('status');
+      expect(radio(/Optimizada/)).toBeDisabled();
+      expect(radio(/Original/)).toBeDisabled();
+    });
+
+    it('no se recuerda: al volver a abrir la pantalla vuelve a estar marcada Optimizada', () => {
+      mockApi();
+      const first = renderPage();
+      fireEvent.click(radio(/Original/));
+      first.unmount();
+      renderPage();
+      expect(radio(/Optimizada/)).toBeChecked();
+    });
   });
 
   describe('plantilla de la generación (FR-022)', () => {

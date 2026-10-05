@@ -3,14 +3,18 @@ import { ConnectionRepo } from '../alegra/connection.repo';
 import { toHttpError } from '../api/alegra-settings.routes';
 import { HttpError } from '../api/errors';
 import type { AppContext } from '../context';
+import { photoTarget } from '../pdf/photo-target';
+import { collectPhotoUrls } from '../pdf/photo-variants';
 import { buildCatalog } from './catalog-builder';
 import { loadLocalInputs } from './catalog-inputs';
+import { DEFAULT_PDF_QUALITY, type PdfQuality } from './pdf-quality';
 import { computeStructure } from './structure';
 import type { Template } from './template';
 import { TemplateRepo } from './template.repo';
 import type {
   AvailableSection,
   BundleDecision,
+  CatalogPayload,
   CatalogStructure,
   GenerationOptions,
   PhotoFailureReason,
@@ -122,9 +126,14 @@ export class CatalogService {
 
   /**
    * Valida la instantánea y las decisiones, e inicia el renderizado en segundo plano. Devuelve el trabajo y la
-   * plantilla usada (si la elegida se eliminó, la predeterminada con `fallback: true`).
+   * plantilla usada (si la elegida se eliminó, la predeterminada con `fallback: true`). La calidad del PDF es
+   * parámetro de esta generación y no de la preparación (FR-001).
    */
-  generate(prepareId: string, decisions: Record<string, BundleDecision>): { jobId: string; template: UsedTemplate } {
+  generate(
+    prepareId: string,
+    decisions: Record<string, BundleDecision>,
+    quality: PdfQuality = DEFAULT_PDF_QUALITY,
+  ): { jobId: string; template: UsedTemplate } {
     const entry = this.ctx.prepares.get(prepareId);
     if (!entry) {
       throw new HttpError(410, 'prepare_expired', 'La revisión expiró. Vuelve a preparar el catálogo.');
@@ -146,9 +155,9 @@ export class CatalogService {
 
     const jobId = this.ctx.jobs.acquire('rendering', 'Generando PDF'); // 409 si hay otro activo
     this.ctx.prepares.setPayload(prepareId, built.payload);
-    // `pages` se guarda con el historial para mostrarlo en Inicio sin abrir el PDF
-    const params = { options: entry.options, decisions, pages: computeStructure(built.payload).totalPages };
-    void this.render(jobId, prepareId, built.report, params);
+    // `pages` se guarda con el historial para mostrarlo en Inicio sin abrir el PDF; `quality`, para quien lo consulte
+    const params = { options: entry.options, decisions, pages: computeStructure(built.payload).totalPages, quality };
+    void this.render(jobId, prepareId, built.report, params, quality, built.payload, resolved.template);
     return {
       jobId,
       template: { id: resolved.template.id, name: resolved.template.name, fallback: resolved.fallback },
@@ -189,19 +198,42 @@ export class CatalogService {
     prepareId: string,
     report: ReviewReport,
     params: unknown,
+    quality: PdfQuality,
+    payload: CatalogPayload,
+    template: Template,
   ): Promise<void> {
-    const { sessions, renderer, jobs, history, runtime } = this.ctx;
+    const { sessions, renderer, jobs, history, runtime, prepares, photoOptimizer } = this.ctx;
     const sid = sessions.create(); // sesión temporal para el navegador headless
     try {
+      let printUrl = `${runtime.baseUrl}/print/${prepareId}`;
+      // Solo en Optimizada: copias reducidas de las fotos, a 150 ppp al tamaño de su recuadro en esta plantilla. En
+      // Original no se toca nada. Las fotos que no se pueden reducir se quedan con su dirección original (FR-008)
+      if (quality === 'optimized') {
+        const target = photoTarget(template);
+        if (target) {
+          jobs.update(jobId, { step: 'Optimizando fotos', progress: 5 });
+          const variants = await photoOptimizer.run(jobId, collectPhotoUrls(payload), target, (done, total) =>
+            jobs.update(jobId, { progress: 5 + Math.round((done / Math.max(total, 1)) * 25) }),
+          );
+          if (variants.size > 0) {
+            prepares.setVariants(prepareId, variants);
+            printUrl += '?quality=optimized';
+          }
+        }
+      }
       jobs.update(jobId, { step: 'Renderizando páginas', progress: 30 });
-      const pdf = await renderer.render(`${runtime.baseUrl}/print/${prepareId}`, sid);
+      const pdf = await renderer.render(printUrl, sid);
       jobs.update(jobId, { step: 'Guardando archivo', progress: 90 });
       const entry = history.add(pdf, report.counts.included, report.counts.omitted, params);
-      jobs.complete(jobId, entry.id);
+      // Pasar el tamaño objetivo no aborta nada: solo se informa el tamaño y la pantalla decide si avisa (FR-012)
+      jobs.complete(jobId, entry.id, { sizeBytes: pdf.length, quality });
     } catch (e) {
       // Nunca se entrega un PDF parcial (principio II).
       jobs.fail(jobId, (e as Error).message || 'No se pudo generar el PDF.');
     } finally {
+      // Las copias son temporales: se borran con éxito o con error
+      prepares.clearVariants(prepareId);
+      photoOptimizer.cleanup(jobId);
       sessions.destroy(sid);
     }
   }

@@ -3,8 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { CatalogService } from '../catalog/catalog.service';
+import { DEFAULT_PDF_QUALITY, PDF_QUALITIES } from '../catalog/pdf-quality';
 import { TemplateRepo } from '../catalog/template.repo';
 import type { AppContext } from '../context';
+import { withPhotoVariants } from '../pdf/photo-variants';
 import { HttpError, parseOr422 } from './errors';
 
 const prepareSchema = z.object({
@@ -25,6 +27,8 @@ const INVALID_OPTIONS = 'Las opciones de generación no son válidas.';
 const generateSchema = z.object({
   prepareId: z.string().min(1),
   bundleDecisions: z.record(z.string(), z.enum(['keep', 'omit'])).default({}),
+  /** Calidad del PDF de esta generación (FR-001, FR-002): no es una opción de la preparación. */
+  quality: z.enum(PDF_QUALITIES).default(DEFAULT_PDF_QUALITY),
 });
 
 const SAFE_FILE = /^[A-Za-z0-9._-]+$/;
@@ -51,8 +55,8 @@ export function catalogRoutes(ctx: AppContext): Router {
   });
 
   r.post('/catalog/generate', (req, res) => {
-    const { prepareId, bundleDecisions } = generateSchema.parse(req.body ?? {});
-    res.status(202).json(service.generate(prepareId, bundleDecisions));
+    const { prepareId, bundleDecisions, quality } = generateSchema.parse(req.body ?? {});
+    res.status(202).json(service.generate(prepareId, bundleDecisions, quality));
   });
 
   r.get('/catalog/jobs/current', (_req, res) => {
@@ -65,7 +69,11 @@ export function catalogRoutes(ctx: AppContext): Router {
     if (!entry) throw new HttpError(410, 'prepare_expired', 'La revisión expiró. Vuelve a preparar el catálogo.');
     // El payload es el de la última preparación, cambio de opciones o generación; solo la plantilla se refresca,
     // para que la vista previa refleje una plantilla guardada después de preparar.
-    res.json({ ...entry.payload, template: new TemplateRepo(ctx.db).resolve(entry.options.templateId).template });
+    const payload = { ...entry.payload, template: new TemplateRepo(ctx.db).resolve(entry.options.templateId).template };
+    // Solo el navegador de la generación en calidad Optimizada pide `?quality=optimized`: recibe el mismo payload con
+    // las direcciones de las fotos reemplazadas por sus copias reducidas. La vista previa y el editor no lo piden.
+    const variants = req.query.quality === 'optimized' ? entry.variants : undefined;
+    res.json(variants?.size ? withPhotoVariants(payload, variants) : payload);
   });
 
   r.get('/catalog/history', (_req, res) => {
@@ -99,5 +107,14 @@ export function mediaRoutes(ctx: AppContext): Router {
   };
   r.get('/cache/:file', serveDir(path.join(ctx.config.dataDir, 'image-cache')));
   r.get('/uploads/:file', serveDir(ctx.uploadsDir));
+  // Copias reducidas de una generación en curso (feature 005): existen solo mientras se renderiza
+  r.get('/pdf/:run/:file', (req, res) => {
+    const run = String(req.params.run);
+    const file = String(req.params.file);
+    if (!SAFE_FILE.test(run) || !SAFE_FILE.test(file)) throw new HttpError(400, 'invalid_file', 'Nombre de archivo inválido.');
+    const full = ctx.photoOptimizer.fileFor(run, file);
+    if (!full) throw new HttpError(404, 'not_found', 'Imagen no encontrada.');
+    res.sendFile(full);
+  });
   return r;
 }
