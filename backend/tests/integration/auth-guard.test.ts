@@ -16,6 +16,9 @@ describe('guardia de sesión', () => {
     ['get', '/api/custom-products'],
     ['get', '/api/bundles'],
     ['get', '/api/catalog/uncategorized'],
+    ['get', '/api/catalog/articles'],
+    ['put', '/api/catalog/omitted/1'],
+    ['delete', '/api/catalog/omitted/1'],
     ['get', '/api/settings/business'],
   ];
 

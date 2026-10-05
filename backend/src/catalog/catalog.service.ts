@@ -3,6 +3,7 @@ import { ConnectionRepo } from '../alegra/connection.repo';
 import { toHttpError } from '../api/alegra-settings.routes';
 import { HttpError } from '../api/errors';
 import type { AppContext } from '../context';
+import { OmittedItemRepo, omittedSignature } from '../custom/omitted-item.repo';
 import { photoTarget } from '../pdf/photo-target';
 import { collectPhotoUrls } from '../pdf/photo-variants';
 import { buildCatalog } from './catalog-builder';
@@ -67,11 +68,17 @@ export class CatalogService {
         throw toHttpError(e);
       }
       const items = rawItems.map(mapAlegraItem);
+      // Una sola lectura de las entradas locales: la misma lista de omitidos decide qué fotos se descargan, qué entra
+      // al catálogo y la firma con la que `generate` comprobará que no cambió (FR-012)
+      const local = loadLocalInputs(this.ctx);
 
       jobs.update(jobId, { step: 'Descargando imágenes', progress: 20 });
-      // Cada producto aporta sus fotos candidatas (favorita primero); se prueban en orden hasta que una sirva
+      // Cada producto aporta sus fotos candidatas (favorita primero); se prueban en orden hasta que una sirva.
+      // Un artículo omitido no necesita su foto: no se descarga.
       const candidates = new Map(
-        items.map((i) => [i.id, i.imageUrls ?? (i.remoteImageUrl ? [i.remoteImageUrl] : [])] as const),
+        items
+          .filter((i) => !local.omittedIds.has(i.id))
+          .map((i) => [i.id, i.imageUrls ?? (i.remoteImageUrl ? [i.remoteImageUrl] : [])] as const),
       );
       const outcomes = await this.ctx.imageCache.downloadAll(candidates, 6, (done, total) =>
         jobs.update(jobId, { progress: 20 + Math.round((done / Math.max(total, 1)) * 70) }),
@@ -84,7 +91,7 @@ export class CatalogService {
       for (const [id, o] of outcomes) if (o.status === 'failed') photoFailures.set(id, o.reason);
 
       const input = {
-        ...loadLocalInputs(this.ctx),
+        ...local,
         categories: categories.map((c) => ({ id: String(c.id), name: c.name })),
         items,
         localImages,
@@ -107,7 +114,13 @@ export class CatalogService {
         templateId: params.templateId,
       };
       const first = build({}, options);
-      const prepareId = this.ctx.prepares.add({ build, payload: first.payload, params, options });
+      const prepareId = this.ctx.prepares.add({
+        build,
+        payload: first.payload,
+        params,
+        options,
+        omittedSignature: omittedSignature(input.omittedIds),
+      });
       return {
         prepareId,
         report: first.report,
@@ -137,6 +150,16 @@ export class CatalogService {
     const entry = this.ctx.prepares.get(prepareId);
     if (!entry) {
       throw new HttpError(410, 'prepare_expired', 'La revisión expiró. Vuelve a preparar el catálogo.');
+    }
+    // La revisión es una instantánea: si la lista de omitidos cambió desde que se preparó, el PDF no sería lo que la
+    // persona revisó (FR-012, principio II). Solo aplica a esta lista; las demás entradas locales se siguen
+    // tomando al preparar.
+    if (omittedSignature(new OmittedItemRepo(this.ctx.db).all()) !== entry.omittedSignature) {
+      throw new HttpError(
+        409,
+        'omitted_changed',
+        'Cambiaste los artículos omitidos después de preparar. Vuelve a preparar el catálogo para aplicar el cambio.',
+      );
     }
     const resolved = this.templates().resolve(entry.options.templateId);
     const built = entry.build(decisions, entry.options, resolved.template);

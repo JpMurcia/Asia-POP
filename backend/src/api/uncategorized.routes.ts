@@ -4,6 +4,7 @@ import { mapAlegraItem } from '../alegra/alegra.mapper';
 import { ConnectionRepo } from '../alegra/connection.repo';
 import { listSections } from '../catalog/sections.service';
 import type { AppContext } from '../context';
+import { OmittedItemRepo } from '../custom/omitted-item.repo';
 import { OverrideRepo } from '../custom/override.repo';
 import { toHttpError } from './alegra-settings.routes';
 import { HttpError } from './errors';
@@ -13,6 +14,7 @@ const assignSchema = z.object({ sectionKey: z.string().min(1) });
 export function uncategorizedRoutes(ctx: AppContext): Router {
   const r = Router();
   const overrides = new OverrideRepo(ctx.db);
+  const omitted = new OmittedItemRepo(ctx.db);
   const conn = new ConnectionRepo(ctx.db, ctx.config);
 
   /** Ítems activos de Alegra sin categoría (consulta en vivo) y su asignación local, si existe. */
@@ -25,10 +27,17 @@ export function uncategorizedRoutes(ctx: AppContext): Router {
     } catch (e) {
       throw toHttpError(e);
     }
+    // Un omitido conserva su asignación de sección (vuelve a aplicar si se lo incluye de nuevo) pero ya no está pendiente
+    const omittedIds = omitted.all();
     const items = raw
       .map(mapAlegraItem)
       .filter((i) => !i.categoryId && i.type !== 'variantParent')
-      .map((i) => ({ itemId: i.id, name: i.name, assignedSectionKey: overrides.get(i.id) }));
+      .map((i) => ({
+        itemId: i.id,
+        name: i.name,
+        assignedSectionKey: overrides.get(i.id),
+        omitted: omittedIds.has(i.id),
+      }));
     res.json({ items });
   });
 

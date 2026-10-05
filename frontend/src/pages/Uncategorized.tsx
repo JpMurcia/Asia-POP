@@ -7,6 +7,8 @@ interface Item {
   itemId: string;
   name: string;
   assignedSectionKey: string | null;
+  /** Omitido por la persona (feature 006): no necesita sección y no cuenta como pendiente. */
+  omitted?: boolean;
 }
 interface Section {
   key: string;
@@ -50,7 +52,10 @@ export default function Uncategorized() {
     }
   }
 
-  const pending = items?.filter((i) => !i.assignedSectionKey).length ?? 0;
+  // Un omitido no saldrá en el catálogo: no hay nada que asignarle y no cuenta como pendiente
+  const pending = items?.filter((i) => !i.assignedSectionKey && !i.omitted).length ?? 0;
+  const hasOmitted = items?.some((i) => i.omitted) ?? false;
+  const omittedUnassigned = items?.some((i) => i.omitted && !i.assignedSectionKey) ?? false;
 
   return (
     <section className="flex flex-col gap-5 max-w-3xl">
@@ -61,6 +66,11 @@ export default function Uncategorized() {
       <p className="text-sm text-pop-muted">
         La asignación solo se guarda aquí: no cambia nada en Alegra, así que conviene corregirlo allá también.
       </p>
+      {hasOmitted && (
+        <p className="text-sm text-pop-muted">
+          Los artículos omitidos no necesitan sección: no saldrán en el catálogo.
+        </p>
+      )}
       {error && <Alert tone="error">{error}</Alert>}
       {!items ? (
         !error && <p>Cargando…</p>
@@ -69,7 +79,11 @@ export default function Uncategorized() {
       ) : (
         <Card className="!p-0">
           <p className="px-4 py-3 text-sm text-pop-muted border-b border-pop-line">
-            {pending > 0 ? `${pending} pendientes de asignar` : 'Todos tienen sección asignada'}
+            {pending > 0
+              ? `${pending} pendientes de asignar`
+              : omittedUnassigned
+                ? 'No quedan pendientes de asignar'
+                : 'Todos tienen sección asignada'}
           </p>
           <ul className="list-none m-0 p-0">
             {items.map((i, idx) => (
@@ -78,7 +92,13 @@ export default function Uncategorized() {
                 className={`p-3 flex items-center gap-3 flex-wrap ${idx % 2 ? 'bg-pop-surface2' : ''}`}
               >
                 <span className="flex-1 min-w-40 text-sm font-semibold">{i.name}</span>
-                {i.assignedSectionKey ? <Badge tone="alegra">Asignado</Badge> : <Badge tone="amber">Pendiente</Badge>}
+                {i.assignedSectionKey ? (
+                  <Badge tone="alegra">Asignado</Badge>
+                ) : i.omitted ? (
+                  <Badge tone="neutral">Omitido</Badge>
+                ) : (
+                  <Badge tone="amber">Pendiente</Badge>
+                )}
                 <select
                   aria-label={`Sección para ${i.name}`}
                   className="h-10 px-2 rounded-pop border border-pop-line bg-pop-input text-sm"

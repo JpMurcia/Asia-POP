@@ -323,3 +323,82 @@ describe('calidad del PDF con Chrome real', () => {
     }
   }, 240_000);
 });
+
+describe('artículos omitidos con Chrome real (feature 006)', () => {
+  let h: Harness;
+
+  const product = (url: string, id: string, name: string, cat: [string, string], over: Partial<AlegraItemRaw> = {}): AlegraItemRaw => ({
+    id,
+    name,
+    description: `Descripción de ${name}.`,
+    status: 'active',
+    price: 9000,
+    category: { id: cat[0], name: cat[1] },
+    images: [{ id: Number(id), name: `foto-${id}`, url: `${url}/img/generic.png?item=${id}`, favorite: true }],
+    ...over,
+  });
+
+  // Nombres con una sola palabra rara cada uno: se buscan en el texto del PDF
+  const NAMES = { agotado: 'Quillon', normal: 'Trembal', visible: 'Zorbax', snack: 'Umbrix' };
+
+  beforeAll(async () => {
+    h = await startHarness({
+      categories: [
+        { id: 'c1', name: 'RAMEN' },
+        { id: 'c2', name: 'SNACKS' },
+      ],
+      items: (url) => [
+        product(url, '1', `Fideos ${NAMES.visible}`, ['c1', 'RAMEN']),
+        product(url, '2', `Fideos ${NAMES.agotado}`, ['c1', 'RAMEN'], { inventory: { availableQuantity: 0, trackInventory: true } }),
+        product(url, '3', `Fideos ${NAMES.normal}`, ['c1', 'RAMEN']),
+        product(url, '4', `Galleta ${NAMES.snack}`, ['c2', 'SNACKS']),
+      ],
+    });
+  }, 180_000);
+
+  afterAll(async () => {
+    await h?.close();
+  });
+
+  const omit = (...ids: string[]) => Promise.all(ids.map((id) => h.agent.put(`/api/catalog/omitted/${id}`).expect(204)));
+  const include = (...ids: string[]) => Promise.all(ids.map((id) => h.agent.delete(`/api/catalog/omitted/${id}`).expect(204)));
+
+  it('un artículo omitido no aparece en el texto del PDF, tampoco con AGOTADO, y el resto sí (SC-002)', async () => {
+    const baseline = await h.generate({ quality: 'original' });
+    for (const n of Object.values(NAMES)) expect(baseline.text, `antes: ${n}`).toContain(n);
+    expect(baseline.text).toContain('AGOTADO');
+
+    await omit('2', '3'); // el agotado y otro de la misma sección
+    try {
+      const r = await h.generate({ quality: 'original' });
+      expect(r.text).not.toContain(NAMES.agotado);
+      expect(r.text).not.toContain(NAMES.normal);
+      expect(r.text).not.toContain('AGOTADO');
+      expect(r.text).toContain(NAMES.visible);
+      expect(r.text).toContain(NAMES.snack);
+      // El PDF tiene las páginas que anunció la preparación
+      expect(r.pdfPages).toBe(r.structure.totalPages);
+    } finally {
+      await include('2', '3');
+    }
+  }, 240_000);
+
+  it('una sección que se queda sin artículos desaparece del PDF, y al volver a incluir todo reaparece (FR-013, SC-006)', async () => {
+    const baseline = await h.generate({ quality: 'original' });
+    await omit('4');
+    try {
+      const without = await h.generate({ quality: 'original' });
+      expect(without.text).not.toContain(NAMES.snack);
+      expect(without.text).not.toMatch(/SNACKS/i);
+      // Se va la portada de la sección y su página de productos
+      expect(without.pdfPages).toBe(baseline.pdfPages - 2);
+      expect(without.pdfPages).toBe(without.structure.totalPages);
+    } finally {
+      await include('4');
+    }
+    const back = await h.generate({ quality: 'original' });
+    expect(back.text).toContain(NAMES.snack);
+    expect(back.text).toContain('AGOTADO');
+    expect(back.pdfPages).toBe(baseline.pdfPages);
+  }, 240_000);
+});

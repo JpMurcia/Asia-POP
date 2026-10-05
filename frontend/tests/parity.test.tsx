@@ -381,7 +381,7 @@ describe('Inicio: antigüedad de la sincronización', () => {
   const NOW = new Date('2026-10-03T12:00:00Z').getTime();
   const base: PanelSummary = {
     alegra: { status: 'ok', email: 'a@b.co', lastTestedAt: null, syncedAt: new Date(NOW - 4 * 60_000).toISOString() },
-    stats: { products: 40, soldOut: 5, uncategorized: 0, estimatedPages: 22 },
+    stats: { products: 40, soldOut: 5, uncategorized: 0, estimatedPages: 22, omitted: 0 },
     sections: [],
     lastCatalog: null,
     generatedAt: '2026-10-03T12:00:00Z',

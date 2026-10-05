@@ -12,6 +12,7 @@ const report = {
   uncategorized: [{ itemId: '9', name: 'Palillos' }],
   omittedNoImage: [{ source: 'alegra', id: '5', name: 'Sin foto' }],
   omittedNoSection: [{ itemId: '9', name: 'Palillos' }],
+  omittedByChoice: [] as { itemId: string; name: string }[],
   soldOutBundles: [{ bundleId: 'b1', name: 'Combo regalo', soldOutComponents: ['Champong'] }],
   counts: { included: 4, omitted: 2, soldOut: 1 },
   emptyCatalog: false,
@@ -661,6 +662,108 @@ describe('pantalla Generar catálogo', () => {
       await prepareNow();
       fireEvent.click(screen.getByLabelText(/Ocultar los productos agotados/));
       expect(await screen.findByText('La revisión expiró. Vuelve a preparar el catálogo.')).toBeInTheDocument();
+    });
+  });
+
+  describe('artículos omitidos por decisión de la persona (FR-008, FR-012)', () => {
+    const CHANGED =
+      'Cambiaste los artículos omitidos después de preparar. Vuelve a preparar el catálogo para aplicar el cambio.';
+    const withOmitted = (names: string[]) =>
+      mockApi({
+        'POST /api/catalog/prepare': () =>
+          json(
+            200,
+            prepared({ report: { ...report, omittedByChoice: names.map((name, i) => ({ itemId: String(100 + i), name })) } }),
+          ),
+      });
+
+    it('con varios omitidos muestra un aviso informativo con el título, los nombres, el texto y el enlace', async () => {
+      withOmitted(['Té verde', 'Bolsa de regalo', 'Ramen picante']);
+      renderPage();
+      await prepareNow();
+      const rep = screen.getByTestId('review-report');
+      const notice = within(rep).getByText('3 artículos omitidos por ti').closest('[role="status"]') as HTMLElement;
+      expect(notice).toBeInTheDocument();
+      for (const name of ['Té verde', 'Bolsa de regalo', 'Ramen picante']) {
+        expect(within(notice).getByText(name)).toBeInTheDocument();
+      }
+      expect(notice).toHaveTextContent('No saldrán en el catálogo.');
+      expect(within(notice).getByRole('link', { name: 'Administrar artículos' })).toHaveAttribute('href', '/articulos');
+    });
+
+    it('va debajo de la línea de conteos y antes de los avisos de problemas', async () => {
+      withOmitted(['Té verde']);
+      renderPage();
+      await prepareNow();
+      const rep = screen.getByTestId('review-report');
+      const counts = within(rep).getByText(/productos incluidos/);
+      const notice = within(rep).getByText('1 artículo omitido por ti');
+      const problem = within(rep).getByText(/sin categoría ni sección asignada/);
+      expect(counts.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(notice.compareDocumentPosition(problem) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('con un solo omitido usa el singular', async () => {
+      withOmitted(['Té verde']);
+      renderPage();
+      await prepareNow();
+      expect(screen.getByText('1 artículo omitido por ti')).toBeInTheDocument();
+    });
+
+    it('sin omitidos (o sin el campo en la respuesta) no muestra ningún aviso', async () => {
+      mockApi();
+      renderPage();
+      await prepareNow();
+      expect(screen.queryByText(/omitidos? por ti/)).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Administrar artículos' })).not.toBeInTheDocument();
+    });
+
+    it('un informe de un servidor anterior, sin el campo, no rompe la pantalla', async () => {
+      const { omittedByChoice: _omit, ...legacy } = report;
+      mockApi({ 'POST /api/catalog/prepare': () => json(200, prepared({ report: legacy })) });
+      renderPage();
+      await prepareNow();
+      expect(screen.queryByText(/omitidos? por ti/)).not.toBeInTheDocument();
+    });
+
+    it('lista hasta 30 nombres y resume el resto', async () => {
+      withOmitted(Array.from({ length: 35 }, (_, i) => `Nombre ${i + 1}`));
+      renderPage();
+      await prepareNow();
+      const rep = screen.getByTestId('review-report');
+      expect(within(rep).getByText('35 artículos omitidos por ti')).toBeInTheDocument();
+      expect(within(rep).getByText('Nombre 30')).toBeInTheDocument();
+      expect(within(rep).queryByText('Nombre 31')).not.toBeInTheDocument();
+      expect(within(rep).getByText('y 5 más')).toBeInTheDocument();
+    });
+
+    it('«omitidos» de la línea de conteos sigue significando sin foto o sin sección', async () => {
+      withOmitted(['Té verde']);
+      renderPage();
+      await prepareNow();
+      expect(screen.getByText(/productos incluidos/)).toHaveTextContent(
+        '4 productos incluidos · 2 omitidos · 1 con badge AGOTADO',
+      );
+    });
+
+    it('los omitidos por decisión no se repiten en los avisos de sin categoría ni sin imagen', async () => {
+      withOmitted(['Té verde']);
+      renderPage();
+      await prepareNow();
+      expect(screen.getAllByText('Té verde')).toHaveLength(1);
+    });
+
+    it('un 409 omitted_changed al generar muestra su mensaje y no inicia ninguna generación', async () => {
+      mockApi({ 'POST /api/catalog/generate': () => json(409, { error: 'omitted_changed', message: CHANGED }) });
+      renderPage();
+      await prepareNow();
+      fireEvent.click(screen.getByLabelText(/Omitir del catálogo/));
+      const generate = screen.getByRole('button', { name: /Generar PDF/ });
+      await waitFor(() => expect(generate).toBeEnabled());
+      fireEvent.click(generate);
+
+      expect(await screen.findByText(CHANGED)).toBeInTheDocument();
+      expect(screen.queryByText('Generando PDF')).not.toBeInTheDocument();
     });
   });
 });

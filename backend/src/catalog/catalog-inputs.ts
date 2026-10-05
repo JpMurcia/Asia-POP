@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { AppContext } from '../context';
 import { BundleRepo } from '../custom/bundle.repo';
 import { CustomProductRepo } from '../custom/custom-product.repo';
+import { OmittedItemRepo } from '../custom/omitted-item.repo';
 import { OverrideRepo } from '../custom/override.repo';
 import { SectionRepo } from '../custom/section.repo';
 import type { BundleBuilderInput, CustomSectionInput } from './catalog-builder';
@@ -16,6 +17,8 @@ export interface LocalCatalogInputs {
   customSections: CustomSectionInput[];
   bundles: BundleBuilderInput[];
   overrides: Map<string, string>;
+  /** Artículos de Alegra que la persona omitió del catálogo (feature 006). */
+  omittedIds: Set<string>;
   sectionOrder: string[];
 }
 
@@ -27,6 +30,7 @@ export function loadLocalInputs(ctx: AppContext): LocalCatalogInputs {
     customSections: loadCustomSections(ctx),
     bundles: loadBundles(ctx),
     overrides: new OverrideRepo(ctx.db).all(),
+    omittedIds: new OmittedItemRepo(ctx.db).all(),
     sectionOrder: new SectionOrderRepo(ctx.db).get(),
   };
 }

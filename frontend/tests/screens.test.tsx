@@ -70,8 +70,8 @@ describe('Conexión Alegra', () => {
 
 describe('Sin categoría', () => {
   const items = [
-    { itemId: '7', name: 'Palillos', assignedSectionKey: null },
-    { itemId: '8', name: 'Salsa', assignedSectionKey: 'alegra:c1' },
+    { itemId: '7', name: 'Palillos', assignedSectionKey: null, omitted: false },
+    { itemId: '8', name: 'Salsa', assignedSectionKey: 'alegra:c1', omitted: false },
   ];
   const sections = [
     { key: 'alegra:c1', name: 'SNACKS', source: 'alegra' },
@@ -109,6 +109,83 @@ describe('Sin categoría', () => {
     renderAt(<UncategorizedAlert />);
     expect(await screen.findByRole('alert')).toHaveTextContent('1 producto(s) de Alegra no tienen categoría');
     expect(screen.getByRole('link', { name: 'Asignarles una sección' })).toHaveAttribute('href', '/sin-categoria');
+  });
+});
+
+describe('Sin categoría con artículos omitidos (feature 006)', () => {
+  const sections = [{ key: 'alegra:c1', name: 'SNACKS', source: 'alegra' }];
+  const item = (itemId: string, name: string, over: Record<string, unknown> = {}) => ({
+    itemId,
+    name,
+    assignedSectionKey: null,
+    omitted: false,
+    ...over,
+  });
+  const show = (items: unknown[]) =>
+    mockApi({
+      'GET /api/catalog/uncategorized': () => json(200, { items }),
+      'GET /api/sections': () => json(200, sections),
+    });
+
+  it('un ítem omitido sin sección muestra «Omitido» en lugar de «Pendiente» y no cuenta como pendiente', async () => {
+    show([item('7', 'Palillos'), item('8', 'Bolsa', { omitted: true })]);
+    renderAt(<Uncategorized />);
+    expect(await screen.findByText('1 pendientes de asignar')).toBeInTheDocument();
+
+    const bolsa = screen.getByText('Bolsa').closest('li')!;
+    expect(within(bolsa).getByText('Omitido')).toBeInTheDocument();
+    expect(within(bolsa).queryByText('Pendiente')).not.toBeInTheDocument();
+    // La asignación de sección sigue disponible: se conserva y vuelve a aplicar si se lo incluye de nuevo
+    expect(within(bolsa).getByLabelText('Sección para Bolsa')).toBeEnabled();
+    expect(within(screen.getByText('Palillos').closest('li')!).getByText('Pendiente')).toBeInTheDocument();
+  });
+
+  it('si solo quedan omitidos sin asignar, el resumen dice «No quedan pendientes de asignar»', async () => {
+    show([item('8', 'Bolsa', { omitted: true }), item('9', 'Salsa', { assignedSectionKey: 'alegra:c1' })]);
+    renderAt(<Uncategorized />);
+    expect(await screen.findByText('No quedan pendientes de asignar')).toBeInTheDocument();
+    expect(screen.queryByText('Todos tienen sección asignada')).not.toBeInTheDocument();
+  });
+
+  it('sin omitidos el resumen sigue diciendo «Todos tienen sección asignada»', async () => {
+    show([item('9', 'Salsa', { assignedSectionKey: 'alegra:c1' })]);
+    renderAt(<Uncategorized />);
+    expect(await screen.findByText('Todos tienen sección asignada')).toBeInTheDocument();
+    expect(screen.queryByText(/Los artículos omitidos no necesitan sección/)).not.toBeInTheDocument();
+  });
+
+  it('la nota de que los omitidos no necesitan sección aparece solo si hay alguno', async () => {
+    show([item('8', 'Bolsa', { omitted: true })]);
+    renderAt(<Uncategorized />);
+    expect(
+      await screen.findByText('Los artículos omitidos no necesitan sección: no saldrán en el catálogo.'),
+    ).toBeInTheDocument();
+  });
+
+  it('un omitido con sección asignada sigue mostrando «Asignado»', async () => {
+    show([item('9', 'Salsa', { assignedSectionKey: 'alegra:c1', omitted: true })]);
+    renderAt(<Uncategorized />);
+    const salsa = (await screen.findByText('Salsa')).closest('li')!;
+    expect(within(salsa).getByText('Asignado')).toBeInTheDocument();
+  });
+
+  it('la alerta de Generar no cuenta a los omitidos', async () => {
+    mockApi({
+      'GET /api/catalog/uncategorized': () =>
+        json(200, { items: [item('7', 'Palillos'), item('8', 'Bolsa', { omitted: true })] }),
+    });
+    renderAt(<UncategorizedAlert />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('1 producto(s) de Alegra no tienen categoría');
+  });
+
+  it('la alerta de Generar no aparece si todos los pendientes están omitidos', async () => {
+    const calls = mockApi({
+      'GET /api/catalog/uncategorized': () => json(200, { items: [item('8', 'Bolsa', { omitted: true })] }),
+    });
+    renderAt(<UncategorizedAlert />);
+    await waitFor(() => expect(calls).toHaveLength(1));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
 

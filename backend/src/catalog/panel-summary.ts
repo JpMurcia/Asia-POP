@@ -84,8 +84,9 @@ export class PanelSummaryService {
     try {
       const [categories, rawItems] = await Promise.all([client.listCategories(), client.listActiveItems()]);
       const items = rawItems.map(mapAlegraItem);
+      const local = loadLocalInputs(this.ctx);
       const built = buildCatalog({
-        ...loadLocalInputs(this.ctx),
+        ...local,
         categories: categories.map((c) => ({ id: String(c.id), name: c.name })),
         items,
         localImages: new Map(items.map((i) => [i.id, i.remoteImageUrl])),
@@ -102,10 +103,12 @@ export class PanelSummaryService {
         status: 'ok',
         stats: {
           products: real.length,
-          soldOut: real.filter((i) => i.soldOut).length,
+          // Los omitidos no salen en el catálogo, así que no cuentan entre los que salen con la indicación AGOTADO
+          soldOut: real.filter((i) => i.soldOut && !local.omittedIds.has(i.id)).length,
           // pendientes: los que ya tienen sección asignada localmente no cuentan
           uncategorized: built.report.omittedNoSection.length,
           estimatedPages: computeStructure(built.payload).totalPages,
+          omitted: real.filter((i) => local.omittedIds.has(i.id)).length,
         },
         sections: built.availableSections.map((s) => ({ ...s, soldOut: soldOutBySection.get(s.key) ?? 0 })),
       };

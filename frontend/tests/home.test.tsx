@@ -6,7 +6,7 @@ import Home from '../src/pages/Home';
 
 const base: PanelSummary = {
   alegra: { status: 'ok', email: 'tienda@example.com', lastTestedAt: null },
-  stats: { products: 40, soldOut: 5, uncategorized: 2, estimatedPages: 22 },
+  stats: { products: 40, soldOut: 5, uncategorized: 2, estimatedPages: 22, omitted: 0 },
   sections: [
     { key: 'alegra:c1', name: 'RAMEN', source: 'alegra', items: 12, soldOut: 2 },
     { key: 'custom:m', name: 'MOCHIS', source: 'custom', items: 3, soldOut: 0 },
@@ -92,5 +92,48 @@ describe('pantalla Inicio', () => {
     renderHome(null, { error: true });
     expect(screen.getByRole('alert')).toHaveTextContent('No se pudo cargar el resumen');
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+});
+
+describe('pantalla Inicio con artículos omitidos (feature 006)', () => {
+  const NOW = new Date('2026-10-03T12:00:00Z').getTime();
+  const withOmitted = (omitted: number, over: Partial<PanelSummary> = {}): PanelSummary => ({
+    ...base,
+    alegra: { ...base.alegra, syncedAt: new Date(NOW - 4 * 60_000).toISOString() },
+    stats: { ...base.stats!, omitted },
+    ...over,
+  });
+  const card = () => screen.getByLabelText('Productos activos en Alegra: 40').closest('div')!;
+
+  it('la nota de «Productos activos en Alegra» dice cuántos se omiten, y el valor no cambia', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(NOW);
+    renderHome(withOmitted(3));
+    expect(card()).toHaveTextContent('3 omitidos del catálogo · Sincronizado hace 4 min');
+    expect(screen.getByLabelText('Productos activos en Alegra: 40')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('con un solo omitido usa el singular', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(NOW);
+    renderHome(withOmitted(1));
+    expect(card()).toHaveTextContent('1 omitido del catálogo · Sincronizado hace 4 min');
+    vi.useRealTimers();
+  });
+
+  it('sin omitidos la nota es la de siempre', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(NOW);
+    renderHome(withOmitted(0));
+    expect(card()).toHaveTextContent('Sincronizado hace 4 min');
+    expect(card()).not.toHaveTextContent('omitido');
+    vi.useRealTimers();
+  });
+
+  it('sin la lectura de Alegra la nota no menciona omitidos', () => {
+    renderHome({ ...withOmitted(3), alegra: { status: 'unreachable', message: 'No hay conexión.' }, stats: null, sections: null });
+    expect(screen.getAllByText('No disponible sin Alegra').length).toBe(4);
+    expect(screen.queryByText(/omitidos? del catálogo/)).not.toBeInTheDocument();
   });
 });

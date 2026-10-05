@@ -79,6 +79,8 @@ export interface BuilderInput {
   photoFailures?: Map<string, PhotoFailureReason>;
   /** Asignaciones locales para ítems sin categoría: itemId -> sectionKey. */
   overrides: Map<string, string>;
+  /** Artículos de Alegra que la persona omitió. Ausente o vacío = el comportamiento de siempre. */
+  omittedIds?: Set<string>;
   /** Orden de secciones (claves `alegra:<id>` / `custom:<id>`). Las que no estén van al final por nombre. */
   sectionOrder: string[];
   /** Si se indica, solo se incluyen estas secciones. */
@@ -170,9 +172,20 @@ export function buildCatalog(input: BuilderInput): BuildResult {
   const photoNotObtained: Tagged<PhotoNotObtained>[] = [];
   const omittedNoSection: ReviewReport['omittedNoSection'] = [];
 
+  // Artículos que la persona decidió dejar fuera (feature 006, FR-005/FR-006). La omisión se aplica DENTRO de este
+  // bucle y no filtrando `input.items`: los combos siguen resolviendo todos sus componentes con los datos de Alegra.
+  const omitted = input.omittedIds ?? new Set<string>();
+  const omittedByChoice: ReviewReport['omittedByChoice'] = [];
+
   for (const it of input.items) {
     // Los padres de variantes se ignoran: sus variantes llegan como ítems propios.
     if (it.type === 'variantParent') continue;
+    // Un omitido no se clasifica ni se reporta de ninguna otra forma (sin categoría, sin foto, agotado...); solo se
+    // informa aparte como omitido por decisión de la persona (FR-008).
+    if (omitted.has(it.id)) {
+      omittedByChoice.push({ itemId: it.id, name: it.name });
+      continue;
+    }
 
     let sectionKey: string | null = null;
     if (it.categoryId) {
@@ -289,9 +302,10 @@ export function buildCatalog(input: BuilderInput): BuildResult {
   const noImage = [...inSelected(omittedNoImage), ...inSelected(omittedCustomNoImage), ...inSelected(omittedBundleNoImage)];
 
   // Estado de las fotos de Alegra sobre todos los productos (no solo las secciones seleccionadas): `allFailed` es una
-  // señal de problema general. Los padres de variantes se ignoran, como en el resto del constructor.
+  // señal de problema general. Los padres de variantes se ignoran, como en el resto del constructor, y los omitidos
+  // también: ya no importan y no deben falsear esa señal (FR-009).
   const informed = input.items.filter(
-    (i) => i.type !== 'variantParent' && (i.imageUrls?.length ?? (i.remoteImageUrl ? 1 : 0)) > 0,
+    (i) => i.type !== 'variantParent' && !omitted.has(i.id) && (i.imageUrls?.length ?? (i.remoteImageUrl ? 1 : 0)) > 0,
   );
   const obtained = informed.filter((i) => !!input.localImages.get(i.id)).length;
 
@@ -303,6 +317,7 @@ export function buildCatalog(input: BuilderInput): BuildResult {
     uncategorized,
     omittedNoImage: noImage,
     omittedNoSection,
+    omittedByChoice: omittedByChoice.sort(byName),
     soldOutBundles: inSelected(soldOutBundles),
     counts: {
       included,

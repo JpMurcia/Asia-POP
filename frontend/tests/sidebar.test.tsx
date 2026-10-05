@@ -7,7 +7,7 @@ import { useUnsavedGuard } from '../src/hooks/useUnsavedGuard';
 
 const summary = (over: Partial<PanelSummary> = {}): PanelSummary => ({
   alegra: { status: 'ok', email: 'tienda@example.com', lastTestedAt: null },
-  stats: { products: 40, soldOut: 3, uncategorized: 3, estimatedPages: 20 },
+  stats: { products: 40, soldOut: 3, uncategorized: 3, estimatedPages: 20, omitted: 0 },
   sections: [],
   lastCatalog: null,
   generatedAt: '2026-10-03T00:00:00Z',
@@ -33,6 +33,7 @@ describe('barra lateral', () => {
       'Inicio',
       'Conexión Alegra',
       'Sin categoría',
+      'Artículos de Alegra',
       'Contenido propio',
       'Combos',
       'Generar catálogo',
@@ -58,7 +59,7 @@ describe('barra lateral', () => {
   });
 
   it('no muestra contador si no hay pendientes o Alegra no respondió', () => {
-    const { unmount } = renderSidebar(summary({ stats: { products: 4, soldOut: 0, uncategorized: 0, estimatedPages: 4 } }));
+    const { unmount } = renderSidebar(summary({ stats: { products: 4, soldOut: 0, uncategorized: 0, estimatedPages: 4, omitted: 0 } }));
     expect(screen.getByRole('link', { name: 'Sin categoría' })).toBeInTheDocument();
     unmount();
     renderSidebar(summary({ stats: null, sections: null }));

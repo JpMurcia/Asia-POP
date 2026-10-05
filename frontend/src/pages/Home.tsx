@@ -21,6 +21,7 @@ export default function Home({ summary, loading, error, refresh }: Props) {
   const stats = summary?.stats ?? null;
   const status = summary?.alegra.status;
   const pending = stats?.uncategorized ?? 0;
+  const omitted = stats?.omitted ?? 0;
   const noteNA = status === 'unreachable' || error ? 'No disponible sin Alegra' : undefined;
   // La lectura de Alegra envejece: "Sincronizado hace N min" (se actualiza solo)
   const now = useNow();
@@ -30,7 +31,15 @@ export default function Home({ summary, loading, error, refresh }: Props) {
     {
       label: 'Productos activos en Alegra',
       value: stats ? String(stats.products) : NA,
-      note: noteNA ?? (ago ? `Sincronizado ${ago}` : 'Leídos de Alegra'),
+      // El valor es el total de Alegra y no baja al omitir; la nota dice cuántos se dejan fuera del catálogo
+      note:
+        noteNA ??
+        [
+          omitted > 0 ? `${omitted === 1 ? '1 omitido' : `${omitted} omitidos`} del catálogo` : null,
+          ago ? `Sincronizado ${ago}` : 'Leídos de Alegra',
+        ]
+          .filter(Boolean)
+          .join(' · '),
     },
     {
       label: 'Agotados',

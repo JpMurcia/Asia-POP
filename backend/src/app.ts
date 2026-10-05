@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { alegraSettingsRoutes } from './api/alegra-settings.routes';
+import { articlesRoutes } from './api/articles.routes';
 import { authRoutes } from './api/auth.routes';
 import { bundlesRoutes } from './api/bundles.routes';
 import { businessRoutes } from './api/business.routes';
@@ -50,6 +51,7 @@ export function createApp(ctx: AppContext): Express {
   api.use(panelRoutes(ctx));
   api.use(catalogRoutes(ctx));
   api.use(uncategorizedRoutes(ctx));
+  api.use(articlesRoutes(ctx));
   api.use(sectionsRoutes(ctx));
   api.use(customRoutes(ctx));
   api.use(bundlesRoutes(ctx));

@@ -123,6 +123,11 @@ export interface ReviewReport {
   /** Todos los omitidos por no tener foto utilizable (incluye los de `photos.notObtained`). */
   omittedNoImage: OmittedItem[];
   omittedNoSection: { itemId: string; name: string }[];
+  /**
+   * Omitidos por decisión de la persona (feature 006): todos los artículos activos de Alegra que marcó, estén o no en
+   * las secciones elegidas. Aparte de los omitidos por un problema: no suman a `counts.omitted`.
+   */
+  omittedByChoice: { itemId: string; name: string }[];
   soldOutBundles: SoldOutBundle[];
   counts: { included: number; omitted: number; soldOut: number };
   emptyCatalog: boolean;
@@ -176,7 +181,16 @@ export interface PanelSummary {
     syncedAt?: string;
   };
   /** `null` si Alegra no respondió. */
-  stats: { products: number; soldOut: number; uncategorized: number; estimatedPages: number } | null;
+  stats: {
+    /** Productos activos en Alegra: es un dato de Alegra y NO baja al omitir artículos. */
+    products: number;
+    /** Agotados entre los que no se omitieron (los que saldrán con la indicación). */
+    soldOut: number;
+    uncategorized: number;
+    estimatedPages: number;
+    /** Artículos omitidos por la persona que hoy están activos en Alegra (feature 006). */
+    omitted: number;
+  } | null;
   sections: { key: string; name: string; source: 'alegra' | 'custom'; items: number; soldOut: number }[] | null;
   /** Siempre del historial local, sin caché. */
   lastCatalog: { id: string; createdAt: string; includedCount: number; omittedCount: number; pages?: number } | null;

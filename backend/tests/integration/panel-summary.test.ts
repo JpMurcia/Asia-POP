@@ -65,6 +65,7 @@ describe('GET /api/panel/summary', () => {
       uncategorized: 1,
       // portada + portada RAMEN + 1 página (3 productos) + políticas
       estimatedPages: 4,
+      omitted: 0,
     });
     expect(s.sections).toEqual([{ key: 'alegra:c1', name: 'RAMEN', source: 'alegra', items: 3, soldOut: 1 }]);
   });
@@ -169,5 +170,71 @@ describe('GET /api/panel/summary', () => {
     const { agent } = await setup();
     const res = await agent.get('/api/panel/summary').expect(200);
     expect(JSON.stringify(res.body)).not.toContain(TOKEN);
+  });
+});
+
+/** RAMEN: 3 productos (1 agotado) + SNACKS: 1 producto + 1 sin categoría. */
+async function setupOmitted() {
+  mock = await startAlegraMock({
+    categories: [
+      { id: 'c1', name: 'RAMEN' },
+      { id: 'c2', name: 'SNACKS' },
+    ],
+  });
+  mock.setItems([
+    item('1'),
+    item('2', { inventory: { availableQuantity: 0, trackInventory: true } }),
+    item('3'),
+    item('4', { category: null }),
+    item('5', { category: { id: 'c2', name: 'SNACKS' } }),
+  ]);
+  const session = await loggedInAgent(testContext({ config: testConfig({ alegraBaseUrl: mock.url }) }));
+  await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+  return session;
+}
+
+describe('GET /api/panel/summary con artículos omitidos (feature 006)', () => {
+  // portada + (portada RAMEN + 1 página) + (portada SNACKS + 1 página) + políticas
+  const BASE = { products: 5, soldOut: 1, uncategorized: 1, estimatedPages: 6, omitted: 0 };
+
+  it('sin omitidos, los indicadores son los de siempre y omitted es 0', async () => {
+    const { agent } = await setupOmitted();
+    expect((await summary(agent)).stats).toEqual(BASE);
+  });
+
+  it('omitir un agotado baja «agotados» y las cantidades de su sección, pero no el total de productos de Alegra', async () => {
+    const { agent } = await setupOmitted();
+    await agent.put('/api/catalog/omitted/2').expect(204);
+    const s = await summary(agent); // sin ?refresh: la escritura ya invalidó la caché
+    expect(s.stats).toEqual({ ...BASE, soldOut: 0, omitted: 1 });
+    expect(s.sections?.find((x) => x.key === 'alegra:c1')).toMatchObject({ items: 2, soldOut: 0 });
+  });
+
+  it('omitir un artículo sin categoría baja el contador de «Sin categoría»', async () => {
+    const { agent } = await setupOmitted();
+    await agent.put('/api/catalog/omitted/4').expect(204);
+    expect((await summary(agent)).stats).toEqual({ ...BASE, uncategorized: 0, omitted: 1 });
+  });
+
+  it('una sección que se queda sin artículos desaparece de Inicio y baja las páginas estimadas', async () => {
+    const { agent } = await setupOmitted();
+    await agent.put('/api/catalog/omitted/5').expect(204);
+    const s = await summary(agent);
+    expect(s.sections?.map((x) => x.key)).toEqual(['alegra:c1']);
+    expect(s.stats).toEqual({ ...BASE, estimatedPages: 4, omitted: 1 });
+  });
+
+  it('volver a incluir devuelve los indicadores a como estaban', async () => {
+    const { agent } = await setupOmitted();
+    await agent.put('/api/catalog/omitted/2').expect(204);
+    await summary(agent);
+    await agent.delete('/api/catalog/omitted/2').expect(204);
+    expect((await summary(agent)).stats).toEqual(BASE);
+  });
+
+  it('un identificador omitido que no corresponde a ningún artículo activo no cuenta', async () => {
+    const { agent } = await setupOmitted();
+    await agent.put('/api/catalog/omitted/999').expect(204);
+    expect((await summary(agent)).stats).toEqual(BASE);
   });
 });

@@ -49,6 +49,9 @@ interface UsedTemplate {
   fallback: boolean;
 }
 
+/** Cuántos nombres de artículos omitidos se listan en la revisión; el resto se resume. */
+const OMITTED_LISTED = 30;
+
 /** Retardo antes de recalcular informe y estructura tras un cambio de opciones. */
 const SYNC_DELAY_MS = 300;
 
@@ -218,6 +221,8 @@ export default function Generate() {
   }
 
   const report = prepared?.report;
+  /** Artículos que la persona omitió (feature 006); un informe sin el campo se trata como sin omitidos. */
+  const omittedByChoice = report?.omittedByChoice ?? [];
   const structure = prepared?.structure;
   const pendingBundles = report?.soldOutBundles.filter((b) => !decisions[b.bundleId]) ?? [];
   // Omitidos por no tener foto, sin los que Alegra sí informa pero no se pudieron obtener (esos van en su propio aviso)
@@ -369,6 +374,32 @@ export default function Generate() {
             <b>{report.counts.included}</b> productos incluidos · <b>{report.counts.omitted}</b> omitidos ·{' '}
             <b>{report.counts.soldOut}</b> con badge AGOTADO
           </p>
+
+          {omittedByChoice.length > 0 && (
+            <Alert
+              tone="info"
+              title={
+                omittedByChoice.length === 1
+                  ? '1 artículo omitido por ti'
+                  : `${omittedByChoice.length} artículos omitidos por ti`
+              }
+            >
+              <ul className="list-disc ml-5">
+                {omittedByChoice.slice(0, OMITTED_LISTED).map((o) => (
+                  <li key={o.itemId}>{o.name}</li>
+                ))}
+                {omittedByChoice.length > OMITTED_LISTED && (
+                  <li className="list-none">{`y ${omittedByChoice.length - OMITTED_LISTED} más`}</li>
+                )}
+              </ul>
+              <p className="mt-1">
+                No saldrán en el catálogo.{' '}
+                <Link to="/articulos" className="font-bold">
+                  Administrar artículos
+                </Link>
+              </p>
+            </Alert>
+          )}
 
           {report.emptyCatalog && <Alert tone="warning">No hay productos para generar el catálogo.</Alert>}
 

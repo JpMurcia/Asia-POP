@@ -9,8 +9,9 @@ export default function UncategorizedAlert() {
 
   useEffect(() => {
     api
-      .get<{ items: { assignedSectionKey: string | null }[] }>('/api/catalog/uncategorized')
-      .then((r) => setCount(r.items.filter((i) => !i.assignedSectionKey).length))
+      .get<{ items: { assignedSectionKey: string | null; omitted?: boolean }[] }>('/api/catalog/uncategorized')
+      // Los omitidos no saldrán en el catálogo: no hay nada pendiente que avisar de ellos
+      .then((r) => setCount(r.items.filter((i) => !i.assignedSectionKey && !i.omitted).length))
       .catch(() => setCount(0)); // sin conexión a Alegra: no hay nada que alertar aquí
   }, []);
 

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import UncategorizedAlert from './components/UncategorizedAlert';
 import { usePanelSummary } from './hooks/usePanelSummary';
 import AlegraSettings from './pages/AlegraSettings';
+import Articles from './pages/Articles';
 import Bundles from './pages/Bundles';
 import Generate from './pages/Generate';
 import History from './pages/History';
@@ -26,6 +27,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         <Route path="/" element={<Home {...panel} />} />
         <Route path="/alegra" element={<AlegraSettings />} />
         <Route path="/sin-categoria" element={<Uncategorized />} />
+        <Route path="/articulos" element={<Articles />} />
         <Route path="/contenido" element={<Sections />} />
         <Route path="/secciones" element={<Navigate to="/contenido" replace />} />
         <Route path="/productos-propios" element={<Navigate to="/contenido?tab=productos" replace />} />

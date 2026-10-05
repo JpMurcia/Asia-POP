@@ -13,12 +13,14 @@ interface NavItem {
 
 /**
  * Nombres y orden del mockup 1b (Inicio, Conexión Alegra, Sin categoría, Contenido propio, Combos,
- * Generar catálogo, Historial) más la entrada nueva Apariencia, que no tiene pantalla propia en el mockup.
+ * Generar catálogo, Historial) más dos entradas que no están en el mockup: Apariencia (feature 003) y
+ * Artículos de Alegra (feature 006), que va justo después de Sin categoría.
  */
 export const NAV: NavItem[] = [
   { to: '/', label: 'Inicio' },
   { to: '/alegra', label: 'Conexión Alegra' },
   { to: '/sin-categoria', label: 'Sin categoría', counter: true },
+  { to: '/articulos', label: 'Artículos de Alegra' },
   { to: '/contenido', label: 'Contenido propio' },
   { to: '/combos', label: 'Combos' },
   { to: '/generar', label: 'Generar catálogo' },

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
 
@@ -8,7 +8,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
   danger: 'bg-pop-err-bg text-pop-err-text border border-pop-err-text/30 hover:brightness-95',
 };
 
-interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+/** `ComponentProps` (y no `ButtonHTMLAttributes`) para que acepte `ref` como prop, como en React 19. */
+interface Props extends ComponentProps<'button'> {
   variant?: ButtonVariant;
 }
 

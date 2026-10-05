@@ -18,6 +18,8 @@ export interface PrepareEntry {
   params: unknown;
   /** Opciones vigentes de esta preparación (secciones, ocultar agotados, banner). */
   options: GenerationOptions;
+  /** Firma de la lista de omitidos con la que se construyó la revisión: `generate` la compara con la vigente (FR-012). */
+  omittedSignature: string;
   /**
    * Copias reducidas de las fotos (dirección original → dirección de la copia). Solo existen mientras se renderiza
    * en calidad Optimizada: las usa `GET /catalog/payload/:id?quality=optimized` y se eliminan al terminar el trabajo.
