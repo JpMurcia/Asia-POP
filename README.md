@@ -95,6 +95,8 @@ npm run lint
 
 Las pruebas con Alegra usan un servidor simulado; nunca consultan la cuenta real.
 
+Con la suite de backend completa en paralelo, el cierre de Chrome en alguna prueba con navegador real (`pdf-render`, `panel-layout`, `editor-browser`) puede agotar el tiempo de forma intermitente en Windows. No es un fallo del código: esas suites pasan siempre que se ejecutan solas, por ejemplo `npm run test:pdf` o `npx vitest run tests/integration/panel-layout.test.ts` dentro de `backend/`. Corre las pruebas desde una ruta sin carpetas ocultas (con punto, como `.claude/`); si no, Chrome responde «Not Found».
+
 Revisión visual (herramientas manuales, no forman parte de `npm test`):
 
 ```bash
@@ -120,7 +122,7 @@ Las fuentes del panel y del catálogo se instalan en local (`@fontsource`); la a
 
 ## Datos y seguridad
 
-- Los datos locales viven en `data/` (base SQLite, imágenes, PDF generados); está fuera de git.
+- Los datos locales viven en `data/` (base SQLite, imágenes, caché de fotos de Alegra en `data/image-cache/`, PDF generados); está fuera de git.
 - El token de Alegra se guarda cifrado (AES-256-GCM) y no aparece en respuestas ni en logs.
 - La aplicación solo atiende desde `localhost`; todas las rutas exigen sesión.
 
