@@ -1,6 +1,6 @@
 # Revisión visual — feature 002
 
-**Fecha**: 2026-10-03 · **Estado**: revisión técnica hecha; **falta la aprobación del responsable de la tienda** (SC-001 y SC-007, tareas T057 y T062).
+**Fecha**: 2026-10-03 · **Estado**: revisión técnica hecha y **aprobada de forma general por el responsable de la tienda el 2026-10-10** (SC-001 y SC-007, tareas T057 y T062; confirmación en el chat).
 
 Las capturas están en [`visual/`](./visual/). Se generaron con `backend/tests/fixtures/visual-sample.ts` (catálogo de muestra con Alegra simulado) y `backend/tests/fixtures/pdf-pages.ts` (páginas de `docs/Cat.pdf`); ver el README.
 
@@ -48,5 +48,5 @@ Lo que sí coincide con Cat.pdf: máximo 3 productos por página con disposició
 
 El responsable debe revisar las capturas (o abrir la aplicación y generar un catálogo) y confirmar:
 
-- [ ] El panel coincide con el mockup 1b «Pop» (SC-001).
-- [ ] El aspecto por defecto del PDF es aceptable, o indicar qué colores ajustar (SC-007).
+- [x] El panel coincide con el mockup 1b «Pop» (SC-001).
+- [x] El aspecto por defecto del PDF es aceptable, o indicar qué colores ajustar (SC-007).

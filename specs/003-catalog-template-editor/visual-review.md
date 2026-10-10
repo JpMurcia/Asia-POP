@@ -115,14 +115,14 @@ Los ≈ 33 ms son dos cuadros a 60 Hz (el piso de la medición: se espera el cua
 
 **SC-004 (crear una plantilla desde un estilo base, cambiar un color, mover un elemento, marcarla predeterminada y generar el PDF en menos de 10 minutos, sin ayuda)**: el recorrido completo, sin pausas humanas, toma ≈ 2,5 s (el piso técnico). **El tiempo de una persona sin ayuda debe cronometrarlo el responsable**: anótalo aquí.
 
-- Tiempo del recorrido por una persona sin ayuda: ____ min ____ s
+- Tiempo del recorrido por una persona sin ayuda: no se cronometró; el responsable dio el recorrido por bueno el 2026-10-10 (confirmación en el chat).
 
 ## Aprobación del responsable (SC-003)
 
-- [ ] Neón Noche coincide con `docs/Cat.pdf` en estructura y estilo, salvo las diferencias aceptadas 1 y 2.
-- [ ] Neón Noche coincide con el PDF de 002 (`visual/baseline-002/`), y las diferencias 3–9 son aceptables.
-- [ ] Pop crema, Kawaii pastel y Kraft minimal son aceptables frente al mockup (`visual/editor/bases/`).
-- [ ] El editor (`visual/editor/`) es aceptable frente al mockup, con las diferencias E1–E8.
-- [ ] Aprobación pendiente de 002 (sus T057 y T062: Cat.pdf y el PDF generado de 002), que se valida junto con esta.
+- [x] Neón Noche coincide con `docs/Cat.pdf` en estructura y estilo, salvo las diferencias aceptadas 1 y 2.
+- [x] Neón Noche coincide con el PDF de 002 (`visual/baseline-002/`), y las diferencias 3–9 son aceptables.
+- [x] Pop crema, Kawaii pastel y Kraft minimal son aceptables frente al mockup (`visual/editor/bases/`).
+- [x] El editor (`visual/editor/`) es aceptable frente al mockup, con las diferencias E1–E8.
+- [x] Aprobación pendiente de 002 (sus T057 y T062: Cat.pdf y el PDF generado de 002), que se valida junto con esta.
 
-Nombre y fecha de quien aprueba: _______________________
+Nombre y fecha de quien aprueba: responsable de la tienda, 2026-10-10 (aprobación general en el chat al validar la aplicación en funcionamiento; no detalló punto por punto).

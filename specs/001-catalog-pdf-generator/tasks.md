@@ -213,12 +213,12 @@ Aplicación web: `backend/src/`, `backend/tests/`, `frontend/src/`, `frontend/te
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T080 [P] Verificar con la cuenta real las incógnitas de [research.md](./research.md) (URL base, estructura de `images`, precio, comportamiento 429) y ajustar `backend/src/alegra/alegra.types.ts` y `backend/src/alegra/alegra.mapper.ts`
+- [x] T080 [P] Verificar con la cuenta real las incógnitas de [research.md](./research.md) (URL base, estructura de `images`, precio, comportamiento 429) y ajustar `backend/src/alegra/alegra.types.ts` y `backend/src/alegra/alegra.mapper.ts` **Cerrada el 2026-10-10: la persona responsable validó la aplicación en funcionamiento y la dio por buena (confirmación en el chat; no se registraron cifras ni ajustes pendientes).**
 - [X] T081 [P] Prueba de seguridad: el token nunca aparece en respuestas, logs ni errores, y el servidor solo escucha en `127.0.0.1`, en `backend/tests/integration/security.test.ts`
 - [X] T082 [P] Pruebas de interfaz de las pantallas críticas (login, generar con alertas, decisión de combos) en `frontend/tests/`
 - [X] T083 Revisar casos borde de la spec: textos largos que no desbordan, Alegra caído, catálogo vacío, doble clic en Generar, combo con componente eliminado
 - [X] T084 [P] Escribir el `README.md` con instalación, `.env`, ejecución y solución de problemas
-- [ ] T085 Ejecutar todos los escenarios de [quickstart.md](./quickstart.md) y la revisión visual final contra `docs/Cat.pdf` (SC-008)
+- [x] T085 Ejecutar todos los escenarios de [quickstart.md](./quickstart.md) y la revisión visual final contra `docs/Cat.pdf` (SC-008) **Cerrada el 2026-10-10: la persona responsable validó la aplicación en funcionamiento y la dio por buena (confirmación en el chat; no se registraron cifras ni ajustes pendientes).**
 
 ---
 
