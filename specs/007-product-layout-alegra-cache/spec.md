@@ -12,7 +12,7 @@ Esta feature **continúa** `001` a `006`. No cambia reglas de precio, stock, sec
 
 ## Punto de partida
 
-- **Zona de productos.** En el editor de Apariencia, el bloque de productos se mueve y se redimensiona como un solo rectángulo (X, Y, ancho y alto en % de la página). Dentro de él, el tamaño de la foto, de la burbuja de descripción y del precio sale de proporciones fijas: la persona no puede cambiar de forma independiente el ancho y el alto de la foto de cada producto.
+- **Zona de productos.** En el editor de Apariencia, el bloque de productos es un solo rectángulo (X, Y, ancho y alto en % de la página). Nace **fijo**: en la página no tiene manijas ni se arrastra hasta pulsar «Desbloquear», y sus campos de Ancho y Alto están al final de una lista larga de estilos, por lo que **parece que no se pueden ajustar**. Dentro del bloque, el tamaño de la foto, de la burbuja de descripción y del precio sale de proporciones fijas: la persona no puede cambiar de forma independiente el ancho y el alto de la foto de cada producto.
 - **Nombre del producto.** Hoy el nombre va **dentro de la burbuja beige**, con el mismo color y la misma letra que la descripción. En `docs/Cat.pdf` el nombre se ve **aparte** de la burbuja de descripción: en color neón, junto a la foto del producto.
 - **Texto largo.** La letra de la burbuja se reduce hasta un mínimo legible; si aun así no cabe, el texto se corta con «…» sin avisar (por ejemplo, una opción de precio larga puede verse como «Caja x 6 …»).
 - **Artículos de Alegra.** Cada vez que se abre la pantalla se consulta Alegra en vivo (unos 200 artículos) y mientras tanto solo se ve el texto «Cargando…». Existe un selector de sección, pero no una lista de categorías visible con su cantidad de artículos.
@@ -54,7 +54,7 @@ En el catálogo, el **nombre de cada producto va aparte de la burbuja de descrip
 1. **Given** la plantilla Neón Noche, **When** se ve un producto con nombre y descripción, **Then** el nombre aparece como un título aparte, junto a la foto, fuera de la burbuja y fuera del marco de la foto, en color neón con su resplandor, y la burbuja contiene solo la descripción y los datos extra.
 2. **Given** un producto con un nombre muy largo, **When** se genera la página, **Then** el nombre reduce su letra (y se parte en líneas si hace falta) hasta verse completo, sin tapar la foto, la descripción ni el precio.
 3. **Given** un producto propio con sabores y opciones de precio largas, o un combo con varios componentes, **When** se genera la página, **Then** todas las opciones, sabores y componentes se leen completos (sin «…») siempre que quepan con una letra legible.
-4. **Given** un producto cuyo texto no cabe completo ni con la letra más pequeña legible, **When** se prepara el catálogo, **Then** la revisión de Generar lista cuáles productos son y qué texto no cabe, y el editor lo avisa en la zona de productos; no se corta un texto sin avisar.
+4. **Given** un producto cuyo texto no cabe completo ni con la letra más pequeña legible, **When** termina la generación del PDF, **Then** Generar lista cuáles productos son y qué texto no cupo (es el único momento en que se miden las fuentes reales), y el editor lo avisa en la zona de productos; no se corta un texto sin avisar.
 5. **Given** un producto sin descripción ni datos extra, **When** se genera la página, **Then** el nombre y el precio se ven bien y no queda una burbuja vacía.
 6. **Given** un producto agotado, **When** se genera la página, **Then** la indicación AGOTADO no oculta el nombre ni el precio.
 7. **Given** un producto de Alegra, un producto propio y un combo, **When** se genera la página, **Then** los tres muestran su nombre con el mismo estilo separado.
@@ -78,7 +78,7 @@ Cuando la persona se conecta a Alegra por primera vez, el sistema **descarga una
 3. **Given** datos guardados, **When** la persona pulsa «Actualizar desde Alegra», **Then** el sistema descarga de nuevo mostrando el avance y reemplaza los datos guardados al terminar; si falla, conserva los anteriores y explica por qué.
 4. **Given** datos guardados, **When** la persona pulsa «Preparar y revisar», **Then** el sistema primero los actualiza desde Alegra y luego arma la revisión, de modo que los precios y el inventario del catálogo son los de ese momento; si Alegra no responde, la preparación se detiene con un mensaje claro y no se genera un PDF parcial.
 5. **Given** que se reinicia el sistema, **When** se abre cualquier pantalla con datos de Alegra, **Then** los datos guardados siguen ahí sin necesidad de volver a descargarlos.
-6. **Given** datos guardados y Alegra sin respuesta, **When** la persona abre Artículos de Alegra, **Then** ve los datos guardados con un aviso de que no se pudieron actualizar y de qué edad son.
+6. **Given** datos guardados y una última actualización que falló (porque Alegra no respondió), **When** la persona abre Artículos de Alegra, **Then** ve los datos guardados, de qué edad son y un aviso de que la última actualización falló, con la opción de reintentar; abrir una pantalla nunca consulta Alegra por sí solo.
 7. **Given** que la persona guarda las credenciales de **otra** cuenta de Alegra, **When** se completa el cambio, **Then** los datos guardados de la cuenta anterior se descartan y se descargan los de la nueva; si guarda de nuevo la misma cuenta, no se pierden.
 8. **Given** artículos omitidos, secciones asignadas en Sin categoría y combos, **When** se usan los datos guardados, **Then** todas esas decisiones siguen funcionando igual; los cambios hechos en Alegra aparecen al actualizar.
 9. **Given** una descarga que se interrumpe (se cierra el sistema o falla la red), **When** se vuelve a abrir, **Then** no queda una copia a medias: se conservan los datos anteriores o se vuelve a descargar desde cero.
@@ -158,7 +158,7 @@ Se **ajusta un poco el diseño** de las pantallas que esta feature toca (Artícu
 - **FR-010**: El nombre separado MUST aplicarse igual a productos de Alegra, productos propios y combos. La burbuja con el nombre separado MUST contener solo descripción, sabores, opciones o componentes, y MUST NOT aparecer vacía.
 - **FR-011**: La indicación AGOTADO (en cualquiera de sus estilos) MUST NOT ocultar el nombre ni el precio del producto.
 - **FR-012**: El sistema MUST ajustar el tamaño de la letra del nombre, la descripción, los datos extra y el precio para que **todo el texto se vea completo** siempre que quepa con una letra legible; el nombre MUST poder partirse en varias líneas.
-- **FR-013**: Cuando un texto no cabe completo ni con la letra legible más pequeña, el sistema MUST NOT cortarlo sin avisar: MUST listar en la revisión de Generar los productos afectados y qué texto no cabe, y MUST avisarlo en el editor sobre la zona de productos.
+- **FR-013**: Cuando un texto no cabe completo ni con la letra legible más pequeña, el sistema MUST NOT cortarlo sin avisar: MUST listar en Generar, al terminar la generación (cuando se miden las fuentes reales), los productos afectados y qué texto no cupo, y MUST avisarlo en el editor sobre la zona de productos.
 
 **Datos de Alegra guardados**
 
@@ -168,7 +168,7 @@ Se **ajusta un poco el diseño** de las pantallas que esta feature toca (Artícu
 - **FR-017**: Preparar el catálogo MUST actualizar antes los datos desde Alegra, de modo que precios e inventario del catálogo sean los del momento de prepararlo; si Alegra falla, la preparación MUST detenerse con un mensaje claro sin entregar un PDF parcial (principio II).
 - **FR-018**: Los datos guardados MUST sobrevivir a reinicios, MUST permanecer solo en este equipo, MUST estar separados de los productos propios (principio I) y MUST NOT contener credenciales.
 - **FR-019**: Si cambia la cuenta de Alegra de la conexión, el sistema MUST descartar los datos guardados de la cuenta anterior y MUST NOT mostrarlos con las credenciales de otra cuenta.
-- **FR-020**: Si Alegra no responde pero hay datos guardados, las pantallas MUST seguir mostrándolos con el aviso de que no se pudieron actualizar y su antigüedad.
+- **FR-020**: Si Alegra no responde pero hay datos guardados, las pantallas MUST seguir mostrándolos con su antigüedad y, si la última actualización falló, con el aviso correspondiente; abrir una pantalla MUST NOT consultar Alegra por sí solo.
 - **FR-021**: Una descarga interrumpida MUST NOT dejar datos a medias; el sistema MUST permitir una sola descarga a la vez.
 - **FR-022**: Omisiones, secciones asignadas en Sin categoría y combos MUST seguir funcionando igual con los datos guardados. El sistema MUST seguir siendo de solo lectura con Alegra (principio I).
 
@@ -201,7 +201,7 @@ Se **ajusta un poco el diseño** de las pantallas que esta feature toca (Artícu
 
 - **SC-001**: La persona cambia el ancho y el alto de la zona de productos y de la foto y ve el resultado en menos de 1 segundo; el 100 % de los tamaños permitidos produce páginas con 0, 1, 2 o 3 productos sin encimarse ni salirse de la hoja.
 - **SC-002**: En la plantilla Neón Noche, el 100 % de los productos del catálogo (de Alegra, propios y combos) muestra su nombre separado de la descripción y en neón, y la persona responsable aprueba la página contra `docs/Cat.pdf`.
-- **SC-003**: Con los 197 artículos de la cuenta real, el 100 % de los nombres, descripciones y precios se ve completo o queda listado en la revisión de Generar; hay 0 textos cortados sin aviso.
+- **SC-003**: Con los 197 artículos de la cuenta real, el 100 % de los nombres, descripciones y precios se ve completo o queda listado en Generar al terminar la generación; hay 0 textos cortados sin aviso.
 - **SC-004**: Sin cambiar ningún tamaño, el catálogo generado tiene las mismas páginas, productos y posiciones que el de hoy (salvo el estilo del nombre en Neón Noche).
 - **SC-005**: Tras la primera conexión, abrir Artículos de Alegra, Sin categoría, Combos o Inicio muestra los datos en menos de 2 segundos, con 0 peticiones a Alegra al abrirlos (hoy cada apertura espera varios segundos).
 - **SC-006**: La descarga inicial de unos 200 artículos termina en menos de 1 minuto y la persona ve el avance durante toda la espera.
