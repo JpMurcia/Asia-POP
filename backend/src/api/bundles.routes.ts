@@ -66,7 +66,7 @@ export function bundlesRoutes(ctx: AppContext): Router {
   });
 
   /**
-   * Productos disponibles para armar un combo (Alegra en vivo + propios). `soldOut` deja avisar «Combo no disponible»
+   * Productos disponibles para armar un combo (datos de Alegra guardados + propios). `soldOut` deja avisar «Combo no disponible»
    * mientras se arma el combo; un producto propio nunca está agotado (principio II).
    */
   r.get('/bundles/component-options', async (_req, res) => {
