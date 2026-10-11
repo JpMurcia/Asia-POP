@@ -382,7 +382,7 @@ describe('Historial', () => {
 });
 
 describe('barra de datos de Alegra en las pantallas (feature 007)', () => {
-  const ready = { state: 'ready', syncedAt: new Date(Date.now() - 5 * 60_000).toISOString(), articles: 10, categories: 3, progress: null, lastError: null };
+  const ready = { state: 'ready', syncedAt: new Date(Date.now() - 5.5 * 60_000).toISOString(), articles: 10, categories: 3, progress: null, lastError: null };
   const syncing = { ...ready, state: 'syncing', progress: { phase: 'items', received: 40 } };
 
   it('Sin categoría muestra la barra bajo el título y, al terminar una actualización, vuelve a cargar su lista', async () => {

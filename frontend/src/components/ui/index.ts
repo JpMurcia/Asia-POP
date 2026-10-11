@@ -6,6 +6,7 @@ export { default as Button } from './Button';
 export type { ButtonVariant } from './Button';
 export { default as Card } from './Card';
 export { default as Field } from './Field';
+export { default as LoadingScreen, LIST_AREA_MIN_HEIGHT } from './LoadingScreen';
 export { default as PageHeader } from './PageHeader';
 export { default as StatusDot } from './StatusDot';
 export type { StatusTone } from './StatusDot';

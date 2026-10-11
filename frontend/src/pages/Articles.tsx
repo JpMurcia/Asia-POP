@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCop } from '../../../backend/src/catalog/price-format';
-import { Alert, Badge, Button, Card, Field, PageHeader } from '../components/ui';
+import AlegraDataBar from '../components/AlegraDataBar';
+import { Alert, Badge, Button, Card, Field, LIST_AREA_MIN_HEIGHT, LoadingScreen, PageHeader } from '../components/ui';
+import { useLoadingScreen } from '../hooks/useAlegraData';
 import { notifySummaryChanged } from '../hooks/usePanelSummary';
 import { api, ApiError } from '../services/api';
 
@@ -17,9 +19,9 @@ interface Article {
   bundles?: string[];
 }
 
-/** Valores del selector de sección que no son una sección. */
-const ALL_SECTIONS = '';
-const NO_SECTION = '__none__';
+/** Valores del filtro de categoría que no son una categoría. */
+const ALL_CATEGORIES = '';
+const NO_CATEGORY = '__none__';
 
 type View = 'all' | 'omitted';
 /** Destino del foco cuando una fila sale de la vista y no queda otra a la que enviarlo. */
@@ -41,13 +43,17 @@ function bundlesNote(names: string[]): string {
 /**
  * Artículos de Alegra (feature 006): la persona marca los que no quiere en el catálogo. La marca es permanente y solo
  * se guarda aquí; no cambia nada en Alegra. Contrato: specs/006-omit-alegra-articles/contracts/articles-ui.md §2.
+ *
+ * Feature 007: la lista sale de los datos de Alegra guardados en el equipo (con la barra «Actualizar desde Alegra»),
+ * muestra una pantalla de carga si tarda y se filtra por categoría con etiquetas que traen su cantidad. Contrato:
+ * specs/007-product-layout-alegra-cache/contracts/ui.md §3 y §4.
  */
 export default function Articles() {
   const [items, setItems] = useState<Article[] | null>(null);
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [query, setQuery] = useState('');
-  const [section, setSection] = useState(ALL_SECTIONS);
+  const [category, setCategory] = useState(ALL_CATEGORIES);
   const [view, setView] = useState<View>('all');
   /** Fila (o `VIEWS_TARGET`) que debe recibir el foco tras el próximo cambio de la lista. */
   const [focusTarget, setFocusTarget] = useState<string | null>(null);
@@ -69,28 +75,47 @@ export default function Articles() {
     void load();
   }, [load]);
 
-  /** Secciones que tienen artículos, por nombre; «Sin categoría» aparte solo si hay artículos sin sección. */
-  const sections = useMemo(() => {
+  /** Categorías que tienen artículos, por nombre; «Sin categoría» aparte solo si hay artículos sin categoría. */
+  const categories = useMemo(() => {
     const byKey = new Map<string, string>();
     for (const a of items ?? []) if (a.sectionKey) byKey.set(a.sectionKey, a.sectionName ?? a.sectionKey);
     return [...byKey].sort((x, y) => x[1].localeCompare(y[1], 'es', { sensitivity: 'base' }));
   }, [items]);
   const hasUnsectioned = items?.some((a) => !a.sectionKey) ?? false;
 
-  /** Lo que coincide con la búsqueda y la sección: de aquí salen los conteos de las dos vistas (FR-003). */
-  const matching = useMemo(() => {
-    const q = normalize(query.trim());
-    return (items ?? []).filter(
-      (a) =>
-        (!q || normalize(a.name).includes(q)) &&
-        (section === ALL_SECTIONS || (section === NO_SECTION ? !a.sectionKey : a.sectionKey === section)),
-    );
-  }, [items, query, section]);
+  const q = normalize(query.trim());
+  const matchesQuery = (a: Article) => !q || normalize(a.name).includes(q);
+  const inCategory = (a: Article, key: string) =>
+    key === ALL_CATEGORIES || (key === NO_CATEGORY ? !a.sectionKey : a.sectionKey === key);
+
+  /** Lo que coincide con la búsqueda y la categoría: de aquí salen los conteos de las dos vistas (FR-003). */
+  const matching = useMemo(
+    () => (items ?? []).filter((a) => matchesQuery(a) && inCategory(a, category)),
+    [items, q, category],
+  );
   const matchingOmitted = matching.filter((a) => a.omitted).length;
   const visible = view === 'omitted' ? matching.filter((a) => a.omitted) : matching;
 
+  /** Cuántos artículos tendría cada etiqueta de categoría: respeta la búsqueda y la vista activas (FR-024). */
+  const chipCount = (key: string): number =>
+    (items ?? []).filter((a) => matchesQuery(a) && (view === 'all' || a.omitted) && inCategory(a, key)).length;
+
   const totalOmitted = items?.filter((a) => a.omitted).length ?? 0;
-  const noFilters = !query.trim() && section === ALL_SECTIONS;
+  const noFilters = !query.trim() && category === ALL_CATEGORIES;
+  const clearFilters = () => {
+    setQuery('');
+    setCategory(ALL_CATEGORIES);
+  };
+
+  /** Etiquetas: «Todas», cada categoría y, al final, «Sin categoría». */
+  const chipList: { key: string; label: string }[] = [
+    { key: ALL_CATEGORIES, label: 'Todas' },
+    ...categories.map(([key, name]) => ({ key, label: name })),
+    ...(hasUnsectioned ? [{ key: NO_CATEGORY, label: 'Sin categoría' }] : []),
+  ];
+
+  const pendingList = !items && !loadError;
+  const { show: showLoading, status: loadingStatus } = useLoadingScreen(pendingList);
 
   // Tras sacar una fila de la vista «Omitidos», el foco pasa a la fila siguiente o a las vistas
   useEffect(() => {
@@ -129,6 +154,7 @@ export default function Articles() {
         Omitir un artículo solo se guarda aquí: no cambia nada en Alegra. Los artículos omitidos quedan fuera de todos
         los catálogos hasta que los vuelvas a incluir.
       </p>
+      <AlegraDataBar onRefreshed={() => void load()} />
 
       {loadError ? (
         <Alert tone="error">
@@ -143,79 +169,102 @@ export default function Articles() {
           </div>
         </Alert>
       ) : !items ? (
-        <p>Cargando…</p>
+        showLoading ? (
+          <LoadingScreen status={loadingStatus} />
+        ) : (
+          // Mismo espacio que la pantalla de carga y que la lista: al llegar los datos nada cambia de lugar
+          <div style={{ minHeight: LIST_AREA_MIN_HEIGHT }}>
+            <p>Cargando…</p>
+          </div>
+        )
       ) : items.length === 0 ? (
         <p className="text-sm text-pop-muted">Alegra no tiene artículos activos.</p>
       ) : (
-        <>
+        <div className="flex flex-col gap-4" style={{ minHeight: LIST_AREA_MIN_HEIGHT }}>
           {saveError && <Alert tone="error">{saveError}</Alert>}
 
           <p className="text-sm font-semibold" aria-live="polite">
             {`${items.length === 1 ? '1 artículo' : `${items.length} artículos`} · ${totalOmitted === 1 ? '1 omitido' : `${totalOmitted} omitidos`}`}
           </p>
 
-          <div className="flex gap-4 flex-wrap items-end">
-            <div className="flex-1 min-w-52">
-              <Field
-                label="Buscar por nombre"
-                type="search"
-                placeholder="Escribe parte del nombre"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="articles-section" className="font-semibold text-[13px]">
-                Sección
-              </label>
-              <select
-                id="articles-section"
-                className="h-11 px-2 rounded-pop border border-pop-line bg-pop-input text-sm"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-              >
-                <option value={ALL_SECTIONS}>Todas las secciones</option>
-                {sections.map(([key, name]) => (
-                  <option key={key} value={key}>
-                    {name}
-                  </option>
-                ))}
-                {hasUnsectioned && <option value={NO_SECTION}>Sin categoría</option>}
-              </select>
-            </div>
-          </div>
+          <Card className="flex flex-col gap-4 !shadow-none">
+            <Field
+              label="Buscar por nombre"
+              type="search"
+              placeholder="Escribe parte del nombre"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
 
-          <fieldset className="flex gap-2 flex-wrap">
-            <legend className="sr-only">Vista</legend>
-            {(
-              [
-                ['all', `Todos (${matching.length})`],
-                ['omitted', `Omitidos (${matchingOmitted})`],
-              ] as const
-            ).map(([value, label]) => (
-              <label
-                key={value}
-                className={`flex items-center gap-2 text-sm px-3 py-2 rounded-pop border cursor-pointer ${
-                  view === value ? 'border-pop-accent bg-pop-stripe' : 'border-pop-line bg-pop-surface2'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="articles-view"
-                  ref={value === 'omitted' ? omittedViewRef : undefined}
-                  checked={view === value}
-                  onChange={() => setView(value)}
-                />
-                <span className="font-bold">{label}</span>
-              </label>
-            ))}
-          </fieldset>
+            <fieldset className="flex flex-col gap-2 min-w-0 m-0 p-0 border-0">
+              <legend className="font-semibold text-[13px] mb-2">Categoría</legend>
+              <div data-testid="category-chips" className="flex flex-wrap gap-2">
+                {chipList.map(({ key, label }) => {
+                  const count = chipCount(key);
+                  const selected = category === key;
+                  return (
+                    <button
+                      key={key || '__all__'}
+                      type="button"
+                      aria-pressed={selected}
+                      data-empty={count === 0 ? 'true' : undefined}
+                      onClick={() => setCategory(key)}
+                      className={`max-w-full min-h-9 px-3 py-1.5 rounded-full border text-sm font-semibold text-left break-words transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pop-accent ${
+                        selected
+                          ? 'border-pop-accent bg-pop-accent text-white'
+                          : `border-pop-line bg-pop-surface2 text-pop-ink hover:border-pop-accent ${count === 0 ? 'opacity-50' : ''}`
+                      }`}
+                    >
+                      {`${label} (${count})`}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <fieldset className="flex gap-2 flex-wrap min-w-0 m-0 p-0 border-0">
+                <legend className="sr-only">Vista</legend>
+                {(
+                  [
+                    ['all', `Todos (${matching.length})`],
+                    ['omitted', `Omitidos (${matchingOmitted})`],
+                  ] as const
+                ).map(([value, label]) => (
+                  <label
+                    key={value}
+                    className={`flex items-center gap-2 text-sm px-3 py-2 rounded-pop border cursor-pointer ${
+                      view === value ? 'border-pop-accent bg-pop-stripe' : 'border-pop-line bg-pop-surface2'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="articles-view"
+                      ref={value === 'omitted' ? omittedViewRef : undefined}
+                      checked={view === value}
+                      onChange={() => setView(value)}
+                    />
+                    <span className="font-bold">{label}</span>
+                  </label>
+                ))}
+              </fieldset>
+              {!noFilters && (
+                <Button variant="secondary" className="h-9" onClick={clearFilters}>
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          <p className="text-[13px] text-pop-muted" aria-live="polite">
+            {`Mostrando ${visible.length} de ${items.length} ${items.length === 1 ? 'artículo' : 'artículos'}`}
+          </p>
 
           {visible.length === 0 ? (
             <p className="text-sm text-pop-muted">
               {view === 'omitted' && noFilters
                 ? 'No has omitido ningún artículo.'
-                : 'Ningún artículo coincide con la búsqueda.'}
+                : 'Ningún artículo coincide con los filtros.'}
             </p>
           ) : (
             <Card className="!p-0">
@@ -259,7 +308,7 @@ export default function Articles() {
               </ul>
             </Card>
           )}
-        </>
+        </div>
       )}
     </section>
   );

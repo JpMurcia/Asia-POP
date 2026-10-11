@@ -110,3 +110,25 @@ export function useAlegraProgress(active: boolean): AlegraDataStatus | null {
   }, [active]);
   return status;
 }
+
+/** Cuánto debe esperar la lista antes de que aparezca la pantalla de carga (con datos guardados la lista sale sin ella). */
+export const LOADING_SCREEN_DELAY_MS = 300;
+
+/**
+ * Cuándo mostrar la pantalla de carga mientras `pending` (la lista aún no llega): si la espera pasa de ~300 ms o si el
+ * estado de los datos dice que se están descargando. Con datos guardados la lista aparece sin ella. Devuelve también el
+ * avance para dibujarlo; consulta el estado solo mientras espera.
+ */
+export function useLoadingScreen(pending: boolean): { show: boolean; status: AlegraDataStatus | null } {
+  const status = useAlegraProgress(pending);
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    if (!pending) {
+      setLate(false);
+      return undefined;
+    }
+    const id = setTimeout(() => setLate(true), LOADING_SCREEN_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [pending]);
+  return { show: pending && (late || status?.state === 'syncing'), status: pending ? status : null };
+}
