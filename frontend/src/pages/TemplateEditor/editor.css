@@ -194,6 +194,116 @@
 .ed-preview-btn[aria-pressed='true'] {
   background: rgba(255, 244, 226, 0.15);
 }
+/*
+ * Ventanas angostas (1024 px): con el botón Consejos la barra no cabe. Se compacta sin quitar ningún botón: menos
+ * espacio entre ellos, sin el título «Apariencia» (la barra ya dice dónde estás con «← Menú» y las pestañas).
+ */
+@media (max-width: 1100px) {
+  .ed-topbar {
+    gap: 6px;
+    padding: 0 8px;
+  }
+  .ed-title {
+    display: none;
+  }
+  .ed-back {
+    padding: 0 8px 0 3px;
+    gap: 5px;
+  }
+  .ed-preview-btn,
+  .ed-tips-btn,
+  .ed-default-btn {
+    padding: 0 10px;
+  }
+  .ed-save {
+    padding: 0 14px;
+  }
+  .ed-name {
+    flex: 1 1 100px;
+    min-width: 80px;
+  }
+}
+.ed-tips-btn {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 244, 226, 0.3);
+  border-radius: 10px;
+  background: transparent;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ed-tips-btn[aria-expanded='true'] {
+  background: rgba(255, 244, 226, 0.15);
+}
+.ed-tips-btn:focus-visible,
+.ed-tips-close:focus-visible,
+.ed-tips-list:focus-visible {
+  outline: 2px solid #ffb800;
+  outline-offset: 2px;
+}
+
+/* Panel de Consejos (feature 007): diálogo a la derecha, bajo la barra superior, con su propio desplazamiento */
+.ed-tips-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 60px 16px 16px;
+  background: rgba(28, 17, 38, 0.35);
+}
+.ed-tips {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 100%);
+  max-height: 100%;
+  border: 1px solid var(--ed-line);
+  border-radius: 16px;
+  background: #fffcf7;
+  color: var(--ed-ink);
+  box-shadow: 0 18px 40px rgba(28, 17, 38, 0.35);
+}
+.ed-tips-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ed-line);
+}
+.ed-tips-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+.ed-tips-close {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ed-line);
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ed-ink);
+}
+.ed-tips-list {
+  margin: 0;
+  padding: 12px 16px 16px 36px;
+  overflow-y: auto;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.ed-tips-list li {
+  padding: 4px 0;
+}
+.ed-tips-list li + li {
+  border-top: 1px solid var(--ed-line);
+  margin-top: 6px;
+  padding-top: 10px;
+}
 .ed-save {
   flex-shrink: 0;
   height: 36px;

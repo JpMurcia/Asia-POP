@@ -30,6 +30,7 @@ const SCREENS: [string, string][] = [
   ['/', 'inicio'],
   ['/alegra', 'conexion-alegra'],
   ['/sin-categoria', 'sin-categoria'],
+  ['/articulos', 'articulos-de-alegra'],
   ['/contenido', 'contenido-secciones'],
   ['/contenido?tab=productos', 'contenido-productos'],
   ['/combos', 'combos'],
@@ -58,11 +59,10 @@ beforeAll(async () => {
   if (!fs.existsSync(path.join(DIST, 'index.html'))) {
     execSync('npm run build -w frontend', { cwd: ROOT_DIR, stdio: 'ignore' });
   }
+  // Feature 007: Artículos de Alegra con 20 categorías de nombre largo y muchos artículos (etiquetas de categoría)
+  const extraCategories = Array.from({ length: 18 }, (_, i) => ({ id: `x${i}`, name: long(40 + (i % 5) * 12, `Categoría${i + 1}`) }));
   mock = await startAlegraMock({
-    categories: [
-      { id: 'c1', name: 'RAMEN' },
-      { id: 'c2', name: long(70, 'CATEGORÍA') },
-    ],
+    categories: [{ id: 'c1', name: 'RAMEN' }, { id: 'c2', name: long(70, 'CATEGORÍA') }, ...extraCategories],
   });
   const item = (id: string, over: Partial<AlegraItemRaw> = {}): AlegraItemRaw => ({
     id,
@@ -80,6 +80,9 @@ beforeAll(async () => {
     item('3', { category: { id: 'c2', name: long(70, 'CATEGORÍA') } }),
     item('4', { category: null, name: long(120, 'SinCategoría') }),
     item('5', { category: null }),
+    ...extraCategories.flatMap((c, i) =>
+      [0, 1, 2].map((k) => item(`x${i}-${k}`, { name: `Producto ${i + 1}.${k + 1}`, category: { id: c.id, name: c.name } })),
+    ),
   ]);
 
   const ctx = testContext({ config: testConfig({ alegraBaseUrl: mock.url, frontendDir: DIST }) });
@@ -203,6 +206,21 @@ describe('el panel no se desborda horizontalmente (FR-005)', () => {
   }
 });
 
+/** Pulsa el primer elemento que coincida con el selector y el texto (los botones del editor se buscan por su rótulo). */
+async function clickByText(page: Awaited<ReturnType<Browser['newPage']>>, selector: string, text: RegExp): Promise<void> {
+  const ok = await page.evaluate(
+    (sel, source) => {
+      const re = new RegExp(source);
+      const el = Array.from(document.querySelectorAll<HTMLElement>(sel)).find((e) => re.test((e.getAttribute('aria-label') ?? e.textContent ?? '').trim()));
+      el?.click();
+      return !!el;
+    },
+    selector,
+    text.source,
+  );
+  if (!ok) throw new Error(`no se encontró ${selector} con ${text}`);
+}
+
 describe('el editor de plantillas cabe en la ventana (FR-005)', () => {
   for (const viewport of VIEWPORTS) {
     it(`${viewport.width}×${viewport.height}`, async () => {
@@ -243,6 +261,64 @@ describe('el editor de plantillas cabe en la ventana (FR-005)', () => {
         expect(metrics.canvas, 'el lienzo es visible y entra en la ventana').toBe(true);
         expect(metrics.inspector, 'el inspector es visible').toBe(true);
         expect(metrics.hasMain, 'sin la estructura del panel').toBe(false);
+      } finally {
+        await page.close();
+      }
+    }, 60_000);
+  }
+});
+
+describe('Apariencia con el bloque de productos seleccionado y el panel de Consejos (feature 007)', () => {
+  for (const viewport of VIEWPORTS) {
+    it(`${viewport.width}×${viewport.height}`, async () => {
+      const page = await open('/apariencia', viewport);
+      try {
+        await page.waitForSelector('[data-testid="template-editor"]', { timeout: 20_000 });
+        await clickByText(page, 'button', /^Productos/);
+        await new Promise((r) => setTimeout(r, 300));
+        await clickByText(page, '[data-testid="layers"] button', /^Productos/);
+        await page.waitForSelector('[data-testid="inspector"]', { timeout: 10_000 });
+        await new Promise((r) => setTimeout(r, 300));
+        const metrics = await page.evaluate(() => {
+          const rect = (el: Element) => el.getBoundingClientRect();
+          const inspector = document.querySelector('[data-testid="inspector"]')!;
+          const ir = rect(inspector);
+          return {
+            scrollWidth: document.documentElement.scrollWidth,
+            clientWidth: document.documentElement.clientWidth,
+            inspector: { left: ir.left, right: ir.right, top: ir.top, bottom: ir.bottom },
+            inspectorOverflowX: inspector.scrollWidth > inspector.clientWidth + 1,
+            window: { w: window.innerWidth, h: window.innerHeight },
+            // La sección nueva y los campos de tamaño están a la vista (no hace falta bajar por una lista larga para llegar a ellos)
+            sizeSection: !!Array.from(inspector.querySelectorAll('.ed-heading')).find((h) => h.textContent === 'Tamaño de los productos'),
+            sizeFieldTop: (() => {
+              const f = inspector.querySelector('[aria-label="Zona de productos"]');
+              return f ? f.getBoundingClientRect().top : null;
+            })(),
+          };
+        });
+        if (process.env.PANEL_SHOTS) {
+          fs.mkdirSync(process.env.PANEL_SHOTS, { recursive: true });
+          await page.screenshot({ path: path.join(process.env.PANEL_SHOTS, `apariencia-productos-${viewport.width}.png`) });
+        }
+        expect(metrics.scrollWidth, JSON.stringify(metrics)).toBeLessThanOrEqual(metrics.clientWidth);
+        expect(metrics.inspectorOverflowX, 'el inspector no se desplaza de lado').toBe(false);
+        expect(metrics.inspector.right).toBeLessThanOrEqual(metrics.window.w + 0.5);
+        expect(metrics.sizeSection, 'la sección «Tamaño de los productos» está en el inspector').toBe(true);
+        expect(metrics.sizeFieldTop, 'los campos de tamaño están dentro de la ventana, sin bajar por la lista').toBeLessThan(metrics.window.h);
+
+        // El panel de Consejos cabe en la ventana y no desplaza la página
+        await clickByText(page, 'header button', /^Consejos$/);
+        await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+        const tips = await page.evaluate(() => {
+          const d = document.querySelector('[role="dialog"]')!.getBoundingClientRect();
+          return { left: d.left, right: d.right, top: d.top, bottom: d.bottom, w: window.innerWidth, h: window.innerHeight, scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth };
+        });
+        expect(tips.left).toBeGreaterThanOrEqual(0);
+        expect(tips.right).toBeLessThanOrEqual(tips.w + 0.5);
+        expect(tips.bottom).toBeLessThanOrEqual(tips.h + 0.5);
+        expect(tips.scrollWidth, JSON.stringify(tips)).toBeLessThanOrEqual(tips.clientWidth);
+        if (process.env.PANEL_SHOTS) await page.screenshot({ path: path.join(process.env.PANEL_SHOTS, `apariencia-consejos-${viewport.width}.png`) });
       } finally {
         await page.close();
       }

@@ -22,6 +22,7 @@ import Inspector from './Inspector';
 import PageStrip from './PageStrip';
 import PreviewPages from './PreviewPages';
 import SideRail from './SideRail';
+import TipsPanel from './TipsPanel';
 import TopBar from './TopBar';
 import ZoomControls from './ZoomControls';
 import { pageData } from './sample-data';
@@ -136,6 +137,9 @@ function EditorScreen({
   const [problem, setProblem] = useState<Problem | null>(null);
   const [warnings, setWarnings] = useState<TemplateWarning[]>([]);
   const [overflow, setOverflow] = useState(false);
+  /** Panel de Consejos: estado local, fuera del reductor (abrirlo no es un cambio de la plantilla). */
+  const [tipsOpen, setTipsOpen] = useState(false);
+  const tipsButton = useRef<HTMLButtonElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   useUnsavedGuard(dirty);
 
@@ -215,14 +219,16 @@ function EditorScreen({
   }, [state.message, actions]);
 
   // --- Atajos de teclado: un solo oyente, que ignora los campos de texto -------------------------------------------------
-  const live = useRef({ state, actions });
+  const live = useRef({ state, actions, tipsOpen });
   useEffect(() => {
-    live.current = { state, actions };
+    live.current = { state, actions, tipsOpen };
   });
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (isField(e.target)) return;
+      // Con el panel de Consejos abierto, los atajos del editor no actúan (un Supr no debe borrar lo seleccionado)
+      if (live.current.tipsOpen) return;
       const { state: s, actions: a } = live.current;
       if (s.view !== 'editor') return; // en la galería no hay elementos que mover ni borrar
       const mod = e.ctrlKey || e.metaKey;
@@ -356,7 +362,11 @@ function EditorScreen({
         onTogglePreview={() => actions.setPreview(!state.preview)}
         onSave={() => void save()}
         onBack={back}
+        tipsOpen={tipsOpen}
+        onOpenTips={() => setTipsOpen(true)}
+        tipsRef={tipsButton}
       />
+
 
       {problem && (
         <div className="ed-alert" role="alert">
@@ -468,6 +478,15 @@ function EditorScreen({
             overflow={overflow}
           />
         </div>
+      )}
+
+      {tipsOpen && (
+        <TipsPanel
+          onClose={() => {
+            setTipsOpen(false);
+            tipsButton.current?.focus();
+          }}
+        />
       )}
 
       {state.message && (

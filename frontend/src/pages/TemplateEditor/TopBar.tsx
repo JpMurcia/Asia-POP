@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { LIMITS } from '../../../../backend/src/catalog/template';
 import { IMAGES } from '../../print/assets';
 import type { EditorView } from './useTemplateEditor';
@@ -24,11 +25,16 @@ export interface TopBarProps {
   onTogglePreview: () => void;
   onSave: () => void;
   onBack: () => void;
+  /** Panel de consejos (feature 007): el botón está siempre, en el Editor y en las Plantillas. */
+  tipsOpen: boolean;
+  onOpenTips: () => void;
+  tipsRef: Ref<HTMLButtonElement>;
 }
 
 /**
  * Barra superior: volver al menú, pestañas Editor/Plantillas, nombre de la plantilla, historial, estado de guardado,
- * plantilla predeterminada, vista previa y Guardar. En la galería solo quedan las pestañas, el estado y Guardar.
+ * Consejos, plantilla predeterminada, vista previa y Guardar. En la galería solo quedan las pestañas, el estado, Consejos
+ * y Guardar.
  */
 export default function TopBar({
   view,
@@ -49,6 +55,9 @@ export default function TopBar({
   onTogglePreview,
   onSave,
   onBack,
+  tipsOpen,
+  onOpenTips,
+  tipsRef,
 }: TopBarProps) {
   const editing = view === 'editor';
   const blank = name.trim() === '';
@@ -97,6 +106,16 @@ export default function TopBar({
         <span className="ed-status-dot" aria-hidden="true" />
         {dirty ? 'Cambios sin guardar' : 'Todo guardado'}
       </span>
+      <button
+        ref={tipsRef}
+        type="button"
+        className="ed-tips-btn"
+        aria-haspopup="dialog"
+        aria-expanded={tipsOpen}
+        onClick={onOpenTips}
+      >
+        Consejos
+      </button>
       {editing && (
         <>
           <button type="button" className="ed-preview-btn" aria-pressed={preview} onClick={onTogglePreview}>
