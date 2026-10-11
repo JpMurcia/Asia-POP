@@ -7,7 +7,8 @@ import { createApp } from '../src/app';
 import type { AppConfig } from '../src/config/env';
 import { createContext, type AppContext } from '../src/context';
 import { openDatabase } from '../src/db/database';
-import type { PdfRenderer } from '../src/pdf/pdf.service';
+import type { TextOverflow } from '../src/catalog/types';
+import type { PdfRenderer, RenderReport } from '../src/pdf/pdf.service';
 
 export const SEED = { username: 'tienda', password: 'clave-semilla-test' };
 
@@ -29,10 +30,13 @@ export class FakeRenderer implements PdfRenderer {
   calls: { url: string; sessionId: string }[] = [];
   fail = false;
   delayMs = 0;
-  async render(url: string, sessionId: string): Promise<Buffer> {
+  /** Los textos que no caben que "detecta" el navegador (feature 007): se copian al informe que pasa el servicio. */
+  textOverflow: TextOverflow[] = [];
+  async render(url: string, sessionId: string, report?: RenderReport): Promise<Buffer> {
     this.calls.push({ url, sessionId });
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     if (this.fail) throw new Error('fallo de renderizado simulado');
+    if (report) report.textOverflow = [...this.textOverflow];
     return Buffer.from('%PDF-1.4 fake');
   }
   async close(): Promise<void> {}

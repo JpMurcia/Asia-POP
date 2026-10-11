@@ -4,6 +4,7 @@ import { toHttpError } from '../api/alegra-settings.routes';
 import { HttpError } from '../api/errors';
 import type { AppContext } from '../context';
 import { OmittedItemRepo, omittedSignature } from '../custom/omitted-item.repo';
+import type { RenderReport } from '../pdf/pdf.service';
 import { photoTarget } from '../pdf/photo-target';
 import { collectPhotoUrls } from '../pdf/photo-variants';
 import { buildCatalog } from './catalog-builder';
@@ -245,11 +246,12 @@ export class CatalogService {
         }
       }
       jobs.update(jobId, { step: 'Renderizando páginas', progress: 30 });
-      const pdf = await renderer.render(printUrl, sid);
+      const rendered: RenderReport = { textOverflow: [] };
+      const pdf = await renderer.render(printUrl, sid, rendered);
       jobs.update(jobId, { step: 'Guardando archivo', progress: 90 });
       const entry = history.add(pdf, report.counts.included, report.counts.omitted, params);
       // Pasar el tamaño objetivo no aborta nada: solo se informa el tamaño y la pantalla decide si avisa (FR-012)
-      jobs.complete(jobId, entry.id, { sizeBytes: pdf.length, quality });
+      jobs.complete(jobId, entry.id, { sizeBytes: pdf.length, quality, textOverflow: rendered.textOverflow });
     } catch (e) {
       // Nunca se entrega un PDF parcial (principio II).
       jobs.fail(jobId, (e as Error).message || 'No se pudo generar el PDF.');

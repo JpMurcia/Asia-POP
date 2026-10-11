@@ -370,6 +370,119 @@ describe('TemplatePage', () => {
     });
   });
 
+  describe('nombre separado (feature 007)', () => {
+    const separado = (over: Partial<ProductsEl> = {}) =>
+      withProducts({ nameStyle: 'separado', nameColor: '#00FF66', nameFill: '#112233', nameGlow: true, ...over });
+    const row = (container: HTMLElement, i = 0) => container.querySelectorAll<HTMLElement>('[data-testid="product-card"]')[i]!;
+    const nameOf = (r: HTMLElement) => r.querySelector<HTMLElement>('[data-part="name"]');
+
+    it('cada producto muestra su nombre en un rótulo aparte, fuera de la burbuja y de la foto', () => {
+      const { container } = render(<TemplatePage template={separado()} page="productos" tokens={tokens} items={[alegra('1'), custom, bundle]} />);
+      for (let i = 0; i < 3; i++) {
+        const r = row(container, i);
+        const tag = nameOf(r)!;
+        expect(tag, `producto ${i}`).not.toBeNull();
+        expect(tag.closest('[data-part="bubble"]')).toBeNull();
+        expect(tag.closest('[data-part="photo"]')).toBeNull();
+        expect(tag.querySelector('.pb-name')).not.toBeNull();
+        expect(r.querySelector('[data-part="bubble"] .pb-name')).toBeNull();
+      }
+      expect(nameOf(row(container, 0))).toHaveTextContent('Producto 1');
+      expect(nameOf(row(container, 1))).toHaveTextContent('Caja de mochis');
+      expect(nameOf(row(container, 2))).toHaveTextContent('Combo regalo');
+    });
+
+    it('el rótulo lleva el color, el fondo y el resplandor de la plantilla', () => {
+      const { container } = render(<TemplatePage template={separado()} page="productos" tokens={tokens} items={[alegra('1')]} />);
+      const tag = nameOf(row(container))!;
+      expect(getComputedStyle(tag).color).toBe('rgb(0, 255, 102)');
+      expect(getComputedStyle(tag).backgroundColor).toBe('rgb(17, 34, 51)');
+      expect(tag.style.textShadow.toLowerCase()).toContain('#00ff66');
+    });
+
+    it('con una clave de paleta usa el color de la plantilla, y sin resplandor no pone sombra', () => {
+      const { container } = render(
+        <TemplatePage template={separado({ nameColor: 'a1', nameFill: 'transparent', nameGlow: false })} page="productos" tokens={tokens} items={[alegra('1')]} />,
+      );
+      const tag = nameOf(row(container))!;
+      expect(getComputedStyle(tag).color).toBe('rgb(255, 0, 122)');
+      expect(getComputedStyle(tag).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(tag.style.textShadow).toBe('');
+    });
+
+    it('la burbuja trae la descripción y los datos extra pero no el nombre', () => {
+      const { container } = render(<TemplatePage template={separado()} page="productos" tokens={tokens} items={[alegra('1'), custom, bundle]} />);
+      const bubble = (i: number) => row(container, i).querySelector<HTMLElement>('[data-part="bubble"]')!;
+      expect(bubble(0)).toHaveTextContent('Descripción 1');
+      expect(bubble(0)).not.toHaveTextContent('Producto 1');
+      expect(bubble(1)).toHaveTextContent('Sabores: FRESA, MANGO');
+      expect(bubble(1)).toHaveTextContent('Caja x 6 UND');
+      expect(bubble(1)).not.toHaveTextContent('Caja de mochis');
+      expect(bubble(2)).toHaveTextContent('Incluye: 2 × Shin');
+      expect(bubble(2)).not.toHaveTextContent('Combo regalo');
+    });
+
+    it('sin descripción ni extras no hay burbuja, pero el producto conserva nombre y precio', () => {
+      const { container } = render(
+        <TemplatePage template={separado()} page="productos" tokens={tokens} items={[{ ...alegra('1'), description: '' } as CatalogItem]} />,
+      );
+      const r = row(container);
+      expect(r.querySelector('[data-part="bubble"]')).toBeNull();
+      expect(nameOf(r)).toHaveTextContent('Producto 1');
+      expect(r.querySelector('[data-part="price"]')).toHaveTextContent('$9.000');
+    });
+
+    it.each(['sello', 'cinta', 'gris'] as const)('un producto agotado con el estilo %s conserva visibles su nombre y su precio', (sold) => {
+      const { container } = render(<TemplatePage template={separado({ sold })} page="productos" tokens={tokens} items={[alegra('2', true)]} />);
+      const r = row(container);
+      expect(r).toHaveAttribute('data-sold-out', 'true');
+      expect(r).toHaveTextContent('AGOTADO');
+      expect(nameOf(r)).toHaveTextContent('Producto 2');
+      expect(r.querySelector('[data-part="price"]')).toHaveTextContent('$9.000');
+      expect(nameOf(r)!.closest('[data-part="photo"]')).toBeNull();
+    });
+
+    it('el rótulo se pinta antes que la burbuja (el nombre se lee antes que la descripción)', () => {
+      const { container } = render(<TemplatePage template={separado()} page="productos" tokens={tokens} items={[alegra('1')]} />);
+      const r = row(container);
+      expect(nameOf(r)!.compareDocumentPosition(r.querySelector('[data-part="bubble"]')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('con nameStyle burbuja el producto se dibuja como antes: el nombre dentro de la burbuja y sin rótulo', () => {
+      const { container } = render(<TemplatePage template={withProducts({ nameStyle: 'burbuja' })} page="productos" tokens={tokens} items={[alegra('1')]} />);
+      const r = row(container);
+      expect(nameOf(r)).toBeNull();
+      expect(r.querySelector('[data-part="bubble"] .pb-name')).toHaveTextContent('Producto 1');
+    });
+
+    it('cada fila marca el nombre del producto con data-item-name para el aviso de textos que no caben', () => {
+      const { container } = render(<TemplatePage template={separado()} page="productos" tokens={tokens} items={[alegra('1'), custom]} />);
+      expect(row(container, 0)).toHaveAttribute('data-item-name', 'Producto 1');
+      expect(row(container, 1)).toHaveAttribute('data-item-name', 'Caja de mochis');
+    });
+
+    it.each(['alternado', 'tarjetas', 'lista'] as const)('con %s el rótulo no se encima con la foto, la burbuja ni el precio', (layout) => {
+      const { container } = render(<TemplatePage template={separado({ layout })} page="productos" tokens={tokens} items={[alegra('1'), alegra('2'), alegra('3')]} />);
+      const box = (n: HTMLElement | null) => {
+        const x = Number.parseFloat(n!.style.left);
+        const y = Number.parseFloat(n!.style.top);
+        const w = Number.parseFloat(n!.style.width);
+        const h = Number.parseFloat(n!.style.height || n!.style.maxHeight || n!.style.minHeight || '0');
+        return { x, y, w, h };
+      };
+      for (let i = 0; i < 3; i++) {
+        const r = row(container, i);
+        const name = box(nameOf(r));
+        for (const part of ['photo', 'bubble'] as const) {
+          const other = box(r.querySelector<HTMLElement>(`[data-part="${part}"]`));
+          const ox = Math.min(name.x + name.w, other.x + other.w) - Math.max(name.x, other.x);
+          const oy = Math.min(name.y + name.h, other.y + other.h) - Math.max(name.y, other.y);
+          expect(ox > 0.01 && oy > 0.01, `${layout} fila ${i} nombre/${part}`).toBe(false);
+        }
+      }
+    });
+  });
+
   describe('tamaño de la foto (feature 007)', () => {
     const three = [alegra('1'), alegra('2'), alegra('3')];
     const photos = (container: HTMLElement) => Array.from(container.querySelectorAll<HTMLElement>('[data-part="photo"]'));

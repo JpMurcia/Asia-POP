@@ -103,9 +103,10 @@ function alternado(W: number, H: number, { sw, sh, named }: Geo): RowLayout[] {
       align: 'center' as const,
     };
     if (named) {
-      // De la orilla de la foto (con un respiro del 1 % del ancho) al borde de la burbuja del otro lado
-      const x = left ? bubble.x + 0.047 * W : bubble.x;
-      const right = left ? bubble.x + bubble.w : 0.495 * W;
+      // De la orilla de la foto (con un respiro del 1 % del ancho) hasta cerca del borde exterior de la burbuja: el
+      // 3 % de ancho que se deja libre evita el logo de la esquina superior de Neón Noche
+      const x = left ? bubble.x + 0.047 * W : bubble.x + 0.03 * W;
+      const right = left ? bubble.x + bubble.w - 0.03 * W : 0.495 * W;
       row.name = { x, y: top + 0.01 * rowH, w: right - x, h: 0.17 * rowH };
     }
     return row;

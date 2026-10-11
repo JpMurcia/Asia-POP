@@ -767,3 +767,52 @@ describe('pantalla Generar catálogo', () => {
     });
   });
 });
+
+describe('textos que no caben completos (feature 007)', () => {
+  const done = (extra: Record<string, unknown> = {}) =>
+    mockApi({ 'GET /api/catalog/jobs/current': () => json(200, { status: 'done', catalogId: 'c1', sizeBytes: 1_000_000, quality: 'optimized', ...extra }) });
+
+  it('al terminar muestra bajo el aviso de éxito los productos con texto que no cupo, con un enlace a Apariencia', async () => {
+    done({ textOverflow: [{ item: 'Shin Ramyun Picante', part: 'name' }, { item: 'Caja de mochis', part: 'bubble' }] });
+    renderPage();
+    expect(await screen.findByText('2 producto(s) tienen texto que no cabe completo')).toBeInTheDocument();
+    const notice = screen.getByTestId('text-overflow-notice');
+    expect(notice).toHaveTextContent('Shin Ramyun Picante');
+    expect(notice).toHaveTextContent('Caja de mochis');
+    expect(notice).toHaveTextContent('Agranda la zona o la foto de los productos en Apariencia, o acorta el texto, y genera de nuevo.');
+    expect(screen.getByRole('link', { name: /Apariencia/ })).toHaveAttribute('href', '/apariencia');
+    // el PDF se puede descargar igual
+    expect(screen.getByRole('link', { name: 'Descargar PDF' })).toBeInTheDocument();
+  });
+
+  it('un producto con el nombre y la burbuja afectados se cuenta una sola vez', async () => {
+    done({ textOverflow: [{ item: 'Largo', part: 'name' }, { item: 'Largo', part: 'bubble' }] });
+    renderPage();
+    expect(await screen.findByText('1 producto(s) tienen texto que no cabe completo')).toBeInTheDocument();
+  });
+
+  it('con más de 20 productos lista 20 y dice cuántos más hay', async () => {
+    const many = Array.from({ length: 23 }, (_, i) => ({ item: `Producto ${i + 1}`, part: 'name' as const }));
+    done({ textOverflow: many });
+    renderPage();
+    expect(await screen.findByText('23 producto(s) tienen texto que no cabe completo')).toBeInTheDocument();
+    expect(screen.getByText(/Producto 20\b/)).toBeInTheDocument();
+    expect(screen.queryByText(/Producto 21\b/)).not.toBeInTheDocument();
+    expect(screen.getByText(/y 3 más/)).toBeInTheDocument();
+  });
+
+  it('sin textOverflow no hay aviso nuevo y todo lo anterior sigue igual', async () => {
+    done();
+    renderPage();
+    expect(await screen.findByRole('link', { name: 'Descargar PDF' })).toBeInTheDocument();
+    expect(screen.queryByText(/tienen texto que no cabe completo/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/supera los 25 MB/)).not.toBeInTheDocument();
+  });
+
+  it('una lista vacía tampoco muestra aviso', async () => {
+    done({ textOverflow: [] });
+    renderPage();
+    expect(await screen.findByRole('link', { name: 'Descargar PDF' })).toBeInTheDocument();
+    expect(screen.queryByText(/tienen texto que no cabe completo/)).not.toBeInTheDocument();
+  });
+});

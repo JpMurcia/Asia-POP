@@ -81,6 +81,48 @@ describe('prepare / generate', () => {
     expect(pdf.headers['content-disposition']).toMatch(/attachment; filename="catalogo-\d{4}-\d{2}-\d{2}-\d{4}\.pdf"/);
   });
 
+  it('un trabajo terminado entrega los textos que no cupieron (textOverflow) y sigue siendo un éxito', async () => {
+    const renderer = new FakeRenderer();
+    renderer.textOverflow = [{ item: 'Producto largo', part: 'name' }, { item: 'Otro', part: 'bubble' }];
+    const { agent } = await setup(() => [item('1')], renderer);
+    const { body: prep } = await agent.post('/api/catalog/prepare').send({});
+    await agent.post('/api/catalog/generate').send({ prepareId: prep.prepareId }).expect(202);
+    const job = await waitFor(agent, 'done');
+    expect(job.textOverflow).toEqual([{ item: 'Producto largo', part: 'name' }, { item: 'Otro', part: 'bubble' }]);
+    expect(job.catalogId).toBeTruthy();
+    expect((await agent.get('/api/catalog/history').expect(200)).body).toHaveLength(1);
+  });
+
+  it('sin textos recortados el trabajo no trae textOverflow', async () => {
+    const { agent } = await setup(() => [item('1')]);
+    const { body: prep } = await agent.post('/api/catalog/prepare').send({});
+    await agent.post('/api/catalog/generate').send({ prepareId: prep.prepareId }).expect(202);
+    const job = await waitFor(agent, 'done');
+    expect('textOverflow' in job).toBe(false);
+  });
+
+  it('un renderizador que no usa el informe sigue funcionando', async () => {
+    const renderer = new FakeRenderer();
+    renderer.render = async () => Buffer.from('%PDF-1.4 fake');
+    const { agent } = await setup(() => [item('1')], renderer);
+    const { body: prep } = await agent.post('/api/catalog/prepare').send({});
+    await agent.post('/api/catalog/generate').send({ prepareId: prep.prepareId }).expect(202);
+    const job = await waitFor(agent, 'done');
+    expect(job.catalogId).toBeTruthy();
+    expect('textOverflow' in job).toBe(false);
+  });
+
+  it('el estado de un trabajo en reposo o fallido no trae textOverflow', async () => {
+    const renderer = new FakeRenderer();
+    renderer.fail = true;
+    renderer.textOverflow = [{ item: 'x', part: 'name' }];
+    const { agent } = await setup(() => [item('1')], renderer);
+    const { body: prep } = await agent.post('/api/catalog/prepare').send({});
+    await agent.post('/api/catalog/generate').send({ prepareId: prep.prepareId }).expect(202);
+    const job = await waitFor(agent, 'failed');
+    expect('textOverflow' in job).toBe(false);
+  });
+
   it('el navegador usa una sesión temporal que se destruye al terminar', async () => {
     const { agent, renderer, ctx } = await setup(() => [item('1')]);
     const { body: prep } = await agent.post('/api/catalog/prepare').send({});

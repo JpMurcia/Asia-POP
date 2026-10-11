@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { HttpError } from '../api/errors';
 import type { PdfQuality } from '../catalog/pdf-quality';
+import type { TextOverflow } from '../catalog/types';
 
 export type JobStatus = 'idle' | 'preparing' | 'rendering' | 'done' | 'failed';
 
@@ -15,6 +16,8 @@ export interface JobState {
   sizeBytes?: number;
   /** Solo en `done`: la calidad con la que se generó; la pantalla la usa para decidir si avisa del tamaño (FR-012). */
   quality?: PdfQuality;
+  /** Solo en `done` y solo si hay alguno: los productos cuyo texto no cupo completo en el PDF (feature 007). */
+  textOverflow?: TextOverflow[];
 }
 
 /** Un único trabajo a la vez (FR-031). */
@@ -48,7 +51,11 @@ export class JobManager {
     if (this.state.id === id) this.state = { status: 'idle' };
   }
 
-  complete(id: string, catalogId: string, result: { sizeBytes?: number; quality?: PdfQuality } = {}): void {
+  complete(
+    id: string,
+    catalogId: string,
+    result: { sizeBytes?: number; quality?: PdfQuality; textOverflow?: TextOverflow[] } = {},
+  ): void {
     if (this.state.id === id) {
       this.state = {
         id,
@@ -58,6 +65,7 @@ export class JobManager {
         catalogId,
         ...(result.sizeBytes !== undefined ? { sizeBytes: result.sizeBytes } : {}),
         ...(result.quality !== undefined ? { quality: result.quality } : {}),
+        ...(result.textOverflow && result.textOverflow.length > 0 ? { textOverflow: result.textOverflow } : {}),
       };
     }
   }

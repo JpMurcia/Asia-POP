@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import puppeteer, { type Browser } from 'puppeteer';
+import type { TextOverflow } from '../catalog/types';
 
 const FALLBACK_BROWSERS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -22,10 +23,29 @@ export async function resolveChromePath(configured?: string): Promise<string | u
   return FALLBACK_BROWSERS.find((p) => fs.existsSync(p));
 }
 
+/** Lo que el navegador observó al dibujar el catálogo y que no forma parte del PDF (parámetro de salida de `render`). */
+export interface RenderReport {
+  /** Productos cuyo texto no cupo completo (feature 007). */
+  textOverflow: TextOverflow[];
+}
+
 export interface PdfRenderer {
-  /** Abre la URL (con la cookie de sesión dada) y devuelve el PDF A4. */
-  render(url: string, sessionId: string): Promise<Buffer>;
+  /**
+   * Abre la URL (con la cookie de sesión dada) y devuelve el PDF A4. Si se pasa `report`, el renderizador anota en él
+   * lo que observó del dibujo; un renderizador que no lo usa sigue siendo válido.
+   */
+  render(url: string, sessionId: string, report?: RenderReport): Promise<Buffer>;
   close(): Promise<void>;
+}
+
+/** Los textos recortados que dejó la vista de impresión; un valor inesperado cuenta como ninguno (nunca aborta). */
+function parseTextOverflow(raw: unknown): TextOverflow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((r): TextOverflow[] => {
+    const item = (r as { item?: unknown })?.item;
+    const part = (r as { part?: unknown })?.part;
+    return typeof item === 'string' && (part === 'name' || part === 'bubble') ? [{ item, part }] : [];
+  });
 }
 
 /** Puppeteer con navegador reutilizado entre generaciones. */
@@ -45,7 +65,7 @@ export class PuppeteerRenderer implements PdfRenderer {
     return this.browser;
   }
 
-  async render(url: string, sessionId: string): Promise<Buffer> {
+  async render(url: string, sessionId: string, report?: RenderReport): Promise<Buffer> {
     const browser = await this.getBrowser();
     const page = await browser.newPage();
     try {
@@ -56,6 +76,8 @@ export class PuppeteerRenderer implements PdfRenderer {
       // un recuadro roto ni se entrega un PDF parcial (principio II)
       const broken = Number(await page.evaluate('window.__printBrokenImages ?? 0'));
       if (broken > 0) throw new Error(`No se pudo cargar la foto de ${broken} producto(s); no se generó el PDF.`);
+      // Los textos que no cupieron completos no impiden generar: la persona los ve al terminar (feature 007)
+      if (report) report.textOverflow = parseTextOverflow(await page.evaluate('window.__printTextOverflow ?? []'));
       await page.evaluate('document.fonts.ready');
       const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
       return Buffer.from(pdf);

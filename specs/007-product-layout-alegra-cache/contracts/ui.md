@@ -12,13 +12,13 @@ El inspector del **bloque de productos** se reordena en secciones con título. L
 | --- | --- | --- |
 | 1 | **Tamaño de los productos** | Zona: «Ancho %» y «Alto %» (los `w` y `h` del bloque) · Foto: «Ancho %» y «Alto %» (`photoW`, `photoH`; 100 = tamaño original) · nota de límite · botón «Restaurar tamaños originales» |
 | 2 | **Distribución** | Alternado · Tarjetas · Lista (como hoy) |
-| 3 | **Nombre del producto** | «Estilo»: Separado · Dentro de la burbuja · «Color del nombre» · con *Separado*: «Fondo del rótulo» y el interruptor «Resplandor neón» |
+| 3 | **Nombre del producto** | «Estilo del nombre»: Separado · Dentro de la burbuja · «Color del nombre» · con *Separado*: «Fondo del rótulo» y el interruptor «Resplandor neón» |
 | 4 | **Foto del producto**, **Descripción**, **Precio**, **Agotados** | Los campos de hoy, sin cambios |
 | 5 | **Posición** | Solo «X %» y «Y %» |
 
 - Los campos de la sección 1 son los **mismos** controles numéricos de siempre (`NumberField`): se escribe el valor y se confirma con Enter o al salir del campo. No dependen de que el bloque esté desbloqueado.
 - Bajo los campos, una nota fija: «Para arrastrar la zona en la página, pulsa Desbloquear.» (el bloque sigue naciendo «Fijo»).
-- **Rotulación**: «Ancho %» y «Alto %» se agrupan bajo los subtítulos «Zona de productos» y «Foto del producto» para que no se confundan.
+- **Rotulación**: «Ancho %» y «Alto %» se agrupan bajo los subtítulos «Zona de productos» y «Tamaño de la foto» (cada par es un `role="group"` con ese nombre) para que no se confundan con la sección «Foto del producto». El selector del nombre se llama «Estilo del nombre» para no chocar con el «Estilo» de los agotados.
 
 ### Límites (FR-004)
 
@@ -31,7 +31,7 @@ Un valor fuera de lo permitido **se recorta al máximo o mínimo que sí cabe** 
 | Alto de la foto sobre el máximo de la zona | «El alto máximo de la foto en esta zona es N %. Agranda el alto de la zona para darle más espacio.» |
 | Foto bajo 50 % | El campo limita en 50; no hay mensaje (el rango ya lo dice) |
 
-- Si la nota de límite está visible, tiene `role="status"`. El máximo de cada escala se recalcula al cambiar la zona o la distribución (`photoScaleLimits`).
+- La nota de límite se muestra mientras el valor guardado esté en su máximo (o lo supere) y, la de la zona, mientras esté en su mínimo; sin nota no se dibuja nada (el aviso temporal ya se anuncia). Cuando está visible, tiene `role="status"`. El máximo de cada escala se recalcula al cambiar la zona o la distribución (`photoScaleLimits`).
 - Si el cambio de zona deja una escala por encima de su nuevo máximo, **no se cambia lo guardado**: se dibuja recortada y la nota lo dice. Así deshacer y rehacer devuelven valores exactos.
 - «Restaurar tamaños originales»: pone `photoW` y `photoH` en 100 y `w` y `h` del bloque en los de la plantilla de fábrica de la que partió (`template.base`). Es **un solo paso** de deshacer.
 

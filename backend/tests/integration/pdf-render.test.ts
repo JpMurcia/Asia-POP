@@ -14,7 +14,7 @@ import { baseTemplate } from '../../src/catalog/template-presets';
 import { PuppeteerRenderer } from '../../src/pdf/pdf.service';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
-import { copyOf, startHarness, type Harness } from '../fixtures/pdf-harness';
+import { PNG, copyOf, startHarness, type Harness } from '../fixtures/pdf-harness';
 import { SEED, testConfig, testContext } from '../helpers';
 
 const DIST = path.join(ROOT_DIR, 'frontend', 'dist');
@@ -401,4 +401,130 @@ describe('artículos omitidos con Chrome real (feature 006)', () => {
     expect(back.text).toContain('AGOTADO');
     expect(back.pdfPages).toBe(baseline.pdfPages);
   }, 240_000);
+});
+
+/**
+ * Nombre separado (feature 007) con Chrome real: en Neón Noche el texto del PDF trae el nombre de cada producto
+ * (Alegra, propio y combo) antes de su descripción, y el resto del catálogo no cambia respecto del mismo catálogo con
+ * el nombre dentro de la burbuja.
+ */
+describe('nombre separado en el PDF real (feature 007)', () => {
+  let h: Harness;
+  let separado: Awaited<ReturnType<Harness['generate']>>;
+  let burbuja: Awaited<ReturnType<Harness['generate']>>;
+
+  const alegraItem = (url: string, id: string, name: string, description: string, over: Partial<AlegraItemRaw> = {}): AlegraItemRaw => ({
+    id,
+    name,
+    description,
+    status: 'active',
+    price: 9000,
+    category: { id: 'c1', name: 'RAMEN' },
+    images: [{ id: Number(id), name: `foto-${id}`, url: `${url}/img/generic.png?item=${id}`, favorite: true }],
+    ...over,
+  });
+
+  beforeAll(async () => {
+    h = await startHarness({
+      categories: [{ id: 'c1', name: 'RAMEN' }],
+      items: (url) => [
+        alegraItem(url, '1', 'Shin Ramyun', 'Caldo intenso y picante'),
+        alegraItem(url, '2', 'Champong', 'Sopa de mariscos', { inventory: { availableQuantity: 0, trackInventory: true } }),
+      ],
+      seed: async (agent) => {
+        const section = (await agent.post('/api/sections/custom').send({ name: 'MOCHIS' }).expect(201)).body;
+        const product = (
+          await agent
+            .post('/api/custom-products')
+            .send({
+              sectionId: section.id,
+              name: 'Caja de mochis',
+              description: 'Seis mochis rellenos de crema',
+              price: null,
+              options: [{ label: 'Caja x 6 UND', price: 30000, maxFlavors: 2 }],
+              flavors: ['FRESA', 'MANGO'],
+            })
+            .expect(201)
+        ).body;
+        await agent.put(`/api/custom-products/${product.id}/image`).attach('image', PNG, 'p.png').expect(200);
+        const bundle = (
+          await agent
+            .post('/api/bundles')
+            .send({
+              sectionId: section.id,
+              name: 'Combo regalo',
+              description: 'Para sorprender a alguien',
+              pricing: { type: 'discount', percent: 10 },
+              components: [
+                { source: 'alegra', productId: '1', quantity: 2 },
+                { source: 'custom', productId: product.id, quantity: 1 },
+              ],
+            })
+            .expect(201)
+        ).body;
+        await agent.put(`/api/bundles/${bundle.id}/image`).attach('image', PNG, 'b.png').expect(200);
+      },
+    });
+    // La misma Neón Noche con el nombre dentro de la burbuja, para comparar el resto del catálogo
+    await h.save((ws) => ({
+      templates: [
+        ...ws.templates,
+        (() => {
+          const t = copyOf(baseTemplate('neon'), 'tburbuja', 'Neón con nombre en la burbuja');
+          t.pages.productos.els = t.pages.productos.els.map((e) => (e.type === 'products' ? { ...e, nameStyle: 'burbuja' as const } : e));
+          return t;
+        })(),
+      ],
+    }));
+    separado = await h.generate({ prepare: { templateId: 'neon' } });
+    burbuja = await h.generate({ prepare: { templateId: 'tburbuja' } });
+  }, 240_000);
+
+  afterAll(async () => {
+    await h?.close();
+  });
+
+  it('Neón Noche viene con el nombre separado y la otra copia con el nombre en la burbuja', () => {
+    const style = (r: typeof separado) => {
+      const el = r.payload.template.pages.productos.els.find((e) => e.type === 'products');
+      return el && el.type === 'products' ? el.nameStyle : undefined;
+    };
+    expect(style(separado)).toBe('separado');
+    expect(style(burbuja)).toBe('burbuja');
+  });
+
+  it.each([
+    ['Shin Ramyun', 'Caldo intenso y picante'],
+    ['Champong', 'Sopa de mariscos'],
+    ['Caja de mochis', 'Seis mochis rellenos de crema'],
+    ['Combo regalo', 'Para sorprender a alguien'],
+  ])('el nombre «%s» aparece en el texto del PDF antes de su descripción', (name, description) => {
+    const page = separado.pageTexts.find((t) => t.includes(name) && t.includes(description));
+    expect(page, `página con ${name}`).toBeDefined();
+    expect(page!.indexOf(name)).toBeLessThan(page!.indexOf(description));
+  });
+
+  it('el catálogo tiene las mismas páginas y el mismo texto fuera de las páginas de productos que con el nombre en la burbuja', () => {
+    expect(separado.pdfPages).toBe(burbuja.pdfPages);
+    expect(separado.pageTexts).toHaveLength(burbuja.pageTexts.length);
+    const isProductPage = (t: string) => /\$\d/.test(t);
+    separado.pageTexts.forEach((t, i) => {
+      if (!isProductPage(t)) expect(t, `página ${i + 1}`).toBe(burbuja.pageTexts[i]);
+    });
+  });
+
+  it('los precios, el AGOTADO y las opciones son los mismos con ambos estilos', () => {
+    const prices = (r: typeof separado) => [...new Set(r.text.match(/\$\d[\d.]*/g) ?? [])].sort();
+    expect(prices(separado)).toEqual(prices(burbuja));
+    const soldOut = (r: typeof separado) => r.pageTexts.filter((t) => t.includes('AGOTADO')).length;
+    expect(soldOut(separado)).toBe(soldOut(burbuja));
+    expect(separado.text).toContain('Caja x 6 UND');
+    expect(separado.text).toContain('Sabores: FRESA, MANGO');
+    expect(separado.text).toMatch(/Incluye: 2 × Shin Ramyun/);
+  });
+
+  it('el catálogo se generó sin textos que no caben', () => {
+    expect(separado.textOverflow).toEqual([]);
+    expect(burbuja.textOverflow).toEqual([]);
+  });
 });

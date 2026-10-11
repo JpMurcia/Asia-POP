@@ -221,3 +221,55 @@ describe('useFit', () => {
     expect(small).toBeLessThan(1);
   });
 });
+
+describe('data-clipped (feature 007)', () => {
+  const steps = [{ '--lines': '3' }, { '--lines': '2' }, { '--lines': '1' }];
+
+  it('un texto que cabe reduciendo la letra no se marca como recortado', () => {
+    metrics.naturalHeight = 160;
+    const { container } = render(<Box fontSize={20} opts={{ lastResort: steps }} />);
+    expect(fitOf(box(container))).toBeLessThan(1);
+    expect(box(container)).not.toHaveAttribute('data-clipped');
+    expect(box(container)).not.toHaveAttribute('data-overflow');
+  });
+
+  it('un texto que cabe sin ajustar tampoco', () => {
+    const { container } = render(<Box fontSize={20} opts={{ lastResort: steps }} />);
+    expect(box(container)).not.toHaveAttribute('data-clipped');
+  });
+
+  it('al aplicar un paso de último recurso queda marcado como recortado, y solo con data-overflow si aun así no cabe', () => {
+    // el contenido no cabe a ningún tamaño, pero cada paso lo acorta: alto = 300 × fit × (líneas / 5)
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      const lines = parseFloat(this.style.getPropertyValue('--lines') || '5');
+      return 300 * fitOf(this) * (lines / 5);
+    });
+    const { container } = render(<Box fontSize={20} limit={100} opts={{ lastResort: steps }} />);
+    expect(box(container)).toHaveAttribute('data-clipped', 'true');
+    expect(box(container)).not.toHaveAttribute('data-overflow');
+  });
+
+  it('si ni con todos los pasos cabe, queda con data-clipped y con data-overflow', () => {
+    metrics.naturalHeight = 10_000;
+    const { container } = render(<Box fontSize={20} opts={{ lastResort: steps }} />);
+    expect(box(container)).toHaveAttribute('data-clipped', 'true');
+    expect(box(container)).toHaveAttribute('data-overflow', 'true');
+  });
+
+  it('sin pasos de último recurso nunca se marca como recortado (solo data-overflow)', () => {
+    metrics.naturalHeight = 10_000;
+    const { container } = render(<Box fontSize={20} />);
+    expect(box(container)).not.toHaveAttribute('data-clipped');
+    expect(box(container)).toHaveAttribute('data-overflow', 'true');
+  });
+
+  it('al volver a ajustar con un texto corto se quitan las dos marcas', () => {
+    metrics.naturalHeight = 10_000;
+    const { container, rerender } = render(<Box fontSize={20} dep={0} opts={{ lastResort: steps }} />);
+    expect(box(container)).toHaveAttribute('data-clipped', 'true');
+    metrics.naturalHeight = 50;
+    rerender(<Box fontSize={20} dep={1} opts={{ lastResort: steps }} />);
+    expect(box(container)).not.toHaveAttribute('data-clipped');
+    expect(box(container)).not.toHaveAttribute('data-overflow');
+  });
+});

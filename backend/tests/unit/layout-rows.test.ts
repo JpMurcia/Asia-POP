@@ -477,8 +477,8 @@ describe('layoutRows · nombre separado · dónde queda', () => {
       expect(name.x + name.w, `fila ${i}`).toBeLessThanOrEqual(row.bubble.x + row.bubble.w + 0.01);
       expect(name.y + name.h, `fila ${i}`).toBeLessThanOrEqual(row.bubble.y + 0.01);
       expect(name.y, `fila ${i}`).toBeGreaterThanOrEqual(row.photo.y - 0.01);
-      // el ancho es casi el de la burbuja: solo cede lo que la burbuja se mete bajo la foto
-      expect(name.w).toBeGreaterThan(0.8 * row.bubble.w);
+      // el ancho es casi el de la burbuja: cede lo que la burbuja se mete bajo la foto y un respiro del lado exterior
+      expect(name.w).toBeGreaterThan(0.75 * row.bubble.w);
     });
   });
 

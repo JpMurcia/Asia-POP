@@ -13,10 +13,10 @@ import puppeteer, { type Browser, type Page } from 'puppeteer';
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import { ROOT_DIR } from '../../src/config/env';
-import { resolveChromePath, type PdfRenderer } from '../../src/pdf/pdf.service';
+import { resolveChromePath, type PdfRenderer, type RenderReport } from '../../src/pdf/pdf.service';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import type { PdfQuality } from '../../src/catalog/pdf-quality';
-import type { CatalogPayload, CatalogStructure } from '../../src/catalog/types';
+import type { CatalogPayload, CatalogStructure, TextOverflow } from '../../src/catalog/types';
 import type { Template, WorkspaceState } from '../../src/catalog/template';
 import { startAlegraMock, type AlegraMock } from './alegra-mock';
 import { SEED, testConfig, testContext } from '../helpers';
@@ -45,7 +45,7 @@ export class InspectingRenderer implements PdfRenderer {
   prepare?: (page: Page) => Promise<void>;
   private browser?: Browser;
 
-  async render(url: string, sessionId: string): Promise<Buffer> {
+  async render(url: string, sessionId: string, report?: RenderReport): Promise<Buffer> {
     this.browser ??= await puppeteer.launch({
       headless: true,
       executablePath: await resolveChromePath(),
@@ -60,6 +60,8 @@ export class InspectingRenderer implements PdfRenderer {
       await page.waitForFunction('window.__printReady === true', { timeout: 60_000 });
       await page.evaluate('document.fonts.ready');
       if (this.measure) this.result = await page.evaluate(this.measure);
+      // Lo mismo que lee el renderizador real: los textos que no cupieron completos (feature 007)
+      if (report) report.textOverflow = (await page.evaluate('window.__printTextOverflow ?? []')) as TextOverflow[];
       if (this.inspect) await this.inspect(page);
       return Buffer.from(await page.pdf({ printBackground: true, preferCSSPageSize: true }));
     } finally {
@@ -88,6 +90,8 @@ export interface GenerationResult {
   /** Los bytes del PDF y su longitud (para comparar el peso entre calidades). */
   pdf: Buffer;
   sizeBytes: number;
+  /** Los productos cuyo texto no cupo completo, como los entrega el trabajo terminado (vacío si ninguno). */
+  textOverflow: TextOverflow[];
 }
 
 export interface Harness {
@@ -163,7 +167,7 @@ export async function startHarness(opts: HarnessOptions): Promise<Harness> {
         .post('/api/catalog/generate')
         .send({ prepareId: prep.prepareId, bundleDecisions, ...(quality ? { quality } : {}) })
         .expect(202);
-      let job: { status: string; catalogId?: string; error?: string } = { status: 'rendering' };
+      let job: { status: string; catalogId?: string; error?: string; textOverflow?: TextOverflow[] } = { status: 'rendering' };
       for (let i = 0; i < 480 && (job.status === 'rendering' || job.status === 'preparing'); i++) {
         await new Promise((r) => setTimeout(r, 250));
         job = (await agent.get('/api/catalog/jobs/current')).body;
@@ -189,6 +193,7 @@ export async function startHarness(opts: HarnessOptions): Promise<Harness> {
         measure: renderer.result,
         pdf: res.body as Buffer,
         sizeBytes: (res.body as Buffer).length,
+        textOverflow: job.textOverflow ?? [],
       };
     },
     async close() {

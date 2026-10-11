@@ -630,3 +630,74 @@ describe('bloque de productos: tamaño de los productos (feature 007)', () => {
     expect(headings()).not.toContain('Tamaño de los productos');
   });
 });
+
+describe('bloque de productos: nombre del producto (feature 007)', () => {
+  const inspector = () => screen.getByTestId('inspector');
+  const headings = () => Array.from(inspector().querySelectorAll('.ed-heading')).map((h) => h.textContent);
+
+  async function onProducts() {
+    await start();
+    goToPage('Productos');
+    selectLayer(/^Productos/);
+  }
+  const nameTag = () => canvas().querySelector('[data-part="name"]');
+
+  it('la sección «Nombre del producto» va entre la distribución y «Foto del producto»', async () => {
+    await onProducts();
+    const h = headings();
+    expect(h).toContain('Nombre del producto');
+    expect(h.indexOf('Nombre del producto')).toBeGreaterThan(h.indexOf('Tamaño de los productos'));
+    expect(h.indexOf('Nombre del producto')).toBeLessThan(h.indexOf('Foto del producto'));
+    const order = (a: Element, b: Element) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(order(group('Distribución'), screen.getByText('Nombre del producto', { selector: '.ed-heading' }))).toBeTruthy();
+  });
+
+  it('el estilo se elige entre Separado y Dentro de la burbuja, y cambia el lienzo', async () => {
+    await onProducts();
+    // Neón Noche viene con el nombre separado
+    expect(inGroup('Estilo del nombre', 'Separado')).toHaveAttribute('aria-pressed', 'true');
+    expect(nameTag()).not.toBeNull();
+    fireEvent.click(inGroup('Estilo del nombre', 'Dentro de la burbuja'));
+    expect(inGroup('Estilo del nombre', 'Dentro de la burbuja')).toHaveAttribute('aria-pressed', 'true');
+    expect(nameTag()).toBeNull();
+    expect(canvas().querySelector('[data-part="bubble"] .pb-name')).not.toBeNull();
+    fireEvent.click(inGroup('Estilo del nombre', 'Separado'));
+    expect(nameTag()).not.toBeNull();
+  });
+
+  it('«Fondo del rótulo» y «Resplandor neón» solo aparecen con el estilo Separado', async () => {
+    await onProducts();
+    expect(group('Color del nombre')).toBeInTheDocument();
+    expect(group('Fondo del rótulo')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Resplandor neón' })).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(inGroup('Estilo del nombre', 'Dentro de la burbuja'));
+    expect(group('Color del nombre')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Fondo del rótulo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'Resplandor neón' })).not.toBeInTheDocument();
+  });
+
+  it('los colores se eligen entre los de la paleta y cambian el rótulo', async () => {
+    await onProducts();
+    fireEvent.click(within(group('Color del nombre')).getByRole('button', { name: 'Acento 2' }));
+    expect(within(group('Color del nombre')).getByRole('button', { name: 'Acento 2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(getComputedStyle(nameTag() as HTMLElement).color).toBe('rgb(0, 255, 102)');
+    fireEvent.click(within(group('Fondo del rótulo')).getByRole('button', { name: 'Transparente' }));
+    expect(getComputedStyle(nameTag() as HTMLElement).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  });
+
+  it('el interruptor de resplandor se apaga y se prende', async () => {
+    await onProducts();
+    const glow = () => screen.getByRole('switch', { name: 'Resplandor neón' });
+    fireEvent.click(glow());
+    expect(glow()).toHaveAttribute('aria-checked', 'false');
+    expect((nameTag() as HTMLElement).style.textShadow).toBe('');
+    fireEvent.click(glow());
+    expect(glow()).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('el estilo de agotado conserva su propio grupo «Estilo» (sin chocar con el del nombre)', async () => {
+    await onProducts();
+    expect(inGroup('Estilo', 'Sello')).toBeInTheDocument();
+    expect(screen.getAllByRole('group', { name: 'Estilo' })).toHaveLength(1);
+  });
+});

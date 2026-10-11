@@ -170,6 +170,17 @@ export interface CatalogStructure {
 
 export type AlegraStatus = 'ok' | 'unreachable' | 'not_configured';
 
+/**
+ * Un texto de producto que no cupo completo en el PDF generado (feature 007): lo detecta el navegador que lo dibuja
+ * (`window.__printTextOverflow`) y Generar lo muestra al terminar. No impide generar ni se guarda en el historial.
+ */
+export interface TextOverflow {
+  /** Nombre del producto afectado (ya está en el catálogo que se generó). */
+  item: string;
+  /** Qué texto no cupo completo: el nombre o la burbuja (descripción y datos extra). */
+  part: 'name' | 'bubble';
+}
+
 export interface PanelSummary {
   /** `message` explica por qué Alegra no está disponible (credenciales rechazadas, sin conexión...). */
   alegra: {

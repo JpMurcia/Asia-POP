@@ -161,6 +161,12 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         { kind: 'button', label: 'Restaurar tamaños originales', action: 'restoreProductSizes' },
         { kind: 'note', id: 'products-unlock-note', text: 'Para arrastrar la zona en la página, pulsa Desbloquear.' },
         seg('layout', 'Distribución', [['alternado', 'Alternado'], ['tarjetas', 'Tarjetas'], ['lista', 'Lista']]),
+        heading('Nombre del producto'),
+        seg('nameStyle', 'Estilo del nombre', [['separado', 'Separado'], ['burbuja', 'Dentro de la burbuja']]),
+        color('nameColor', 'Color del nombre'),
+        ...(p.nameStyle === 'separado'
+          ? [color('nameFill', 'Fondo del rótulo', 'transparent'), { kind: 'toggle', key: 'nameGlow', label: 'Resplandor neón' } as FieldDesc]
+          : []),
         heading('Foto del producto'),
         color('cardFill', 'Fondo de la foto', 'transparent'),
         color('ring', 'Anillo'),

@@ -256,3 +256,32 @@ describe('documento del catálogo (vista de impresión)', () => {
     expect(screen.getByTestId('cover-page')).not.toHaveTextContent('Catálogo de productos');
   });
 });
+
+describe('nombre separado en el documento de impresión (feature 007)', () => {
+  it('Neón Noche muestra el nombre de un producto de Alegra, uno propio y un combo en el mismo rótulo, fuera de la burbuja', () => {
+    render(<CatalogDocument payload={payload} />);
+    const cards = screen.getAllByTestId('product-card');
+    const named = (text: string) => cards.find((c) => c.querySelector('[data-part="name"]')?.textContent === text)!;
+    for (const name of ['Producto 1', 'Caja de mochis', 'Combo regalo']) {
+      const card = named(name);
+      expect(card, name).toBeTruthy();
+      expect(card.querySelector('[data-part="bubble"]')?.textContent ?? '').not.toContain(name);
+    }
+  });
+
+  it('el combo sin descripción conserva su burbuja con «Incluye…» y el producto agotado su nombre y su precio', () => {
+    render(<CatalogDocument payload={payload} />);
+    const combo = screen.getAllByTestId('product-card').find((c) => c.querySelector('[data-part="name"]')?.textContent === 'Combo regalo')!;
+    expect(combo.querySelector('[data-part="bubble"]')).toHaveTextContent('Incluye: 2 × Shin');
+    expect(combo).toHaveAttribute('data-sold-out', 'true');
+    expect(combo.querySelector('[data-part="price"]')).toHaveTextContent('$27.000');
+  });
+
+  it('con otra plantilla (nombre dentro de la burbuja) el documento se dibuja como antes', () => {
+    render(<CatalogDocument payload={{ ...payload, template: baseTemplate('pop') }} />);
+    for (const card of screen.getAllByTestId('product-card')) {
+      expect(card.querySelector('[data-part="name"]')).toBeNull();
+      expect(card.querySelector('[data-part="bubble"] .pb-name')).not.toBeNull();
+    }
+  });
+});

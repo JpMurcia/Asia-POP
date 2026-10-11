@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import type { Template } from '../../../backend/src/catalog/template';
-import type { CatalogPayload } from '../../../backend/src/catalog/types';
+import type { CatalogPayload, TextOverflow } from '../../../backend/src/catalog/types';
 import { countBrokenProductImages } from '../print/broken-images';
 import CatalogDocument from '../print/CatalogDocument';
 import { loadTemplateAssets } from '../print/preload';
+import { collectTextOverflow } from '../print/text-overflow';
 import { api, ApiError } from '../services/api';
 
 declare global {
@@ -12,6 +13,8 @@ declare global {
     __printReady?: boolean;
     /** Fotos de producto que terminaron sin cargar; el renderizador aborta si es mayor que 0 (nunca un PDF con fotos rotas). */
     __printBrokenImages?: number;
+    /** Productos cuyo texto no cupo completo (nombre o burbuja); el renderizador los entrega a Generar (feature 007). */
+    __printTextOverflow?: TextOverflow[];
   }
 }
 
@@ -55,11 +58,13 @@ export default function Print({ preview = false }: { preview?: boolean }) {
     if (!payload) return;
     window.__printReady = false;
     window.__printBrokenImages = 0;
+    window.__printTextOverflow = [];
     // Espera un ciclo de render para que existan las imágenes en el DOM
     const t = setTimeout(() => {
       void whenAssetsReady(payload.template).then(() => {
         // Antes de marcar la página como lista: quien exporta el PDF lee este dato justo después
         window.__printBrokenImages = countBrokenProductImages();
+        window.__printTextOverflow = collectTextOverflow();
         window.__printReady = true;
       });
     }, 0);

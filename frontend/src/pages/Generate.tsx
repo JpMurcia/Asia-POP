@@ -16,6 +16,7 @@ import type {
   CatalogStructure,
   GenerationOptions,
   ReviewReport,
+  TextOverflow,
 } from '../../../backend/src/catalog/types';
 import StructurePreview from '../components/StructurePreview';
 import { Alert, Button, Card, Field, PageHeader } from '../components/ui';
@@ -31,7 +32,12 @@ interface Job {
   /** Solo al terminar: tamaño del PDF en bytes y la calidad con la que se generó. */
   sizeBytes?: number;
   quality?: PdfQuality;
+  /** Solo al terminar y solo si hay alguno: los productos cuyo texto no cupo completo en el PDF. */
+  textOverflow?: TextOverflow[];
 }
+
+/** Cuántos nombres de producto se listan en el aviso de textos que no caben; el resto se cuenta. */
+const TEXT_OVERFLOW_LISTED = 20;
 
 interface Prepared {
   prepareId: string;
@@ -497,6 +503,7 @@ export default function Generate() {
               Descargar PDF
             </a>
           </Alert>
+          {job.textOverflow && job.textOverflow.length > 0 && <TextOverflowNotice entries={job.textOverflow} />}
           {/* Solo con Optimizada: con Original la persona eligió conservar las fotos y no se le avisa del peso */}
           {job.quality === 'optimized' && job.sizeBytes !== undefined && exceedsTarget(job.sizeBytes) && (
             <Alert
@@ -510,5 +517,25 @@ export default function Generate() {
       )}
       {job.status === 'failed' && <Alert tone="error">No se pudo generar el PDF: {job.error}</Alert>}
     </section>
+  );
+}
+
+/** Aviso al terminar una generación: productos cuyo texto no se ve completo, para agrandar la zona o acortar el texto. */
+function TextOverflowNotice({ entries }: { entries: TextOverflow[] }) {
+  // Un producto con el nombre y la burbuja afectados cuenta una sola vez
+  const names = [...new Set(entries.map((e) => e.item))];
+  const listed = names.slice(0, TEXT_OVERFLOW_LISTED);
+  const more = names.length - listed.length;
+  return (
+    <Alert tone="warning" title={`${names.length} producto(s) tienen texto que no cabe completo`} data-testid="text-overflow-notice">
+      <p>
+        Aparecen con la letra más pequeña o con el texto cortado: {listed.join(', ')}
+        {more > 0 ? ` y ${more} más` : ''}. Agranda la zona o la foto de los productos en Apariencia, o acorta el texto, y
+        genera de nuevo.
+      </p>
+      <Link to="/apariencia" className="font-bold">
+        Ir a Apariencia
+      </Link>
+    </Alert>
   );
 }

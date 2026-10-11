@@ -102,6 +102,36 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/*
+ * Rótulo del nombre (nameStyle «separado», feature 007): fuera de la burbuja y de la foto. El nombre se reduce y se
+ * parte en líneas hasta caber; --name-lines (useFit, último recurso) lo corta con «…» solo con la letra en 6 pt.
+ * Queda por encima del sello de AGOTADO: el sello nunca oculta el nombre.
+ */
+.pb-name-tag {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  align-items: safe center; /* si el texto se pasa, crece hacia abajo y useFit lo mide bien */
+  justify-content: center;
+  padding: calc(2px * var(--fit, 1)) calc(8px * var(--fit, 1));
+  border-radius: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+/* Con el nombre separado, la burbuja se pinta justo después del rótulo y a su misma altura: en el PDF el nombre se lee
+   antes que la descripción, y el sello de AGOTADO no tapa ni uno ni otra */
+.pb-name-tag ~ .pb-bubble {
+  z-index: 4;
+}
+.pb-name-tag .pb-name {
+  max-width: 100%;
+  font-size: calc(17px * var(--fit, 1)); /* el nombre es el título del producto: más grande que el texto de la burbuja */
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: var(--name-lines, none);
+}
 .pb-extra {
   font-size: calc(10.5px * var(--fit, 1));
   font-weight: 600;
@@ -120,16 +150,21 @@
 }
 .pb-options li {
   display: flex;
+  flex-wrap: wrap;
   min-width: 0;
-  white-space: nowrap;
 }
+/* La etiqueta larga baja a otra línea en lugar de cortarse con «…»; el precio no se parte (feature 007) */
 .pb-opt-label {
   min-width: 0;
+  overflow-wrap: anywhere;
+  /* Con la letra en 6 pt y sin caber, useFit (último recurso) muestra menos líneas de cada opción, con «…» */
+  display: -webkit-box;
+  -webkit-line-clamp: var(--opt-lines, none);
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .pb-opt-price {
-  flex: none;
+  white-space: nowrap;
 }
 
 .pb-price {

@@ -44,8 +44,9 @@ export interface FitOptions {
  * Los tamaños de letra se escriben como `calc(Npx * var(--fit, 1))`. El factor mínimo es
  * `máx(MIN_FIT, minFontPx / tamaño base del elemento)`: un texto de 8 px no baja de 6 px y uno de 40 px llega a
  * 18 px; en un bloque con textos de varios tamaños se cuenta sobre el más pequeño de sus hijos. Si al llegar al mínimo
- * aún no cabe, aplica los pasos de `lastResort` y, si ni así cabe, marca `data-overflow="true"` (el editor lo muestra
- * como advertencia).
+ * aún no cabe, aplica los pasos de `lastResort` (y marca `data-clipped="true"`: el texto quedó cortado con «…») y, si ni
+ * así cabe, marca `data-overflow="true"` (el editor lo muestra como advertencia). Ambas marcas son las que la vista de
+ * impresión reúne para avisar, al terminar la generación, de los textos que no se ven completos.
  * Se repite cuando las fuentes terminan de cargar, porque con la fuente de reserva las medidas serían otras.
  * En jsdom las medidas son 0 y no hace nada.
  */
@@ -85,10 +86,15 @@ export function useFit<T extends HTMLElement>(
         el.style.setProperty('--fit', scale.toFixed(3));
       }
       // Con la letra en su mínimo: recortar líneas, paso a paso, hasta que quepa
+      let clipped = false;
       for (const step of lastResort) {
         if (!overflows()) break;
         for (const [key, value] of Object.entries(step)) el.style.setProperty(key, value);
+        clipped = true;
       }
+      // `data-clipped`: hubo que cortar con «…» (el texto no se ve completo); `data-overflow`: ni así cabe
+      if (clipped) el.setAttribute('data-clipped', 'true');
+      else el.removeAttribute('data-clipped');
       if (overflows()) el.setAttribute('data-overflow', 'true');
       else el.removeAttribute('data-overflow');
     };
