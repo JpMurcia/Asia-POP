@@ -370,6 +370,42 @@ describe('TemplatePage', () => {
     });
   });
 
+  describe('tamaño de la foto (feature 007)', () => {
+    const three = [alegra('1'), alegra('2'), alegra('3')];
+    const photos = (container: HTMLElement) => Array.from(container.querySelectorAll<HTMLElement>('[data-part="photo"]'));
+    const size = (n: HTMLElement) => ({ w: Number.parseFloat(n.style.width), h: Number.parseFloat(n.style.height) });
+    const renderWith = (patch: Partial<ProductsEl>, items = three) =>
+      render(<TemplatePage template={withProducts(patch)} page="productos" tokens={tokens} items={items} />).container;
+
+    it.each(['alternado', 'tarjetas', 'lista'] as const)('con %s, photoW 80 y photoH 70 achican la foto a ese porcentaje del tamaño original', (layout) => {
+      const base = photos(renderWith({ layout })).map(size);
+      const scaled = photos(renderWith({ layout, photoW: 80, photoH: 70 })).map(size);
+      scaled.forEach((s, i) => {
+        expect(s.w, `${layout} foto ${i} ancho`).toBeCloseTo(base[i]!.w * 0.8, 1);
+        expect(s.h, `${layout} foto ${i} alto`).toBeCloseTo(base[i]!.h * 0.7, 1);
+      });
+    });
+
+    it('con los valores de origen los tamaños son los de siempre', () => {
+      const plain = photos(renderWith({})).map((n) => n.getAttribute('style'));
+      const origin = photos(renderWith({ photoW: 100, photoH: 100 })).map((n) => n.getAttribute('style'));
+      expect(origin).toEqual(plain);
+    });
+
+    it('una escala por encima del máximo de la zona se dibuja con el máximo', () => {
+      const atMax = photos(renderWith({ layout: 'tarjetas', photoW: 107 })).map((n) => n.getAttribute('style'));
+      const above = photos(renderWith({ layout: 'tarjetas', photoW: 150 })).map((n) => n.getAttribute('style'));
+      expect(above).toEqual(atMax);
+    });
+
+    it('con 1 y con 3 productos las filas que se repiten tienen la misma geometría', () => {
+      const one = renderWith({ photoW: 80, photoH: 90 }, [alegra('1')]);
+      const all = renderWith({ photoW: 80, photoH: 90 });
+      expect(photos(one)).toHaveLength(1);
+      expect(photos(one)[0]!.getAttribute('style')).toBe(photos(all)[0]!.getAttribute('style'));
+    });
+  });
+
   describe('bloque de introducción', () => {
     it('no se pinta si la sección no tiene texto de introducción', () => {
       const { container } = render(<TemplatePage template={baseTemplate('neon')} page="seccion" tokens={tokens} />);

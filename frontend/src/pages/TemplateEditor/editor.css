@@ -708,6 +708,48 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
+/* Pares de ancho y alto de «Tamaño de los productos» (feature 007) */
+.ed-numgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ed-subhead {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ed-ink);
+}
+/* Nota de límite: mismo lenguaje que .ed-overflow */
+.ed-limit-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff1c9;
+  color: #5c3b00;
+  font-size: 12px;
+}
+#products-unlock-note {
+  background: transparent;
+  color: var(--ed-muted);
+  padding: 0;
+}
+.ed-action-btn {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--ed-line);
+  background: #fffcf7;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ed-ink);
+  cursor: pointer;
+}
+.ed-action-btn:hover {
+  background: #fff;
+}
+.ed-action-btn:focus-visible {
+  outline: 2px solid var(--ed-accent, #6d4aff);
+  outline-offset: 2px;
+}
 .ed-num {
   display: flex;
   flex-direction: column;

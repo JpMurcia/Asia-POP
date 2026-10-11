@@ -476,3 +476,157 @@ describe('advertencia de bloque reducido (Edge Cases)', () => {
     expect(screen.queryByTestId('overflow-warning')).not.toBeInTheDocument();
   });
 });
+
+describe('bloque de productos: tamaño de los productos (feature 007)', () => {
+  const BLOCK = 'neon-c3'; // el bloque de productos de Neón Noche
+  const inspector = () => screen.getByTestId('inspector');
+  const headings = () => Array.from(inspector().querySelectorAll('.ed-heading')).map((h) => h.textContent);
+  const sizeField = (groupName: string, label: string) => within(group(groupName)).getByLabelText(label) as HTMLInputElement;
+  /** Escribe el valor y lo confirma al salir del campo, como hace la persona. */
+  const commit = (groupName: string, label: string, value: string) => {
+    const input = sizeField(groupName, label);
+    fireEvent.change(input, { target: { value } });
+    fireEvent.blur(input);
+  };
+
+  async function onProducts() {
+    await start();
+    goToPage('Productos');
+    selectLayer(/^Productos/);
+  }
+
+  it('la primera sección es «Tamaño de los productos», con dos pares de Ancho % y Alto % de nombre accesible distinto', async () => {
+    await onProducts();
+    expect(headings()[0]).toBe('Tamaño de los productos');
+    for (const g of ['Zona de productos', 'Tamaño de la foto']) {
+      expect(within(group(g)).getByLabelText('Ancho %')).toBeInTheDocument();
+      expect(within(group(g)).getByLabelText('Alto %')).toBeInTheDocument();
+    }
+    // los valores de fábrica de Neón Noche
+    expect(sizeField('Zona de productos', 'Ancho %')).toHaveValue('100');
+    expect(sizeField('Zona de productos', 'Alto %')).toHaveValue('85.2');
+    expect(sizeField('Tamaño de la foto', 'Ancho %')).toHaveValue('100');
+    expect(sizeField('Tamaño de la foto', 'Alto %')).toHaveValue('100');
+    expect(screen.getAllByLabelText('Ancho %')).toHaveLength(2);
+  });
+
+  it('trae la nota fija sobre desbloquear y el botón «Restaurar tamaños originales»', async () => {
+    await onProducts();
+    expect(within(inspector()).getByText('Para arrastrar la zona en la página, pulsa Desbloquear.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restaurar tamaños originales' })).toBeInTheDocument();
+  });
+
+  it('los campos de la zona funcionan con el bloque fijo, sin desbloquearlo', async () => {
+    await onProducts();
+    expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeInTheDocument();
+    commit('Zona de productos', 'Ancho %', '80');
+    commit('Zona de productos', 'Alto %', '60');
+    expect(canvasEl(BLOCK)!.style.width).toBe('80%');
+    expect(canvasEl(BLOCK)!.style.height).toBe('60%');
+    expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeInTheDocument();
+  });
+
+  it('un valor se confirma con Enter o al salir del campo, no a cada tecla', async () => {
+    await onProducts();
+    const input = sizeField('Zona de productos', 'Ancho %');
+    fireEvent.change(input, { target: { value: '7' } });
+    expect(canvasEl(BLOCK)!.style.width).toBe('100%');
+    expect(screen.queryByTestId('toast')).not.toBeInTheDocument();
+    fireEvent.change(input, { target: { value: '70' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(canvasEl(BLOCK)!.style.width).toBe('70%');
+  });
+
+  it('el ancho y el alto de la foto cambian el tamaño de las fotos del lienzo', async () => {
+    await onProducts();
+    const photoWidth = () => canvas().querySelector<HTMLElement>('[data-part="photo"]')!.style.width;
+    const before = Number.parseFloat(photoWidth());
+    commit('Tamaño de la foto', 'Ancho %', '80');
+    expect(Number.parseFloat(photoWidth())).toBeCloseTo(before * 0.8, 1);
+  });
+
+  it('un alto de foto mayor que el máximo se recorta y la nota (role="status") lo explica', async () => {
+    await onProducts();
+    commit('Tamaño de la foto', 'Alto %', '150');
+    const max = Number(sizeField('Tamaño de la foto', 'Alto %').value);
+    expect(max).toBeGreaterThanOrEqual(100);
+    expect(max).toBeLessThan(150);
+    const note = within(inspector()).getByText(`El alto máximo de la foto en esta zona es ${max} %. Agranda el alto de la zona para darle más espacio.`);
+    expect(note).toHaveAttribute('role', 'status');
+    expect(screen.getByTestId('toast')).toHaveTextContent(/El alto máximo de la foto/);
+  });
+
+  it('en tarjetas, un ancho de foto mayor que el máximo se recorta con su nota', async () => {
+    await onProducts();
+    fireEvent.click(inGroup('Distribución', 'Tarjetas'));
+    commit('Tamaño de la foto', 'Ancho %', '150');
+    const max = Number(sizeField('Tamaño de la foto', 'Ancho %').value);
+    expect(max).toBeLessThan(150);
+    expect(within(inspector()).getByText(`El ancho máximo de la foto en esta zona es ${max} %. Agranda la zona para darle más espacio.`)).toBeInTheDocument();
+  });
+
+  it('un valor dentro de los límites no muestra nota', async () => {
+    await onProducts();
+    commit('Tamaño de la foto', 'Ancho %', '90');
+    expect(within(inspector()).queryByText(/máximo de la foto/)).not.toBeInTheDocument();
+    expect(within(inspector()).queryByText(/La zona de productos debe medir/)).not.toBeInTheDocument();
+  });
+
+  it('una zona más pequeña que el mínimo queda en 40 % y 30 % con su nota', async () => {
+    await onProducts();
+    commit('Zona de productos', 'Ancho %', '20');
+    expect(sizeField('Zona de productos', 'Ancho %')).toHaveValue('40');
+    expect(canvasEl(BLOCK)!.style.width).toBe('40%');
+    const note = within(inspector()).getByText('La zona de productos debe medir al menos 40 % de ancho y 30 % de alto.');
+    expect(note).toHaveAttribute('role', 'status');
+    commit('Zona de productos', 'Ancho %', '60');
+    expect(within(inspector()).queryByText(/La zona de productos debe medir/)).not.toBeInTheDocument();
+  });
+
+  it('la nota se explica sola si lo guardado queda por encima del máximo al cambiar la distribución', async () => {
+    await onProducts();
+    commit('Tamaño de la foto', 'Ancho %', '140'); // alternado admite 150
+    expect(within(inspector()).queryByText(/El ancho máximo/)).not.toBeInTheDocument();
+    fireEvent.click(inGroup('Distribución', 'Tarjetas'));
+    // se dibuja recortada, pero lo guardado sigue siendo 140
+    expect(sizeField('Tamaño de la foto', 'Ancho %')).toHaveValue('140');
+    expect(within(inspector()).getByText(/El ancho máximo de la foto en esta zona es \d+ %\./)).toBeInTheDocument();
+  });
+
+  it('las secciones siguen en orden y al final solo quedan X % e Y % bajo «Posición»', async () => {
+    await onProducts();
+    const h = headings();
+    expect(h).toEqual(expect.arrayContaining(['Tamaño de los productos', 'Foto del producto', 'Descripción', 'Precio', 'Agotados', 'Posición']));
+    expect(h.indexOf('Tamaño de los productos')).toBe(0);
+    expect(h.indexOf('Foto del producto')).toBeLessThan(h.indexOf('Descripción'));
+    expect(h.indexOf('Descripción')).toBeLessThan(h.indexOf('Precio'));
+    expect(h.indexOf('Precio')).toBeLessThan(h.indexOf('Agotados'));
+    expect(h.at(-1)).toBe('Posición');
+    expect(h).not.toContain('Posición y tamaño');
+    expect(screen.getByLabelText('X %')).toBeInTheDocument();
+    expect(screen.getByLabelText('Y %')).toBeInTheDocument();
+    // el ancho y el alto de la zona ya no se repiten fuera de «Tamaño de los productos»
+    expect(screen.getAllByLabelText('Alto %')).toHaveLength(2);
+  });
+
+  it('«Restaurar tamaños originales» deja los cuatro valores como los de fábrica', async () => {
+    await onProducts();
+    commit('Zona de productos', 'Ancho %', '70');
+    commit('Zona de productos', 'Alto %', '50');
+    commit('Tamaño de la foto', 'Ancho %', '70');
+    commit('Tamaño de la foto', 'Alto %', '60');
+    click('Restaurar tamaños originales');
+    expect(sizeField('Zona de productos', 'Ancho %')).toHaveValue('100');
+    expect(sizeField('Zona de productos', 'Alto %')).toHaveValue('85.2');
+    expect(sizeField('Tamaño de la foto', 'Ancho %')).toHaveValue('100');
+    expect(sizeField('Tamaño de la foto', 'Alto %')).toHaveValue('100');
+  });
+
+  it('con otro tipo de elemento el inspector sigue mostrando «Posición y tamaño» con X, Y, ancho y alto', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    expect(headings()).toContain('Posición y tamaño');
+    for (const n of ['X %', 'Y %', 'Ancho %', 'Alto %']) expect(screen.getByLabelText(n)).toBeInTheDocument();
+    expect(headings()).not.toContain('Tamaño de los productos');
+  });
+});

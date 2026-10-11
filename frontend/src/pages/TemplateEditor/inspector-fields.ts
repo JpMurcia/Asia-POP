@@ -34,7 +34,28 @@ export type FieldDesc =
   | { kind: 'textarea'; key: string; label: string; rows?: number }
   | { kind: 'tokens'; key: string; label: string }
   | { kind: 'toggle'; key: string; label: string }
-  | { kind: 'numbers'; items: readonly (readonly [string, string])[] };
+  | {
+      kind: 'numbers';
+      items: readonly (readonly [string, string])[];
+      /** Nombre del grupo (`role="group"`): distingue dos pares de «Ancho %» y «Alto %» en el mismo inspector. */
+      group?: string;
+      /** `blur`: el valor se guarda al pulsar Enter o salir del campo, no a cada tecla (la zona de productos avisa al recortar). */
+      confirm?: 'blur';
+    }
+  /** Párrafo con `role="status"`; con `text` vacío no se dibuja. */
+  | { kind: 'note'; id: string; text: string }
+  | { kind: 'button'; label: string; action: FieldAction };
+
+/** Acciones que un botón del inspector le pide al editor. */
+export type FieldAction = 'restoreProductSizes';
+
+/** Textos que el inspector calcula fuera de las descripciones de campos (límites del bloque de productos). */
+export interface FieldExtras {
+  /** Nota bajo los campos de la zona (por ejemplo, el mínimo). */
+  zoneNote?: string;
+  /** Nota bajo los campos de la foto (el máximo que cabe). */
+  photoNote?: string;
+}
 
 type El<T extends PageElement['type']> = Extract<PageElement, { type: T }>;
 
@@ -76,7 +97,7 @@ export const IMAGE_OPTIONS = [
 const WEIGHT_LABELS: Record<(typeof WEIGHTS)[number], string> = { 400: 'Normal', 600: 'Semi', 700: 'Negrita', 900: 'Black' };
 
 /** Campos propios del tipo de elemento (sin posición, rotación ni opacidad). */
-function ownFields(el: PageElement, template: Template): FieldDesc[] {
+function ownFields(el: PageElement, template: Template, extras: FieldExtras): FieldDesc[] {
   switch (el.type) {
     case 'text': {
       const t = el as El<'text'>;
@@ -132,6 +153,13 @@ function ownFields(el: PageElement, template: Template): FieldDesc[] {
     case 'products': {
       const p = el as El<'products'>;
       return [
+        heading('Tamaño de los productos'),
+        { kind: 'numbers', group: 'Zona de productos', confirm: 'blur', items: [['w', 'Ancho %'], ['h', 'Alto %']] },
+        { kind: 'note', id: 'products-zone-note', text: extras.zoneNote ?? '' },
+        { kind: 'numbers', group: 'Tamaño de la foto', confirm: 'blur', items: [['photoW', 'Ancho %'], ['photoH', 'Alto %']] },
+        { kind: 'note', id: 'products-photo-note', text: extras.photoNote ?? '' },
+        { kind: 'button', label: 'Restaurar tamaños originales', action: 'restoreProductSizes' },
+        { kind: 'note', id: 'products-unlock-note', text: 'Para arrastrar la zona en la página, pulsa Desbloquear.' },
         seg('layout', 'Distribución', [['alternado', 'Alternado'], ['tarjetas', 'Tarjetas'], ['lista', 'Lista']]),
         heading('Foto del producto'),
         color('cardFill', 'Fondo de la foto', 'transparent'),
@@ -171,12 +199,18 @@ function ownFields(el: PageElement, template: Template): FieldDesc[] {
   }
 }
 
-/** Todos los campos de un elemento: los suyos más posición, tamaño, rotación (no en bloques) y opacidad. */
-export function fieldsFor(el: PageElement, template: Template): FieldDesc[] {
+/**
+ * Todos los campos de un elemento: los suyos más posición, tamaño, rotación (no en bloques) y opacidad. El bloque de
+ * productos trae su ancho y su alto en «Tamaño de los productos» (feature 007), así que aquí solo lleva X e Y.
+ */
+export function fieldsFor(el: PageElement, template: Template, extras: FieldExtras = {}): FieldDesc[] {
+  const position: FieldDesc[] =
+    el.type === 'products'
+      ? [heading('Posición'), { kind: 'numbers', items: [['x', 'X %'], ['y', 'Y %']] }]
+      : [heading('Posición y tamaño'), { kind: 'numbers', items: [['x', 'X %'], ['y', 'Y %'], ['w', 'Ancho %'], ['h', 'Alto %']] }];
   return [
-    ...ownFields(el, template),
-    heading('Posición y tamaño'),
-    { kind: 'numbers', items: [['x', 'X %'], ['y', 'Y %'], ['w', 'Ancho %'], ['h', 'Alto %']] },
+    ...ownFields(el, template, extras),
+    ...position,
     ...(isAutoBlock(el) ? [] : [range('rot', 'Rotación', RANGES.rot, 1, '°')]),
     { kind: 'range', key: 'opacity', label: 'Opacidad', min: 0, max: 100, step: 1, unit: ' %', scale: 100 },
   ];

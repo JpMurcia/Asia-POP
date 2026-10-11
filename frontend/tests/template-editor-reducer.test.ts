@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { PageElement, TextEl } from '../../backend/src/catalog/template';
-import { BASE_TEMPLATES, draftText } from '../../backend/src/catalog/template-presets';
+import { PAGE_H, PAGE_W, type PageElement, type ProductsEl, type TextEl } from '../../backend/src/catalog/template';
+import { photoScaleLimits } from '../../backend/src/catalog/template-layout';
+import { BASE_TEMPLATES, baseTemplate, draftText } from '../../backend/src/catalog/template-presets';
 import { DEFAULT_BUSINESS } from '../../backend/src/catalog/settings.repo';
 import {
   HISTORY_LIMIT,
@@ -655,5 +656,138 @@ describe('interfaz', () => {
     const blocked = run(s0, { type: 'delete', id: els(s0).find((e) => e.type === 'products')!.id });
     expect(blocked.message).not.toBeNull();
     expect(run(blocked, { type: 'dismissMessage' }).message).toBeNull();
+  });
+});
+
+describe('bloque de productos: tamaño de la zona y de la foto (feature 007)', () => {
+  const ZONE_MESSAGE = 'La zona de productos debe medir al menos 40 % de ancho y 30 % de alto.';
+  /** Neón Noche abierta en Productos; su bloque es de distribución `alternado`. */
+  const inProducts = () => run(fresh(), { type: 'selectPage', page: 'productos' });
+  const block = (s: EditorState) => els(s).find((e) => e.type === 'products') as ProductsEl;
+  const patch = (s: EditorState, p: Partial<ProductsEl>, over: { record?: false; now?: number } = {}) =>
+    run(s, { type: 'patch', id: block(s).id, patch: p, now: over.now ?? T0, ...(over.record === false ? { record: false } : {}) });
+  /** Máximo de la foto en la zona y la distribución actuales del bloque. */
+  const maxOf = (s: EditorState) => {
+    const b = block(s);
+    return photoScaleLimits(b.layout, (b.w / 100) * PAGE_W, (b.h / 100) * PAGE_H, { nameStyle: b.nameStyle });
+  };
+
+  describe('zona mínima', () => {
+    it('un ancho o un alto por debajo del mínimo queda en el mínimo y el editor avisa', () => {
+      const s = patch(inProducts(), { w: 20 });
+      expect(block(s).w).toBe(40);
+      expect(s.message?.text).toBe(ZONE_MESSAGE);
+      const t = patch(inProducts(), { h: 10 });
+      expect(block(t).h).toBe(30);
+      expect(t.message?.text).toBe(ZONE_MESSAGE);
+    });
+
+    it('el mínimo exacto no avisa', () => {
+      const s = patch(inProducts(), { w: 40, h: 30 });
+      expect(block(s)).toMatchObject({ w: 40, h: 30 });
+      expect(s.message).toBeNull();
+    });
+
+    it('vale igual cuando el cambio viene del arrastre de la esquina (parche sin historial)', () => {
+      const s = run(inProducts(), { type: 'checkpoint', now: T0 });
+      const t = patch(s, { w: 12, h: 9 }, { record: false });
+      expect(block(t)).toMatchObject({ w: 40, h: 30 });
+      expect(t.message?.text).toBe(ZONE_MESSAGE);
+      expect(t.past).toEqual(s.past);
+    });
+
+    it('los demás elementos conservan su mínimo de siempre (un texto puede medir 3 %)', () => {
+      const s = run(withText(), { type: 'patch', id: 'mio', patch: { w: 3, h: 0.3 }, now: T0 });
+      expect(byId(s, 'mio')).toMatchObject({ w: 3, h: 0.3 });
+      expect(s.message).toBeNull();
+    });
+
+    it('repetir el mismo aviso no crea un mensaje nuevo cada vez (el arrastre manda muchos parches)', () => {
+      const first = patch(inProducts(), { w: 10 }, { record: false });
+      const again = patch(first, { w: 11 }, { record: false });
+      expect(again.message).toBe(first.message);
+    });
+  });
+
+  describe('escala de la foto', () => {
+    it('un ancho de foto sobre el máximo de la zona queda en el máximo, con su aviso', () => {
+      const tarjetas = patch(inProducts(), { layout: 'tarjetas' });
+      const max = maxOf(tarjetas).w[1];
+      expect(max).toBeLessThan(150);
+      const s = patch(tarjetas, { photoW: 150 });
+      expect(block(s).photoW).toBe(max);
+      expect(s.message?.text).toBe(`El ancho máximo de la foto en esta zona es ${max} %. Agranda la zona para darle más espacio.`);
+    });
+
+    it('un alto de foto sobre el máximo de la zona queda en el máximo, con su aviso', () => {
+      const s0 = inProducts();
+      const max = maxOf(s0).h[1];
+      expect(max).toBeLessThan(150);
+      const s = patch(s0, { photoH: 150 });
+      expect(block(s).photoH).toBe(max);
+      expect(s.message?.text).toBe(`El alto máximo de la foto en esta zona es ${max} %. Agranda el alto de la zona para darle más espacio.`);
+    });
+
+    it('un valor dentro de los límites se guarda tal cual y no avisa', () => {
+      const s = patch(inProducts(), { photoW: 80, photoH: 90 });
+      expect(block(s)).toMatchObject({ photoW: 80, photoH: 90 });
+      expect(s.message).toBeNull();
+    });
+
+    it('por debajo de 50 queda en 50 sin aviso (el rango ya lo dice)', () => {
+      const s = patch(inProducts(), { photoW: 10, photoH: 0 });
+      expect(block(s)).toMatchObject({ photoW: 50, photoH: 50 });
+      expect(s.message).toBeNull();
+    });
+
+    it('el máximo se calcula con la zona del mismo parche (primero se recorta la zona)', () => {
+      const s = patch(inProducts(), { w: 20, photoW: 100 });
+      expect(block(s)).toMatchObject({ w: 40, photoW: 100 });
+    });
+
+    it('cambiar la zona o la distribución no reescribe un photoW guardado: solo se dibuja recortado', () => {
+      let s = patch(inProducts(), { photoW: 140, photoH: 106 });
+      expect(block(s)).toMatchObject({ photoW: 140, photoH: 106 });
+      // `tarjetas` admite un ancho de foto de ~107 %: lo guardado sigue siendo 140
+      s = patch(s, { layout: 'tarjetas', h: 35 }, { now: T0 + 5000 });
+      expect(block(s)).toMatchObject({ layout: 'tarjetas', h: 35, photoW: 140, photoH: 106 });
+      expect(s.message).toBeNull();
+    });
+
+    it('otros elementos no reciben estos avisos', () => {
+      const s = run(withText(), { type: 'patch', id: 'mio', patch: { w: 50 }, now: T0 });
+      expect(s.message).toBeNull();
+    });
+  });
+
+  describe('restaurar tamaños originales', () => {
+    it('pone la foto en 100 % y la zona en la de fábrica de la plantilla de la que partió, en un solo paso', () => {
+      let s = inProducts();
+      s = patch(s, { w: 60, h: 50, photoW: 70, photoH: 60 }, { now: T0 });
+      s = patch(s, { x: 7 }, { now: T0 + 5000 });
+      const factory = baseTemplate('neon').pages.productos.els.find((e) => e.type === 'products') as ProductsEl;
+      const after = run(s, { type: 'restoreProductSizes', id: block(s).id });
+      expect(block(after)).toMatchObject({ w: factory.w, h: factory.h, photoW: 100, photoH: 100 });
+      // la posición y el estilo no se tocan
+      expect(block(after).x).toBe(7);
+      expect(after.past).toHaveLength(s.past.length + 1);
+      const undone = run(after, { type: 'undo' });
+      expect(block(undone)).toMatchObject({ w: 60, h: 50, photoW: 70, photoH: 60 });
+      expect(run(undone, { type: 'redo' }).workspace).toEqual(after.workspace);
+    });
+
+    it('usa el estilo base de la plantilla (`base`), no su id', () => {
+      const s0 = run(fresh(), { type: 'createTemplate', base: 'kraft', id: 'mia' }, { type: 'selectPage', page: 'productos' });
+      const s = patch(s0, { w: 60, h: 45 });
+      const after = run(s, { type: 'restoreProductSizes', id: block(s).id });
+      const factory = baseTemplate('kraft').pages.productos.els.find((e) => e.type === 'products') as ProductsEl;
+      expect(block(after)).toMatchObject({ w: factory.w, h: factory.h });
+    });
+
+    it('con un elemento que no es el bloque de productos no hace nada', () => {
+      const s = withText();
+      expect(run(s, { type: 'restoreProductSizes', id: 'mio' })).toBe(s);
+      expect(run(s, { type: 'restoreProductSizes', id: 'no-existe' })).toBe(s);
+    });
   });
 });

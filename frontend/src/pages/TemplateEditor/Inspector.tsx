@@ -9,6 +9,7 @@ import {
 import FieldRenderer from './FieldRenderer';
 import Layers, { layerName } from './Layers';
 import { fieldsFor, pageFields } from './inspector-fields';
+import { productNotes } from './product-limits';
 import type { EditorActions } from './useTemplateEditor';
 
 export const PAGE_NOTES: Record<PageKey, string> = {
@@ -25,6 +26,13 @@ export interface InspectorProps {
   actions: EditorActions;
   /** El bloque seleccionado llegó al tamaño mínimo legible y aun así no cabe (`data-overflow`). */
   overflow: boolean;
+}
+
+/** Las notas de límite del bloque de productos (vacías para los demás elementos). */
+function extrasFor(el: PageElement) {
+  if (el.type !== 'products') return {};
+  const notes = productNotes(el);
+  return { zoneNote: notes.zone, photoNote: notes.photo };
 }
 
 /**
@@ -70,10 +78,13 @@ export default function Inspector({ template, page, el, actions, overflow }: Ins
           )}
           <FieldRenderer
             key={el.id}
-            fields={fieldsFor(el, template)}
+            fields={fieldsFor(el, template, extrasFor(el))}
             values={el as unknown as Record<string, unknown>}
             palette={template.palette}
             onChange={(patch, mergeKey) => actions.patch(el.id, patch as Partial<PageElement>, mergeKey ? `${el.id}:${mergeKey}` : undefined)}
+            onAction={(action) => {
+              if (action === 'restoreProductSizes') actions.restoreProductSizes(el.id);
+            }}
           />
         </>
       ) : (

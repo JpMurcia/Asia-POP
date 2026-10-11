@@ -7,7 +7,7 @@ import {
   type Palette,
 } from '../../../../backend/src/catalog/template';
 import { clampBox } from './useTemplateEditor';
-import { TOKEN_CHIPS, type FieldDesc } from './inspector-fields';
+import { TOKEN_CHIPS, type FieldAction, type FieldDesc } from './inspector-fields';
 
 export interface FieldRendererProps {
   fields: readonly FieldDesc[];
@@ -16,6 +16,8 @@ export interface FieldRendererProps {
   palette: Palette;
   /** `mergeKey` agrupa los cambios seguidos de un mismo campo (deslizar un rango) en un solo paso del historial. */
   onChange: (patch: Record<string, unknown>, mergeKey?: string) => void;
+  /** Acción de un botón del inspector (por ejemplo, «Restaurar tamaños originales»). */
+  onAction?: (action: FieldAction) => void;
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -127,9 +129,33 @@ function RangeField({
   );
 }
 
-/** Campo numérico de texto libre: acepta lo que se escribe a medias y solo guarda números válidos dentro del rango. */
-function NumberField({ label, value, onCommit }: { label: string; value: number; onCommit: (n: number) => void }) {
+/**
+ * Campo numérico de texto libre: acepta lo que se escribe a medias y solo guarda números válidos dentro del rango.
+ * Con `deferred` el valor se guarda al pulsar Enter o al salir del campo, no a cada tecla: así escribir «60» no pasa
+ * por «6» (que se recortaría y avisaría de un mínimo que la persona aún no terminó de teclear).
+ */
+function NumberField({
+  label,
+  value,
+  onCommit,
+  deferred = false,
+}: {
+  label: string;
+  value: number;
+  onCommit: (n: number) => void;
+  deferred?: boolean;
+}) {
   const [draft, setDraft] = useState<string | null>(null);
+  const parse = (text: string): number | null => {
+    const n = Number(text.replace(',', '.'));
+    return text.trim() !== '' && Number.isFinite(n) ? n : null;
+  };
+  /** Guarda lo escrito (si es un número) y vuelve a mostrar el valor guardado, ya recortado. */
+  const settle = () => {
+    const n = draft === null ? null : parse(draft);
+    if (n !== null) onCommit(n);
+    setDraft(null);
+  };
   return (
     <label className="ed-num">
       <span>{label}</span>
@@ -140,17 +166,22 @@ function NumberField({ label, value, onCommit }: { label: string; value: number;
         onChange={(e) => {
           const text = e.target.value;
           setDraft(text);
-          const n = Number(text.replace(',', '.'));
-          if (text.trim() !== '' && Number.isFinite(n)) onCommit(n);
+          if (!deferred) {
+            const n = parse(text);
+            if (n !== null) onCommit(n);
+          }
         }}
-        onBlur={() => setDraft(null)}
+        onKeyDown={(e) => {
+          if (deferred && e.key === 'Enter') settle();
+        }}
+        onBlur={() => (deferred ? settle() : setDraft(null))}
       />
     </label>
   );
 }
 
 /** Dibuja la lista de descriptores de `inspector-fields.ts`: una línea por propiedad. */
-export default function FieldRenderer({ fields, values, palette, onChange }: FieldRendererProps) {
+export default function FieldRenderer({ fields, values, palette, onChange, onAction }: FieldRendererProps) {
   return (
     <>
       {fields.map((f, i) => {
@@ -255,18 +286,46 @@ export default function FieldRenderer({ fields, values, palette, onChange }: Fie
             );
           }
 
-          case 'numbers':
-            return (
-              <div key={`nums${i}`} className="ed-nums">
+          case 'numbers': {
+            const grid = (
+              <div key={`nums${i}`} className="ed-nums" style={{ gridTemplateColumns: `repeat(${f.items.length}, 1fr)` }}>
                 {f.items.map(([key, label]) => (
                   <NumberField
                     key={key}
                     label={label}
                     value={Number(values[key] ?? 0)}
+                    deferred={f.confirm === 'blur'}
                     onCommit={(n) => onChange({ [key]: clampBox[key as keyof typeof clampBox](n) }, key)}
                   />
                 ))}
               </div>
+            );
+            // Con nombre de grupo (los dos pares de ancho y alto de los productos) se rotula para quien no ve la pantalla
+            return f.group ? (
+              <div key={`numgroup${i}`} className="ed-numgroup" role="group" aria-label={f.group}>
+                <span className="ed-subhead" aria-hidden="true">
+                  {f.group}
+                </span>
+                {grid}
+              </div>
+            ) : (
+              grid
+            );
+          }
+
+          case 'note':
+            // Sin texto no se dibuja nada (el aviso temporal del editor ya se anuncia al cambiar)
+            return f.text ? (
+              <p key={f.id} id={f.id} role="status" className="ed-limit-note">
+                {f.text}
+              </p>
+            ) : null;
+
+          case 'button':
+            return (
+              <button key={f.action} type="button" className="ed-action-btn" onClick={() => onAction?.(f.action)}>
+                {f.label}
+              </button>
             );
         }
       })}

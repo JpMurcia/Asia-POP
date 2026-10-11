@@ -40,7 +40,7 @@ const isSoldOut = (item: CatalogItem): boolean => item.kind !== 'custom' && item
 export default function ProductsBlock({ el, palette, fonts, items, photoPositions }: Props) {
   const W = (el.w / 100) * PAGE_W;
   const H = (el.h / 100) * PAGE_H;
-  const rows = layoutRows(el.layout, W, H);
+  const rows = layoutRows(el.layout, W, H, { photoW: el.photoW, photoH: el.photoH });
   return (
     <div className="pb" style={{ fontFamily: fontFamily({ fonts }, 'body') }} data-layout={el.layout}>
       {items.slice(0, 3).map((item, i) => (

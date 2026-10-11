@@ -2,6 +2,7 @@ import { useCallback, useMemo, useReducer } from 'react';
 import {
   ELEMENT_LABELS,
   LIMITS,
+  PRODUCTS_ZONE_MIN,
   RANGES,
   isAutoBlock,
   type BaseId,
@@ -12,11 +13,13 @@ import {
   type PageKey,
   type Palette,
   type PaletteKey,
+  type ProductsEl,
   type Template,
 } from '../../../../backend/src/catalog/template';
 import { baseTemplate } from '../../../../backend/src/catalog/template-presets';
 import { isHexColor } from '../../../../backend/src/catalog/theme';
 import type { BusinessSettings } from '../../../../backend/src/catalog/types';
+import { ZONE_MIN_MESSAGE, photoHeightMessage, photoWidthMessage, productLimits } from './product-limits';
 
 /** Pasos que se pueden deshacer (FR-010). */
 export const HISTORY_LIMIT = 60;
@@ -91,6 +94,8 @@ export type EditorAction =
       now: number;
     }
   | { type: 'patchBg'; patch: Partial<PageBg>; now: number }
+  /** Zona y foto del bloque de productos a su tamaño de fábrica (un solo paso del historial). */
+  | { type: 'restoreProductSizes'; id: string }
   | { type: 'delete'; id: string }
   | { type: 'duplicate'; id: string; newId: string; now: number }
   | { type: 'reorder'; id: string; dir: 1 | -1 }
@@ -220,6 +225,41 @@ function sanitize(el: PageElement, patch: Partial<PageElement>): Partial<PageEle
   return rest;
 }
 
+/**
+ * Recortes del bloque de productos (feature 007): la zona no baja de `PRODUCTS_ZONE_MIN` y la foto queda entre 50 %
+ * y el máximo que cabe en la zona (ya recortada). Solo se recorta lo que trae el parche: cambiar la zona o la
+ * distribución no reescribe una escala ya guardada (el bloque la dibuja recortada). Devuelve además el aviso.
+ */
+function clampProducts(el: ProductsEl, patch: Partial<PageElement>): { patch: Partial<PageElement>; notice: string | null } {
+  const next = { ...patch } as Partial<ProductsEl>;
+  let notice: string | null = null;
+  if (next.w !== undefined && next.w < PRODUCTS_ZONE_MIN.w) {
+    next.w = PRODUCTS_ZONE_MIN.w;
+    notice = ZONE_MIN_MESSAGE;
+  }
+  if (next.h !== undefined && next.h < PRODUCTS_ZONE_MIN.h) {
+    next.h = PRODUCTS_ZONE_MIN.h;
+    notice = ZONE_MIN_MESSAGE;
+  }
+  if (next.photoW !== undefined || next.photoH !== undefined) {
+    const max = productLimits({ ...el, ...next });
+    const [min] = RANGES.photoScale;
+    if (next.photoW !== undefined) {
+      if (next.photoW > max.w) {
+        next.photoW = max.w;
+        notice = photoWidthMessage(max.w);
+      } else if (next.photoW < min) next.photoW = min;
+    }
+    if (next.photoH !== undefined) {
+      if (next.photoH > max.h) {
+        next.photoH = max.h;
+        notice = photoHeightMessage(max.h);
+      } else if (next.photoH < min) next.photoH = min;
+    }
+  }
+  return { patch: next, notice };
+}
+
 const RESET_HISTORY: Pick<EditorState, 'past' | 'future' | 'mergeKey' | 'mergeAt'> = { past: [], future: [], mergeKey: null, mergeAt: 0 };
 const TEMPLATE_LIMIT_MESSAGE = `Se alcanzó el máximo de ${LIMITS.templates} plantillas. Elimina alguna para crear otra.`;
 
@@ -273,14 +313,33 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
     case 'patch': {
       const el = currentPage(s).els.find((e) => e.id === action.id);
       if (!el) return s;
-      const patch = sanitize(el, action.patch);
+      let patch = sanitize(el, action.patch);
+      let notice: string | null = null;
+      if (el.type === 'products') ({ patch, notice } = clampProducts(el, patch));
       const history = action.record === false ? {} : record(s, action.key ?? null, action.now);
-      return {
+      const next: EditorState = {
         ...s,
         ...history,
         workspace: withPage(s, (p) => ({
           ...p,
           els: p.els.map((e) => (e.id === action.id ? ({ ...e, ...patch } as PageElement) : e)),
+        })),
+      };
+      // El arrastre manda muchos parches seguidos: el mismo aviso no se repite mientras siga en pantalla
+      return notice && s.message?.text !== notice ? say(next, notice) : next;
+    }
+
+    case 'restoreProductSizes': {
+      const el = currentPage(s).els.find((e) => e.id === action.id);
+      if (!el || el.type !== 'products') return s;
+      const factory = baseTemplate(activeTemplate(s).base).pages[s.page].els.find((e) => e.type === 'products');
+      const zone = factory?.type === 'products' ? { w: factory.w, h: factory.h } : { w: el.w, h: el.h };
+      return {
+        ...s,
+        ...record(s, null, 0),
+        workspace: withPage(s, (p) => ({
+          ...p,
+          els: p.els.map((e) => (e.id === action.id ? ({ ...e, ...zone, photoW: 100, photoH: 100 } as PageElement) : e)),
         })),
       };
     }
@@ -522,6 +581,9 @@ export const clampBox = {
   y: (v: number) => Math.min(RANGES.y[1], Math.max(RANGES.y[0], v)),
   w: (v: number) => Math.min(RANGES.w[1], Math.max(RANGES.w[0], v)),
   h: (v: number) => Math.min(RANGES.h[1], Math.max(RANGES.h[0], v)),
+  /** Escala de la foto de los productos (el máximo que cabe lo recorta el reductor). */
+  photoW: (v: number) => Math.min(RANGES.photoScale[1], Math.max(RANGES.photoScale[0], v)),
+  photoH: (v: number) => Math.min(RANGES.photoScale[1], Math.max(RANGES.photoScale[0], v)),
 };
 
 /** El estado del editor y sus acciones (cada una agrega la hora, para que el reductor siga siendo puro). */
@@ -545,6 +607,7 @@ export function useTemplateEditor(initial: { workspace: EditorWorkspace; revisio
       patchLive: (id: string, patch: Partial<PageElement>) =>
         dispatch({ type: 'patch', id, patch, record: false, now: Date.now() }),
       patchBg: (patch: Partial<PageBg>) => dispatch({ type: 'patchBg', patch, now: Date.now() }),
+      restoreProductSizes: (id: string) => dispatch({ type: 'restoreProductSizes', id }),
       remove: (id: string) => dispatch({ type: 'delete', id }),
       duplicate: (id: string) => dispatch({ type: 'duplicate', id, newId: newElementId(), now: Date.now() }),
       reorder: (id: string, dir: 1 | -1) => dispatch({ type: 'reorder', id, dir }),
