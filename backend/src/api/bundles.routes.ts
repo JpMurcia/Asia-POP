@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { mapAlegraItem, type NormalizedItem } from '../alegra/alegra.mapper';
+import type { NormalizedItem } from '../alegra/alegra.mapper';
 import { ConnectionRepo } from '../alegra/connection.repo';
 import { computeBundlePrice } from '../catalog/bundle-pricing';
 import type { AppContext } from '../context';
@@ -8,12 +8,14 @@ import { CustomProductRepo } from '../custom/custom-product.repo';
 import { imageUpload, saveUploadedImage, wrapUpload } from '../custom/image-upload';
 import { HttpError } from './errors';
 
-/** Ítems activos de Alegra (mejor esfuerzo): si Alegra no responde, se devuelve vacío y los precios quedan en null. */
+/**
+ * Ítems activos de Alegra de la copia local (mejor esfuerzo): sin copia y con Alegra caído, `null` y los precios de los
+ * combos quedan en null. Con copia no consulta a Alegra.
+ */
 async function alegraItems(ctx: AppContext): Promise<NormalizedItem[] | null> {
-  const client = new ConnectionRepo(ctx.db, ctx.config).client();
-  if (!client) return null;
+  if (!new ConnectionRepo(ctx.db, ctx.config).status().isConfigured) return null;
   try {
-    return (await client.listActiveItems()).map(mapAlegraItem);
+    return (await ctx.alegraData.get()).items;
   } catch {
     return null;
   }

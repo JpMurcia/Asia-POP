@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
-import { loggedInAgent, testConfig, testContext } from '../helpers';
+import { loggedInAgent, testConfig, testContext, waitForAlegraData } from '../helpers';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 
 let mock: AlegraMock;
@@ -24,6 +24,7 @@ async function setup() {
     .put('/api/settings/alegra')
     .send({ email: 'tienda@example.com', apiToken: 'tok_valido' })
     .expect(200);
+  await waitForAlegraData(session.agent);
   return session;
 }
 

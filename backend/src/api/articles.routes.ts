@@ -1,7 +1,5 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { mapAlegraItem } from '../alegra/alegra.mapper';
-import { ConnectionRepo } from '../alegra/connection.repo';
 import { listSections } from '../catalog/sections.service';
 import type { AppContext } from '../context';
 import { BundleRepo } from '../custom/bundle.repo';
@@ -25,17 +23,17 @@ function parseItemId(raw: unknown): string {
  */
 export function articlesRoutes(ctx: AppContext): Router {
   const r = Router();
-  const conn = new ConnectionRepo(ctx.db, ctx.config);
   const omitted = new OmittedItemRepo(ctx.db);
 
-  /** Artículos activos de Alegra (consulta en vivo) con su marca de omitido y la sección con la que se mostrarían. */
+  /**
+   * Artículos activos de Alegra (de la copia local: no consulta a Alegra salvo la primera vez) con su marca de omitido y
+   * la sección con la que se mostrarían. Lo local (omitidos, asignaciones, combos) se lee en cada petición.
+   */
   r.get('/catalog/articles', async (_req, res) => {
-    const client = conn.client();
-    if (!client) throw new HttpError(422, 'alegra_not_configured', 'Primero configura la conexión con Alegra.');
-    let raw;
+    let data;
     let sections;
     try {
-      [raw, sections] = await Promise.all([client.listActiveItems(), listSections(ctx)]);
+      [data, sections] = await Promise.all([ctx.alegraData.get(), listSections(ctx)]);
     } catch (e) {
       throw toHttpError(e);
     }
@@ -53,8 +51,7 @@ export function articlesRoutes(ctx: AppContext): Router {
       }
     }
 
-    const items = raw
-      .map(mapAlegraItem)
+    const items = data.items
       .filter((i) => i.type !== 'variantParent')
       .map((i) => {
         // La categoría del artículo; si no tiene, la sección asignada en «Sin categoría»; si tampoco, ninguna

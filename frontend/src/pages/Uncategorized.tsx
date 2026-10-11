@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import AlegraDataBar from '../components/AlegraDataBar';
 import { Alert, Badge, Card, PageHeader } from '../components/ui';
 import { notifySummaryChanged } from '../hooks/usePanelSummary';
 import { api, ApiError } from '../services/api';
@@ -63,6 +64,7 @@ export default function Uncategorized() {
         title="Sin categoría"
         subtitle="Productos de Alegra sin categoría. Quedan fuera del PDF hasta que les asignes una sección."
       />
+      <AlegraDataBar onRefreshed={() => void load()} />
       <p className="text-sm text-pop-muted">
         La asignación solo se guarda aquí: no cambia nada en Alegra, así que conviene corregirlo allá también.
       </p>

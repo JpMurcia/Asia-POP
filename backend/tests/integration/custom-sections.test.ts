@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loggedInAgent, testConfig, testContext } from '../helpers';
+import { loggedInAgent, testConfig, testContext, waitForAlegraData } from '../helpers';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 
 let mock: AlegraMock | undefined;
@@ -155,6 +155,7 @@ describe('catálogo con sección propia', () => {
     ]);
     const { agent } = await loggedInAgent(testContext({ config: testConfig({ alegraBaseUrl: mock.url }) }));
     await agent.put('/api/settings/alegra').send({ email: 'tienda@example.com', apiToken: 'tok_valido' }).expect(200);
+    await waitForAlegraData(agent);
 
     const s = await newSection(agent);
     const mk = async (name: string, withImage: boolean) => {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { componentsTotal, computeBundlePrice } from '../../../backend/src/catalog/bundle-pricing';
+import AlegraDataBar from '../components/AlegraDataBar';
 import { Alert, Badge, Button, Card, Field, PageHeader } from '../components/ui';
 import { notifySummaryChanged } from '../hooks/usePanelSummary';
 import { api, ApiError } from '../services/api';
@@ -180,6 +181,7 @@ export default function Bundles() {
   return (
     <section className="flex flex-col gap-5 max-w-3xl">
       <PageHeader title="Combos" subtitle="Regalos armados con productos de Alegra o propios, con precio fijo o descuento." />
+      <AlegraDataBar onRefreshed={() => void load()} />
       {!options.alegraAvailable && (
         <Alert tone="warning">
           No se pudo consultar Alegra: los productos de Alegra no están disponibles para armar combos ahora.

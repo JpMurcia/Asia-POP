@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import type { PanelSummary } from '../../src/catalog/types';
-import { loggedInAgent, testConfig, testContext } from '../helpers';
+import { loggedInAgent, testConfig, testContext, waitForAlegraData } from '../helpers';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 
 let mock: AlegraMock;
@@ -70,19 +70,20 @@ describe('GET /api/panel/summary', () => {
     expect(s.sections).toEqual([{ key: 'alegra:c1', name: 'RAMEN', source: 'alegra', items: 3, soldOut: 1 }]);
   });
 
-  it('cachea la parte de Alegra 60 s; ?refresh=1 vuelve a consultar', async () => {
+  it('se calcula con la copia local: abrir el resumen ya no consulta a Alegra, y ?refresh=1 actualiza la copia', async () => {
     const { agent } = await setup();
-    await summary(agent);
+    await summary(agent); // primera lectura: la copia ya está o termina de descargarse
+    await waitForAlegraData(agent);
     const after = alegraCalls();
     expect(after).toBeGreaterThan(0);
-    await summary(agent);
-    expect(alegraCalls()).toBe(after); // desde caché
+    for (let i = 0; i < 3; i++) await summary(agent);
+    expect(alegraCalls()).toBe(after); // ya no hay caché de 60 s: no hace falta, leer la copia es local
     await summary(agent, '?refresh=1');
     expect(alegraCalls()).toBeGreaterThan(after);
   });
 
-  describe('syncedAt (FR-034)', () => {
-    it('con Alegra disponible trae el instante de la lectura, en ISO 8601', async () => {
+  describe('syncedAt (FR-034): la antigüedad de la copia', () => {
+    it('con Alegra disponible trae el instante de la descarga, en ISO 8601', async () => {
       const before = Date.now();
       const { agent } = await setup();
       const s = await summary(agent);
@@ -92,14 +93,14 @@ describe('GET /api/panel/summary', () => {
       expect(at).toBeLessThanOrEqual(Date.now() + 1000);
     });
 
-    it('es estable mientras dura la caché: no cambia entre lecturas', async () => {
+    it('es estable mientras no se actualice: no cambia entre lecturas', async () => {
       const { agent } = await setup();
       const first = (await summary(agent)).alegra.syncedAt;
       await new Promise((r) => setTimeout(r, 30));
       expect((await summary(agent)).alegra.syncedAt).toBe(first);
     });
 
-    it('?refresh=1 vuelve a leer y lo actualiza', async () => {
+    it('?refresh=1 descarga de nuevo y lo actualiza', async () => {
       const { agent } = await setup();
       const first = (await summary(agent)).alegra.syncedAt!;
       await new Promise((r) => setTimeout(r, 30));
@@ -112,39 +113,65 @@ describe('GET /api/panel/summary', () => {
       expect((await summary(agent)).alegra).not.toHaveProperty('syncedAt');
     });
 
-    it('si Alegra no responde no existe (no hay lectura que mostrar)', async () => {
+    it('si Alegra no responde y no hay copia no existe (no hay datos que mostrar)', async () => {
       const session = await setup();
+      await waitForAlegraData(session.agent);
+      session.ctx.db.prepare('DELETE FROM alegra_snapshot').run();
       await mock.close();
-      const s = await summary(session.agent, '?refresh=1');
+      const s = await summary(session.agent);
       expect(s.alegra.status).toBe('unreachable');
       expect(s.alegra).not.toHaveProperty('syncedAt');
+      expect(s.alegra).not.toHaveProperty('syncError');
       mock = await startAlegraMock();
     });
   });
 
-  it('asignar una sección a un ítem sin categoría invalida la caché y baja el contador', async () => {
-    const { agent } = await setup();
-    expect((await summary(agent)).stats?.uncategorized).toBe(1);
-    await agent.put('/api/catalog/uncategorized/4').send({ sectionKey: 'alegra:c1' }).expect(204);
-    const s = await summary(agent); // sin ?refresh: la escritura ya invalidó la caché
-    expect(s.stats?.uncategorized).toBe(0);
-    expect(s.stats?.estimatedPages).toBe(5); // RAMEN pasa a 4 productos = 2 páginas
+  it('una actualización fallida con copia responde 200 con los datos guardados y el aviso syncError', async () => {
+    const { agent, ctx } = await setup();
+    const first = await summary(agent);
+    await waitForAlegraData(agent);
+    await mock.close();
+    const s = await summary(agent, '?refresh=1');
+    expect(s.alegra.status).toBe('ok');
+    expect(s.alegra.syncError).toMatch(/conectar con Alegra/);
+    expect(s.alegra.syncedAt).toBe(first.alegra.syncedAt);
+    expect(s.stats).toEqual(first.stats);
+    expect(s.sections).toEqual(first.sections);
+    // sin ?refresh, el aviso no se pierde mientras no haya una descarga buena
+    expect((await summary(agent)).alegra.syncError).toMatch(/conectar con Alegra/);
+    expect(ctx.alegraData.status().lastError).not.toBeNull();
+    mock = await startAlegraMock();
   });
 
-  it('crear una sección propia invalida la caché', async () => {
+  it('asignar una sección a un ítem sin categoría baja el contador sin consultar a Alegra', async () => {
+    const { agent } = await setup();
+    expect((await summary(agent)).stats?.uncategorized).toBe(1);
+    await waitForAlegraData(agent);
+    const before = alegraCalls();
+    await agent.put('/api/catalog/uncategorized/4').send({ sectionKey: 'alegra:c1' }).expect(204);
+    const s = await summary(agent);
+    expect(s.stats?.uncategorized).toBe(0);
+    expect(s.stats?.estimatedPages).toBe(5); // RAMEN pasa a 4 productos = 2 páginas
+    expect(alegraCalls()).toBe(before);
+  });
+
+  it('crear una sección propia se refleja al instante, sin consultar a Alegra', async () => {
     const { agent } = await setup();
     await summary(agent);
+    await waitForAlegraData(agent);
     const before = alegraCalls();
     await agent.post('/api/sections/custom').send({ name: 'MOCHIS' }).expect(201);
     await summary(agent);
-    expect(alegraCalls()).toBeGreaterThan(before);
+    expect(alegraCalls()).toBe(before);
   });
 
-  it('Alegra caído: status unreachable, indicadores en null y el último catálogo sigue disponible', async () => {
+  it('sin copia y con Alegra caído: status unreachable, indicadores en null y el último catálogo sigue disponible', async () => {
     const session = await setup();
+    await waitForAlegraData(session.agent);
+    session.ctx.db.prepare('DELETE FROM alegra_snapshot').run();
     session.ctx.history.add(Buffer.from('%PDF-1.4'), 5, 1, { pages: 12 });
     await mock.close();
-    const s = await summary(session.agent, '?refresh=1');
+    const s = await summary(session.agent);
     expect(s.alegra.status).toBe('unreachable');
     expect(s.alegra.message).toBeTruthy();
     expect(s.stats).toBeNull();
@@ -205,7 +232,7 @@ describe('GET /api/panel/summary con artículos omitidos (feature 006)', () => {
   it('omitir un agotado baja «agotados» y las cantidades de su sección, pero no el total de productos de Alegra', async () => {
     const { agent } = await setupOmitted();
     await agent.put('/api/catalog/omitted/2').expect(204);
-    const s = await summary(agent); // sin ?refresh: la escritura ya invalidó la caché
+    const s = await summary(agent); // no hay caché: lo local se lee en cada petición
     expect(s.stats).toEqual({ ...BASE, soldOut: 0, omitted: 1 });
     expect(s.sections?.find((x) => x.key === 'alegra:c1')).toMatchObject({ items: 2, soldOut: 0 });
   });

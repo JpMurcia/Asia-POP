@@ -25,6 +25,25 @@ describe('AlegraClient', () => {
     expect(await client(mock).listActiveItems()).toHaveLength(30);
   });
 
+  it('onProgress informa lo recibido tras cada página, en artículos y en categorías (feature 007)', async () => {
+    mock = await startAlegraMock({
+      items: makeItems(65),
+      categories: Array.from({ length: 31 }, (_, i) => ({ id: String(i + 1), name: `Cat ${i + 1}` })),
+    });
+    const items: number[] = [];
+    const cats: number[] = [];
+    expect(await client(mock).listActiveItems({ onProgress: (n) => items.push(n) })).toHaveLength(65);
+    expect(await client(mock).listCategories({ onProgress: (n) => cats.push(n) })).toHaveLength(31);
+    expect(items).toEqual([30, 60, 65]);
+    expect(cats).toEqual([30, 31]);
+  });
+
+  it('sin onProgress el comportamiento no cambia', async () => {
+    mock = await startAlegraMock({ items: makeItems(40) });
+    expect(await client(mock).listActiveItems()).toHaveLength(40);
+    expect(await client(mock).listActiveItems({})).toHaveLength(40);
+  });
+
   it('solo hace peticiones GET (Alegra es de solo lectura)', async () => {
     mock = await startAlegraMock({ items: makeItems(3), categories: [{ id: '1', name: 'RAMEN' }] });
     const c = client(mock);

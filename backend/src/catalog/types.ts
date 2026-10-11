@@ -171,6 +171,24 @@ export interface CatalogStructure {
 export type AlegraStatus = 'ok' | 'unreachable' | 'not_configured';
 
 /**
+ * Estado de la copia local de los datos de Alegra (feature 007). `GET /api/alegra/data` y `POST /api/alegra/data/refresh`
+ * lo devuelven; nunca consultan a Alegra. Alegra no informa el total de artículos, así que no hay porcentaje.
+ */
+export interface AlegraDataStatus {
+  /** `none`: sin copia (nunca descargada, descartada o de otra cuenta); `ready`: hay copia; `syncing`: descargando. */
+  state: 'none' | 'ready' | 'syncing';
+  /** Instante (ISO 8601) de la copia vigente; `null` si no hay. Durante `syncing` sigue siendo el de la copia anterior. */
+  syncedAt: string | null;
+  /** Artículos activos de la copia (sin padres de variantes). */
+  articles: number | null;
+  categories: number | null;
+  /** Solo con `syncing`: lo recibido hasta ahora en la fase actual. */
+  progress: { phase: 'categories' | 'items'; received: number } | null;
+  /** Último intento fallido que aún no se superó con una descarga buena (memoria; se pierde al reiniciar). */
+  lastError: { message: string; at: string } | null;
+}
+
+/**
  * Un texto de producto que no cupo completo en el PDF generado (feature 007): lo detecta el navegador que lo dibuja
  * (`window.__printTextOverflow`) y Generar lo muestra al terminar. No impide generar ni se guarda en el historial.
  */
@@ -188,8 +206,10 @@ export interface PanelSummary {
     email?: string;
     lastTestedAt?: string | null;
     message?: string;
-    /** Instante (ISO 8601) de la lectura de Alegra que llenó la caché; solo con `status: 'ok'`. */
+    /** Instante (ISO 8601) de la descarga de Alegra con la que se calculó el resumen (la copia local); solo con `status: 'ok'`. */
     syncedAt?: string;
+    /** Con `status: 'ok'`: la última actualización falló y se muestran los datos guardados (feature 007). */
+    syncError?: string;
   };
   /** `null` si Alegra no respondió. */
   stats: {

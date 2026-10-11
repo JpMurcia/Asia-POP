@@ -137,3 +137,32 @@ describe('pantalla Inicio con artículos omitidos (feature 006)', () => {
     expect(screen.queryByText(/omitidos? del catálogo/)).not.toBeInTheDocument();
   });
 });
+
+describe('Inicio con los datos de Alegra guardados (feature 007)', () => {
+  it('«Sincronizado hace N min» es la antigüedad de la copia que informa el servidor', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(new Date('2026-10-10T14:07:00.000Z'));
+    renderHome({ ...base, alegra: { ...base.alegra, syncedAt: '2026-10-10T14:00:00.000Z' } });
+    expect(screen.getByText(/Sincronizado hace 7 min/)).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('si la última actualización falló, avisa bajo los indicadores y ofrece reintentar, sin ocultar los datos', () => {
+    const refresh = vi.fn(async () => {});
+    renderHome(
+      { ...base, alegra: { ...base.alegra, syncedAt: '2026-10-10T14:00:00.000Z', syncError: 'No se pudo conectar con Alegra.' } },
+      { refresh },
+    );
+    const notice = screen.getByTestId('sync-error');
+    expect(notice).toHaveTextContent('No se pudo actualizar desde Alegra: No se pudo conectar con Alegra.');
+    // los datos guardados siguen a la vista
+    expect(screen.getByLabelText('Productos activos en Alegra: 40')).toBeInTheDocument();
+    fireEvent.click(within(notice).getByRole('button', { name: 'Reintentar' }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('sin syncError no hay aviso de actualización', () => {
+    renderHome({ ...base, alegra: { ...base.alegra, syncedAt: '2026-10-10T14:00:00.000Z' } });
+    expect(screen.queryByTestId('sync-error')).not.toBeInTheDocument();
+  });
+});

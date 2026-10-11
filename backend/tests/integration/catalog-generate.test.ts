@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
-import { FakeRenderer, loggedInAgent, testConfig, testContext } from '../helpers';
+import { FakeRenderer, loggedInAgent, testConfig, testContext, waitForAlegraData } from '../helpers';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 
 let mock: AlegraMock;
@@ -27,6 +27,7 @@ async function setup(items: (m: AlegraMock) => AlegraItemRaw[], renderer = new F
   const ctx = testContext({ config: testConfig({ alegraBaseUrl: mock.url }), renderer });
   const session = await loggedInAgent(ctx);
   await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+  await waitForAlegraData(session.agent);
   return { ...session, renderer };
 }
 

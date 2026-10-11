@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import { alegraDataRoutes } from './api/alegra-data.routes';
 import { alegraSettingsRoutes } from './api/alegra-settings.routes';
 import { articlesRoutes } from './api/articles.routes';
 import { authRoutes } from './api/auth.routes';
@@ -36,18 +37,8 @@ export function createApp(ctx: AppContext): Express {
   // Todo lo demás bajo /api y /media exige sesión (FR-003)
   api.use(guard);
 
-  // Cualquier cambio exitoso (credenciales, secciones, productos, combos, overrides, preparar...) invalida el
-  // resumen de Inicio, para que contadores y secciones no queden desactualizados hasta 60 s.
-  api.use((req, res, next) => {
-    if (req.method !== 'GET') {
-      res.on('finish', () => {
-        if (res.statusCode < 400) ctx.panelSummary.invalidate();
-      });
-    }
-    next();
-  });
-
   api.use(alegraSettingsRoutes(ctx));
+  api.use(alegraDataRoutes(ctx));
   api.use(panelRoutes(ctx));
   api.use(catalogRoutes(ctx));
   api.use(uncategorizedRoutes(ctx));

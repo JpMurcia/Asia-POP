@@ -3,6 +3,11 @@ import { AlegraError, type AlegraCategoryRaw, type AlegraItemRaw } from './alegr
 export const PAGE_SIZE = 30; // máximo permitido por Alegra
 const MAX_RETRIES = 3;
 
+/** Opciones de las descargas paginadas: `onProgress` recibe cuántos registros van recibidos tras cada página. */
+export interface DownloadOptions {
+  onProgress?: (received: number) => void;
+}
+
 export interface AlegraClientOptions {
   baseUrl: string;
   email: string;
@@ -30,8 +35,8 @@ export class AlegraClient {
     return this.get('/company');
   }
 
-  async listCategories(): Promise<AlegraCategoryRaw[]> {
-    return this.paginate<AlegraCategoryRaw>('/item-categories', {});
+  async listCategories(opts: DownloadOptions = {}): Promise<AlegraCategoryRaw[]> {
+    return this.paginate<AlegraCategoryRaw>('/item-categories', {}, opts.onProgress);
   }
 
   /**
@@ -39,16 +44,21 @@ export class AlegraClient {
    * omite `images`, y su valor por defecto no está documentado: verificado con la cuenta real que `advanced` devuelve
    * lo mismo que sin el parámetro, así que pedirlo evita que un cambio silencioso deje el catálogo sin fotos.
    */
-  async listActiveItems(): Promise<AlegraItemRaw[]> {
-    return this.paginate<AlegraItemRaw>('/items', { status: 'active', mode: 'advanced' });
+  async listActiveItems(opts: DownloadOptions = {}): Promise<AlegraItemRaw[]> {
+    return this.paginate<AlegraItemRaw>('/items', { status: 'active', mode: 'advanced' }, opts.onProgress);
   }
 
-  private async paginate<T>(path: string, params: Record<string, string>): Promise<T[]> {
+  private async paginate<T>(
+    path: string,
+    params: Record<string, string>,
+    onProgress?: (received: number) => void,
+  ): Promise<T[]> {
     const all: T[] = [];
     for (let start = 0; ; start += PAGE_SIZE) {
       const page = await this.get<T[]>(path, { ...params, start: String(start), limit: String(PAGE_SIZE) });
       if (!Array.isArray(page)) throw new AlegraError('http', 'Respuesta inesperada de Alegra.');
       all.push(...page);
+      onProgress?.(all.length);
       if (page.length < PAGE_SIZE) break;
     }
     return all;

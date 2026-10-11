@@ -12,7 +12,7 @@ import { PrepareStore } from '../../src/catalog/prepare-store';
 import { PuppeteerRenderer } from '../../src/pdf/pdf.service';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
-import { FakeRenderer, loggedInAgent, SEED, testConfig, testContext } from '../helpers';
+import { FakeRenderer, loggedInAgent, SEED, testConfig, testContext, waitForAlegraData } from '../helpers';
 
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -55,6 +55,7 @@ async function setup(renderer = new FakeRenderer()) {
   const session = await loggedInAgent(ctx);
   const { agent } = session;
   await agent.put('/api/settings/alegra').send(creds).expect(200);
+  await waitForAlegraData(agent);
   const section = (await agent.post('/api/sections/custom').send({ name: 'REGALOS' }).expect(201)).body;
   const bundle = (
     await agent
@@ -149,6 +150,7 @@ describe('opciones de generación (API)', () => {
     });
     const { agent } = await loggedInAgent(ctx);
     await agent.put('/api/settings/alegra').send(creds).expect(200);
+    await waitForAlegraData(agent);
     const prep = await prepare(agent);
 
     clock += 14 * 60 * 1000; // aún vigente
@@ -288,6 +290,7 @@ describe('la estructura coincide con el PDF real (SC-003)', () => {
     agent = request.agent(server);
     await agent.post('/api/auth/login').send(SEED).expect(204);
     await agent.put('/api/settings/alegra').send(creds).expect(200);
+    await waitForAlegraData(agent);
   }, 120_000);
 
   afterAll(async () => {

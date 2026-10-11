@@ -3,7 +3,7 @@ import { baseTemplate } from '../../src/catalog/template-presets';
 import type { Template, WorkspaceState } from '../../src/catalog/template';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
-import { loggedInAgent, testConfig, testContext, FakeRenderer } from '../helpers';
+import { loggedInAgent, testConfig, testContext, FakeRenderer, waitForAlegraData } from '../helpers';
 
 const creds = { email: 'tienda@example.com', apiToken: 'tok_valido' };
 
@@ -28,6 +28,7 @@ async function setup() {
   mock.setItems([item('1', 'c1'), item('2', 'c1'), item('3', 'c1'), item('4', 'c1'), item('5', 'c2')]);
   const session = await loggedInAgent(testContext({ config: testConfig({ alegraBaseUrl: mock.url }), renderer: new FakeRenderer() }));
   await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+  await waitForAlegraData(session.agent);
   return session;
 }
 type Agent = Awaited<ReturnType<typeof setup>>['agent'];
@@ -214,6 +215,7 @@ describe('migración desde 002', () => {
 
     const { agent } = await loggedInAgent(ctx);
     await agent.put('/api/settings/alegra').send(creds).expect(200);
+    await waitForAlegraData(agent);
     const prep = await prepare(agent);
     const res = await agent.post('/api/catalog/generate').send({ prepareId: prep.prepareId }).expect(202);
     expect(res.body.template).toEqual({ id: 'neon', name: 'Neón Noche', fallback: false });

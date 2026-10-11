@@ -380,3 +380,88 @@ describe('Historial', () => {
     expect(await screen.findByText('Aún no has generado ningún catálogo.')).toBeInTheDocument();
   });
 });
+
+describe('barra de datos de Alegra en las pantallas (feature 007)', () => {
+  const ready = { state: 'ready', syncedAt: new Date(Date.now() - 5 * 60_000).toISOString(), articles: 10, categories: 3, progress: null, lastError: null };
+  const syncing = { ...ready, state: 'syncing', progress: { phase: 'items', received: 40 } };
+
+  it('Sin categoría muestra la barra bajo el título y, al terminar una actualización, vuelve a cargar su lista', async () => {
+    let listCalls = 0;
+    let dataCalls = 0;
+    mockApi({
+      'GET /api/catalog/uncategorized': () => {
+        listCalls++;
+        return json(200, { items: [{ itemId: '7', name: 'Palillos', assignedSectionKey: null, omitted: false }] });
+      },
+      'GET /api/sections': () => json(200, []),
+      'GET /api/alegra/data': () => json(200, ++dataCalls === 1 ? ready : { ...ready, syncedAt: new Date().toISOString() }),
+      'POST /api/alegra/data/refresh': () => json(202, { ...ready, state: 'ready', syncedAt: new Date().toISOString() }),
+    });
+    renderAt(<Uncategorized />);
+    expect(await screen.findByText('Palillos')).toBeInTheDocument();
+    expect(await screen.findByText(/Datos de Alegra actualizados hace 5 min/)).toBeInTheDocument();
+    expect(listCalls).toBe(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar desde Alegra' }));
+    await waitFor(() => expect(listCalls).toBe(2));
+  });
+
+  it('Combos muestra la barra y su lista no se recarga si nadie actualiza', async () => {
+    let bundleCalls = 0;
+    mockApi({
+      'GET /api/sections/custom': () => json(200, [{ id: 'r', name: 'REGALOS' }]),
+      'GET /api/bundles': () => {
+        bundleCalls++;
+        return json(200, []);
+      },
+      'GET /api/bundles/component-options': () => json(200, { alegra: [], custom: [], alegraAvailable: true }),
+      'GET /api/alegra/data': () => json(200, syncing),
+    });
+    renderAt(<Bundles />);
+    expect(await screen.findByText('Actualizando desde Alegra… 40 artículos recibidos.')).toBeInTheDocument();
+    expect(bundleCalls).toBe(1);
+  });
+
+  it('Conexión Alegra muestra la barra tras guardar con el avance de la primera descarga', async () => {
+    mockApi({
+      'GET /api/settings/alegra': () => json(200, { email: null, isConfigured: false, lastTestedAt: null }),
+      'PUT /api/settings/alegra': () =>
+        json(200, { email: 'a@b.co', isConfigured: true, lastTestedAt: '2026-10-03T10:00:00Z', data: { ...ready, state: 'syncing', syncedAt: null, progress: { phase: 'categories', received: 0 } } }),
+      'GET /api/alegra/data': () => json(200, { ...ready, state: 'syncing', syncedAt: null, progress: { phase: 'items', received: 90 } }),
+    });
+    renderAt(<AlegraSettings />);
+    fireEvent.change(await screen.findByLabelText('Correo de Alegra'), { target: { value: 'a@b.co' } });
+    fireEvent.change(screen.getByLabelText('Token de la API'), { target: { value: 'tok' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(await screen.findByText('Actualizando desde Alegra… 90 artículos recibidos.')).toBeInTheDocument();
+    // una primera conexión no es un cambio de cuenta
+    expect(screen.queryByText(/Cambiaste de cuenta de Alegra/)).not.toBeInTheDocument();
+  });
+
+  it('si el correo guardado es distinto del que había al abrir la pantalla, avisa del cambio de cuenta', async () => {
+    mockApi({
+      'GET /api/settings/alegra': () => json(200, { email: 'vieja@b.co', isConfigured: true, lastTestedAt: null }),
+      'PUT /api/settings/alegra': () => json(200, { email: 'nueva@b.co', isConfigured: true, lastTestedAt: '2026-10-03T10:00:00Z', data: { ...ready, state: 'syncing', syncedAt: null } }),
+      'GET /api/alegra/data': () => json(200, ready),
+    });
+    renderAt(<AlegraSettings />);
+    expect(await screen.findByTestId('alegra-status')).toHaveTextContent('vieja@b.co');
+    fireEvent.change(screen.getByLabelText('Correo de Alegra'), { target: { value: 'nueva@b.co' } });
+    fireEvent.change(screen.getByLabelText('Token de la API'), { target: { value: 'tok' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(await screen.findByText('Cambiaste de cuenta de Alegra: se descargan los datos de la cuenta nueva.')).toBeInTheDocument();
+  });
+
+  it('guardar la misma cuenta (aunque cambien las mayúsculas) no avisa de cambio de cuenta', async () => {
+    mockApi({
+      'GET /api/settings/alegra': () => json(200, { email: 'tienda@b.co', isConfigured: true, lastTestedAt: null }),
+      'PUT /api/settings/alegra': () => json(200, { email: 'TIENDA@b.co', isConfigured: true, lastTestedAt: '2026-10-03T10:00:00Z', data: ready }),
+      'GET /api/alegra/data': () => json(200, ready),
+    });
+    renderAt(<AlegraSettings />);
+    expect(await screen.findByTestId('alegra-status')).toHaveTextContent('tienda@b.co');
+    fireEvent.change(screen.getByLabelText('Token de la API'), { target: { value: 'tok' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(await screen.findByText('Credenciales guardadas y conexión verificada.')).toBeInTheDocument();
+    expect(screen.queryByText(/Cambiaste de cuenta de Alegra/)).not.toBeInTheDocument();
+  });
+});

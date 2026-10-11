@@ -7,7 +7,7 @@ import { createApp } from '../src/app';
 import type { AppConfig } from '../src/config/env';
 import { createContext, type AppContext } from '../src/context';
 import { openDatabase } from '../src/db/database';
-import type { TextOverflow } from '../src/catalog/types';
+import type { AlegraDataStatus, TextOverflow } from '../src/catalog/types';
 import type { PdfRenderer, RenderReport } from '../src/pdf/pdf.service';
 
 export const SEED = { username: 'tienda', password: 'clave-semilla-test' };
@@ -56,4 +56,26 @@ export async function loggedInAgent(ctx: AppContext = testContext()) {
   const agent = request.agent(app);
   await agent.post('/api/auth/login').send(SEED).expect(204);
   return { app, agent, ctx };
+}
+
+type TestAgent = Awaited<ReturnType<typeof loggedInAgent>>['agent'];
+
+/** Espera a que la copia de Alegra deje de descargar (feature 007) y devuelve su estado. */
+export async function waitForAlegraData(agent: TestAgent, timeoutMs = 10_000): Promise<AlegraDataStatus> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const st = (await agent.get('/api/alegra/data').expect(200)).body as AlegraDataStatus;
+    if (st.state !== 'syncing') return st;
+    if (Date.now() > deadline) throw new Error('la copia de Alegra no terminó de descargarse');
+    await new Promise((r) => setTimeout(r, 20));
+  }
+}
+
+/**
+ * Pide la actualización de la copia de Alegra y espera a que termine. Las pantallas leen la copia, no a Alegra: una
+ * prueba que cambia los datos del simulador y espera verlos debe llamar a esto justo después.
+ */
+export async function refreshAlegraData(agent: TestAgent): Promise<AlegraDataStatus> {
+  await agent.post('/api/alegra/data/refresh').expect(202);
+  return waitForAlegraData(agent);
 }

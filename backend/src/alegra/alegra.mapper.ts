@@ -87,3 +87,54 @@ export function mapAlegraItem(raw: AlegraItemRaw): NormalizedItem {
     type: raw.type ?? 'simple',
   };
 }
+
+/**
+ * Lo que la copia local guarda de un artículo de Alegra (feature 007). Igual que `NormalizedItem` salvo las fotos:
+ * sus direcciones están firmadas y vencen, así que no se guardan; solo `hasPhoto`.
+ */
+export interface SnapshotItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  soldOut: boolean;
+  categoryId: string | null;
+  categoryName: string | null;
+  type: string;
+  hasPhoto: boolean;
+}
+
+export function toSnapshotItem(item: NormalizedItem): SnapshotItem {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    soldOut: item.soldOut,
+    categoryId: item.categoryId,
+    categoryName: item.categoryName,
+    type: item.type,
+    hasPhoto: (item.imageUrls?.length ?? 0) > 0 || item.remoteImageUrl !== null,
+  };
+}
+
+/**
+ * Vuelve a un artículo normalizado. La marca `snapshot:photo` NO es una dirección: solo hace que el resumen de Inicio
+ * (que supone «con foto» a todo artículo que tiene dirección) cuente el artículo como con foto. Nunca se descarga ni se
+ * dibuja: `prepare` siempre consulta Alegra en vivo para las fotos.
+ */
+export const SNAPSHOT_PHOTO_MARK = 'snapshot:photo';
+
+export function snapshotToNormalized(s: SnapshotItem): NormalizedItem {
+  return {
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    price: s.price,
+    remoteImageUrl: s.hasPhoto ? SNAPSHOT_PHOTO_MARK : null,
+    soldOut: s.soldOut,
+    categoryId: s.categoryId,
+    categoryName: s.categoryName,
+    type: s.type,
+  };
+}

@@ -19,8 +19,9 @@ interface State {
 /**
  * Resumen de Inicio compartido por la barra lateral y la pantalla Inicio.
  * Un fallo de red no rompe la pantalla: `summary` queda en `null` y `error` en `true`.
- * `reloadKey` (por ejemplo la ruta actual) vuelve a cargarlo al cambiar; el servidor lo cachea 60 s
- * y lo invalida al guardar cambios, así que recargar al navegar es barato.
+ * `reloadKey` (por ejemplo la ruta actual) vuelve a cargarlo al cambiar. Desde la feature 007 el servidor lo calcula con
+ * los datos de Alegra guardados en el equipo (no consulta a Alegra) y las entradas locales de cada petición, así que
+ * recargar al navegar es barato y una decisión local se ve al instante. `refresh()` actualiza esos datos desde Alegra.
  */
 export function usePanelSummary(reloadKey = ''): State {
   const [summary, setSummary] = useState<PanelSummary | null>(null);

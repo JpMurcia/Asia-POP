@@ -20,6 +20,8 @@ describe('guardia de sesión', () => {
     ['put', '/api/catalog/omitted/1'],
     ['delete', '/api/catalog/omitted/1'],
     ['get', '/api/settings/business'],
+    ['get', '/api/alegra/data'],
+    ['post', '/api/alegra/data/refresh'],
   ];
 
   it.each(routes)('%s %s sin sesión responde 401', async (method, url) => {

@@ -68,6 +68,9 @@ export class CatalogService {
       } catch (e) {
         throw toHttpError(e);
       }
+      // Esta descarga (la de las fotos y los precios del momento) queda como la copia vigente de los datos: las pantallas la
+      // ven sin descargar otra vez. Si Alegra falló arriba, la copia anterior no se toca (feature 007)
+      this.ctx.alegraData.store(categories, rawItems);
       const items = rawItems.map(mapAlegraItem);
       // Una sola lectura de las entradas locales: la misma lista de omitidos decide qué fotos se descargan, qué entra
       // al catálogo y la firma con la que `generate` comprobará que no cambió (FR-012)

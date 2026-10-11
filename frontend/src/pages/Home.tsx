@@ -23,7 +23,7 @@ export default function Home({ summary, loading, error, refresh }: Props) {
   const pending = stats?.uncategorized ?? 0;
   const omitted = stats?.omitted ?? 0;
   const noteNA = status === 'unreachable' || error ? 'No disponible sin Alegra' : undefined;
-  // La lectura de Alegra envejece: "Sincronizado hace N min" (se actualiza solo)
+  // Los datos de Alegra guardados envejecen: "Sincronizado hace N min" es la antigüedad de la copia (se actualiza solo)
   const now = useNow();
   const ago = summary?.alegra.syncedAt ? timeAgo(summary.alegra.syncedAt, now) : null;
 
@@ -87,6 +87,17 @@ export default function Home({ summary, loading, error, refresh }: Props) {
         <Alert tone="error" title="No se pudo consultar Alegra">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <span>{summary?.alegra.message ?? 'No se pudo cargar el resumen. Revisa tu conexión.'}</span>
+            <Button variant="secondary" className="h-9" onClick={() => void refresh()}>
+              Reintentar
+            </Button>
+          </div>
+        </Alert>
+      )}
+
+      {summary?.alegra.syncError && (
+        <Alert tone="warning" data-testid="sync-error">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span>No se pudo actualizar desde Alegra: {summary.alegra.syncError.replace(/[.\s]+$/, '')}. Estás viendo los datos guardados{ago ? ` (${ago})` : ''}.</span>
             <Button variant="secondary" className="h-9" onClick={() => void refresh()}>
               Reintentar
             </Button>

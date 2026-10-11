@@ -3,7 +3,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
 import type { CatalogPayload } from '../../src/catalog/types';
-import { FakeRenderer, loggedInAgent, testConfig, testContext } from '../helpers';
+import { FakeRenderer, loggedInAgent, testConfig, testContext, waitForAlegraData } from '../helpers';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 
 let mock: AlegraMock;
@@ -36,6 +36,7 @@ async function setup(items: () => AlegraItemRaw[]) {
   const ctx = testContext({ config: testConfig({ alegraBaseUrl: mock.url }), renderer: new FakeRenderer() });
   const session = await loggedInAgent(ctx);
   await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+  await waitForAlegraData(session.agent);
   return session;
 }
 
@@ -212,6 +213,7 @@ describe('informe de fotos con fallos reales de descarga', () => {
     const ctx = testContext({ config: testConfig({ alegraBaseUrl: mock.url }), renderer: new FakeRenderer() });
     const { agent } = await loggedInAgent(ctx);
     await agent.put('/api/settings/alegra').send(creds).expect(200);
+    await waitForAlegraData(agent);
     const prep = await prepare(agent);
     expect(prep.report.photos.notObtained.map((p: { id: string }) => p.id)).toEqual(['2']);
     const ramen = await agent

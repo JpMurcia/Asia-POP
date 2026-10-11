@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import AlegraDataBar from '../components/AlegraDataBar';
 import { Alert, Button, Card, Field, PageHeader } from '../components/ui';
 import { notifySummaryChanged } from '../hooks/usePanelSummary';
 import { api, ApiError } from '../services/api';
@@ -29,6 +30,9 @@ export default function AlegraSettings() {
   const [apiToken, setApiToken] = useState('');
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Cuántas veces se guardó en esta pantalla: la barra de datos vuelve a consultar el estado tras cada guardado. */
+  const [saves, setSaves] = useState(0);
+  const [accountChanged, setAccountChanged] = useState(false);
 
   useEffect(() => {
     api.get<Status>('/api/settings/alegra').then((s) => {
@@ -48,8 +52,12 @@ export default function AlegraSettings() {
         if (res?.testAttempts) setAttempts(res.testAttempts);
         setMessage({ type: 'ok', text: 'Conexión exitosa con Alegra.' });
       } else {
+        const previous = status?.email ?? null;
         const s = await api.put<Status>('/api/settings/alegra', { email, apiToken });
         setStatus(s);
+        // Otra cuenta: el servidor descarta los datos guardados de la anterior y descarga los de la nueva (feature 007)
+        setAccountChanged(previous !== null && s.email !== null && previous.toLowerCase() !== s.email.toLowerCase());
+        setSaves((n) => n + 1);
         setApiToken(''); // el token no se conserva en pantalla
         setMessage({ type: 'ok', text: 'Credenciales guardadas y conexión verificada.' });
         notifySummaryChanged();
@@ -75,6 +83,10 @@ export default function AlegraSettings() {
             : 'Aún no hay credenciales guardadas.'}
         </p>
       )}
+      {accountChanged && (
+        <Alert tone="info">Cambiaste de cuenta de Alegra: se descargan los datos de la cuenta nueva.</Alert>
+      )}
+      {status?.isConfigured && <AlegraDataBar key={saves} />}
       <Card>
         <form className="flex flex-col gap-4" onSubmit={(e) => run('save', e)}>
           <Field

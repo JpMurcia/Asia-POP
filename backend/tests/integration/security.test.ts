@@ -114,6 +114,9 @@ describe('seguridad', () => {
     record(await agent.post('/api/settings/alegra/test').send({ email: 'tienda@example.com', apiToken: TOKEN }));
     record(await agent.get('/api/panel/summary'));
     record(await agent.get('/api/panel/summary?refresh=1'));
+    record(await agent.get('/api/alegra/data'));
+    record(await agent.post('/api/alegra/data/refresh'));
+    record(await agent.get('/api/alegra/data'));
     const prep = await agent.post('/api/catalog/prepare').send({});
     record(prep);
     record(await agent.put(`/api/catalog/prepare/${prep.body.prepareId}/options`).send({ hideSoldOut: true }));
@@ -135,6 +138,27 @@ describe('seguridad', () => {
     await agent.get('/api/panel/summary?refresh=1').expect(200);
     expect(mock.requests.length).toBeGreaterThan(0);
     expect(mock.requests.every((r) => r.method === 'GET')).toBe(true);
+  });
+
+  it('las descargas de la copia local de Alegra solo usan GET y no guardan el token ni direcciones de fotos (feature 007)', async () => {
+    mock = await startAlegraMock({ token: TOKEN, categories: [{ id: 'c1', name: 'RAMEN' }], items: [] });
+    mock.setItems([
+      { id: '1', name: 'Shin', status: 'active', price: 9000, category: { id: 'c1', name: 'RAMEN' }, images: [`${mock.url}/img/ok.png?Signature=firma`] },
+    ]);
+    const { agent, ctx } = await loggedInAgent(testContext({ config: testConfig({ alegraBaseUrl: mock.url }) }));
+    await agent.put('/api/settings/alegra').send({ email: 'tienda@example.com', apiToken: TOKEN }).expect(200);
+    await agent.post('/api/alegra/data/refresh').expect(202);
+    for (let i = 0; i < 100 && (await agent.get('/api/alegra/data')).body.state === 'syncing'; i++) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    await agent.post('/api/catalog/prepare').send({}).expect(200);
+    expect(mock.requests.length).toBeGreaterThan(0);
+    expect(mock.requests.every((r) => r.method === 'GET')).toBe(true);
+    const row = ctx.db.prepare('SELECT * FROM alegra_snapshot').get() as Record<string, unknown>;
+    expect(JSON.stringify(row)).not.toContain(TOKEN);
+    expect(JSON.stringify(row)).not.toMatch(/Signature|https?:/);
+    const status = await agent.get('/api/alegra/data');
+    expect(JSON.stringify(status.body)).not.toContain(TOKEN);
   });
 
   it('el token se guarda cifrado en la base', async () => {

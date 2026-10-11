@@ -8,7 +8,7 @@ import type { CatalogPayload } from '../../src/catalog/types';
 import { withPhotoVariants } from '../../src/pdf/photo-variants';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 import { heavyPng } from '../fixtures/photos';
-import { FakeRenderer, loggedInAgent, testConfig, testContext } from '../helpers';
+import { FakeRenderer, loggedInAgent, testConfig, testContext, waitForAlegraData } from '../helpers';
 
 type Agent = ReturnType<typeof request.agent>;
 
@@ -89,6 +89,7 @@ async function setup(items: (() => AlegraItemRaw[]) | null = ITEMS) {
   const session = await loggedInAgent(ctx);
   renderer.agent = session.agent;
   await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+  await waitForAlegraData(session.agent);
   return { ...session, renderer };
 }
 

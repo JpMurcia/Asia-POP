@@ -56,9 +56,14 @@ export function alegraSettingsRoutes(ctx: AppContext): Router {
 
   r.put('/settings/alegra', async (req, res) => {
     const { email, apiToken } = credsSchema.parse(req.body);
-    await validate(email, apiToken); // si falla, se conservan las anteriores (FR-006)
+    await validate(email, apiToken); // si falla, se conservan las anteriores y la copia de los datos (FR-006)
+    const previous = repo.status().email;
     repo.save(email, apiToken, new Date().toISOString());
-    res.json(repo.status());
+    // Los datos guardados son de una cuenta: con otro correo (sin distinguir mayúsculas) se descartan (feature 007)
+    if (previous === null || previous.toLowerCase() !== email.toLowerCase()) ctx.alegraData.discard();
+    // Sin copia (primera conexión o cuenta nueva) se descargan ya, en segundo plano, sin retrasar la respuesta
+    if (ctx.alegraData.status().state === 'none') ctx.alegraData.start();
+    res.json({ ...repo.status(), data: ctx.alegraData.status() });
   });
 
   r.post('/settings/alegra/test', limitTests, async (req, res) => {

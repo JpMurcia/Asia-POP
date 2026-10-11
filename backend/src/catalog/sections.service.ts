@@ -13,14 +13,16 @@ export interface SectionInfo {
 const byName = (a: { name: string }, b: { name: string }) =>
   a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
 
-/** Lista unificada de secciones (categorías de Alegra en vivo + secciones propias) en el orden definido. */
+/**
+ * Lista unificada de secciones (categorías de Alegra de la copia local + secciones propias) en el orden definido. Las
+ * categorías salen de los datos guardados: no consulta a Alegra salvo la primera vez (feature 007).
+ */
 export async function listSections(ctx: AppContext): Promise<SectionInfo[]> {
   const sections: SectionInfo[] = [];
 
-  const client = new ConnectionRepo(ctx.db, ctx.config).client();
-  if (client) {
+  if (new ConnectionRepo(ctx.db, ctx.config).status().isConfigured) {
     try {
-      for (const c of await client.listCategories()) {
+      for (const c of (await ctx.alegraData.get()).categories) {
         sections.push({ key: `alegra:${c.id}`, name: c.name, source: 'alegra' });
       }
     } catch (e) {

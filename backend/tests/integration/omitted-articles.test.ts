@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/app';
 import type { AlegraItemRaw } from '../../src/alegra/alegra.types';
-import { FakeRenderer, loggedInAgent, SEED, testConfig, testContext } from '../helpers';
+import { FakeRenderer, loggedInAgent, SEED, testConfig, testContext, waitForAlegraData } from '../helpers';
 import { startAlegraMock, type AlegraMock } from '../fixtures/alegra-mock';
 import request from 'supertest';
 
@@ -38,7 +38,10 @@ async function setup(items: (m: AlegraMock) => AlegraItemRaw[], opts: { configur
   const renderer = new FakeRenderer();
   const ctx = testContext({ config, renderer });
   const session = await loggedInAgent(ctx);
-  if (opts.configured !== false) await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+  if (opts.configured !== false) {
+    await session.agent.put('/api/settings/alegra').send(creds).expect(200);
+    await waitForAlegraData(session.agent); // la copia de Alegra se descarga en segundo plano al guardar la conexión
+  }
   return { ...session, config, renderer };
 }
 
@@ -107,13 +110,23 @@ describe('GET /api/catalog/articles', () => {
     expect(res.body.error).toBe('alegra_not_configured');
   });
 
-  it('con Alegra caído responde 502 y no toca la lista guardada (FR-015)', async () => {
+  it('sin copia y con Alegra caído responde 502 y no toca la lista guardada (FR-015)', async () => {
     const { agent, ctx } = await setup(() => [item('1'), item('2')]);
     await agent.put('/api/catalog/omitted/1').expect(204);
+    ctx.db.prepare('DELETE FROM alegra_snapshot').run(); // sin datos guardados, la lectura tiene que descargar
     await mock.close();
     const res = await agent.get('/api/catalog/articles');
     expect(res.status).toBe(502);
     expect(res.body.error).toBe('alegra_unreachable');
+    expect(omittedRows(ctx)).toEqual(['1']);
+  });
+
+  it('con copia y con Alegra caído la lista se sigue viendo, con sus marcas de omitido (feature 007)', async () => {
+    const { agent, ctx } = await setup(() => [item('1'), item('2')]);
+    await agent.put('/api/catalog/omitted/1').expect(204);
+    await mock.close();
+    const rows = (await agent.get('/api/catalog/articles').expect(200)).body.items as Row[];
+    expect(rows.map((r) => [r.itemId, r.omitted])).toEqual([['1', true], ['2', false]]);
     expect(omittedRows(ctx)).toEqual(['1']);
   });
 });
