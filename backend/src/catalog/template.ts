@@ -25,6 +25,8 @@ export const BASE_IDS = ['neon', 'pop', 'kawaii', 'kraft'] as const;
 export const AUTO_BLOCK_TYPES = ['intro', 'products', 'terms', 'footer'] as const;
 export const TOKEN_NAMES = ['banner', 'seccion', 'telefonos', 'direccion', 'tienda'] as const;
 export const WEIGHTS = [400, 600, 700, 900] as const;
+/** Dónde va el nombre de un producto: en un rótulo aparte de la burbuja o dentro de ella (feature 007). */
+export const NAME_STYLES = ['separado', 'burbuja'] as const;
 
 export type PageKey = (typeof PAGE_KEYS)[number];
 export type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -34,6 +36,7 @@ export type BaseId = (typeof BASE_IDS)[number];
 export type AutoBlockType = (typeof AUTO_BLOCK_TYPES)[number];
 export type TokenName = (typeof TOKEN_NAMES)[number];
 export type Weight = (typeof WEIGHTS)[number];
+export type NameStyle = (typeof NAME_STYLES)[number];
 
 /** Fuente de un texto: la de título, la de cuerpo de la plantilla o una de las seis familias. */
 export type FontRef = 'title' | 'body' | FontKey;
@@ -103,7 +106,15 @@ export const RANGES = {
   cardRadius: [0, 80],
   bubbleRadius: [0, 40],
   footerBw: [0, 6],
+  /** Tamaño de la foto de un producto, en % de su tamaño original en la distribución elegida (feature 007). */
+  photoScale: [50, 150],
 } as const satisfies Record<string, readonly [number, number]>;
+
+/**
+ * Tamaño mínimo de la zona de productos (`w` y `h` del bloque, en % de la página). El rango genérico de `w` y `h`
+ * dejaría una zona de 3 %, donde ninguna fila cabe; el esquema lo exige solo al bloque de productos (feature 007).
+ */
+export const PRODUCTS_ZONE_MIN = { w: 40, h: 30 } as const;
 
 /** Un `radius` de imagen en este valor o más es un círculo. */
 export const CIRCLE_RADIUS = 300;
@@ -208,6 +219,17 @@ export interface ProductsEl extends ElementBase {
   sold: SoldOutStyle;
   /** Solo con `sold: 'cinta'`. */
   soldFill: ColorRef;
+  /** % del ancho original de la foto en la distribución elegida (100 = como siempre; 50 a 150). */
+  photoW: number;
+  /** % del alto original de la foto en la distribución elegida (100 = como siempre; 50 a 150). */
+  photoH: number;
+  /** `separado`: el nombre va en su propio rótulo, fuera de la burbuja; `burbuja`: dentro de ella, como antes. */
+  nameStyle: NameStyle;
+  nameColor: ColorRef;
+  /** Fondo del rótulo del nombre. Solo con `nameStyle: 'separado'`. */
+  nameFill: ColorRef;
+  /** Resplandor del color del nombre. Solo con `nameStyle: 'separado'`. */
+  nameGlow: boolean;
 }
 
 export interface TermsEl extends ElementBase {

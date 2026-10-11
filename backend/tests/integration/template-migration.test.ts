@@ -4,6 +4,8 @@ import { BASE_TEMPLATES, baseTemplate } from '../../src/catalog/template-presets
 import { TemplateRepo } from '../../src/catalog/template.repo';
 import { BusinessSettingsRepo, DEFAULT_BUSINESS } from '../../src/catalog/settings.repo';
 import type { Db } from '../../src/db/database';
+import type { ProductsEl, Template, WorkspaceState } from '../../src/catalog/template';
+import { loggedInAgent, testContext } from '../helpers';
 
 /** Una base de datos de 002 con un tema guardado (fondo y tres acentos propios). */
 function setTheme(db: Db, t: { background: string; accent1: string; accent2: string; accent3: string }) {
@@ -119,5 +121,93 @@ describe('una generación en una base recién migrada no encuentra el repositori
     const ws = repo.getWorkspace();
     expect(ws.templates).toHaveLength(4);
     expect(ws.revision).toBe(2);
+  });
+});
+
+describe('plantillas guardadas antes de la feature 007 se completan al leerlas', () => {
+  const NEW_KEYS = ['photoW', 'photoH', 'nameStyle', 'nameColor', 'nameFill', 'nameGlow'] as const;
+  const productsOf = (t: Template) => t.pages.productos.els.find((e) => e.type === 'products') as ProductsEl;
+
+  /** Siembra y reemplaza el `doc_json` de las plantillas indicadas por el que guardó la feature 006 (sin los campos nuevos). */
+  function legacyDb(ids: string[], mutate: (t: Template) => void = () => {}) {
+    const db = openDatabase(':memory:');
+    new TemplateRepo(db).getWorkspace();
+    for (const id of ids) {
+      const row = db.prepare('SELECT doc_json FROM catalog_template WHERE id = ?').get(id) as { doc_json: string };
+      const doc = JSON.parse(row.doc_json) as Template;
+      for (const el of doc.pages.productos.els) {
+        if (el.type === 'products') for (const k of NEW_KEYS) delete (el as unknown as Record<string, unknown>)[k];
+      }
+      mutate(doc);
+      db.prepare('UPDATE catalog_template SET doc_json = ? WHERE id = ?').run(JSON.stringify(doc), id);
+    }
+    return db;
+  }
+  const rawDoc = (db: Db, id: string) =>
+    (db.prepare('SELECT doc_json FROM catalog_template WHERE id = ?').get(id) as { doc_json: string }).doc_json;
+
+  it('neon queda con el nombre separado y las demás con el nombre en la burbuja', async () => {
+    const db = legacyDb(['neon', 'pop']);
+    const { agent } = await loggedInAgent(testContext({ db }));
+    const ws = (await agent.get('/api/settings/templates').expect(200)).body as WorkspaceState;
+    expect(productsOf(ws.templates.find((t) => t.id === 'neon')!)).toMatchObject({
+      nameStyle: 'separado',
+      nameColor: 'a1',
+      nameFill: 'bg',
+      nameGlow: true,
+      photoW: 100,
+      photoH: 100,
+    });
+    expect(productsOf(ws.templates.find((t) => t.id === 'pop')!)).toMatchObject({
+      nameStyle: 'burbuja',
+      nameColor: 'a1',
+      nameFill: 'transparent',
+      nameGlow: false,
+      photoW: 100,
+      photoH: 100,
+    });
+  });
+
+  it('no pisa un campo que ya está: una plantilla con nameStyle separado y un color propio los conserva', () => {
+    const db = legacyDb(['pop'], (t) => {
+      Object.assign(productsOf(t), { nameStyle: 'separado', nameColor: '#00FF66' });
+    });
+    const pop = new TemplateRepo(db).getWorkspace().templates.find((t) => t.id === 'pop')!;
+    expect(productsOf(pop)).toMatchObject({ nameStyle: 'separado', nameColor: '#00FF66', nameFill: 'transparent', photoW: 100 });
+  });
+
+  it('leer no escribe: la base conserva el documento viejo hasta que la persona guarda', () => {
+    const db = legacyDb(['neon', 'pop']);
+    const before = [rawDoc(db, 'neon'), rawDoc(db, 'pop')];
+    const repo = new TemplateRepo(db);
+    repo.getWorkspace();
+    repo.resolve('pop');
+    repo.summary();
+    expect([rawDoc(db, 'neon'), rawDoc(db, 'pop')]).toEqual(before);
+    expect(before[0]).not.toContain('nameStyle');
+  });
+
+  it('resolve() entrega el documento completo, también el de la reserva predeterminada', () => {
+    const db = legacyDb(['neon', 'pop']);
+    const repo = new TemplateRepo(db);
+    expect(productsOf(repo.resolve().template).nameStyle).toBe('separado');
+    expect(productsOf(repo.resolve('pop').template).nameStyle).toBe('burbuja');
+    // una plantilla que ya no existe cae en la predeterminada, también completa
+    expect(productsOf(repo.resolve('no-existe').template).nameStyle).toBe('separado');
+  });
+
+  it('un PUT con lo recibido pasa la validación y lo guardado ya trae los campos', async () => {
+    const db = legacyDb(['neon', 'pop', 'kawaii', 'kraft']);
+    const { agent } = await loggedInAgent(testContext({ db }));
+    const ws = (await agent.get('/api/settings/templates').expect(200)).body as WorkspaceState;
+    await agent
+      .put('/api/settings/templates')
+      .send({ templates: ws.templates, defaultId: ws.defaultId, business: ws.business, expectedRevision: ws.revision })
+      .expect(200);
+    for (const id of ['neon', 'pop', 'kawaii', 'kraft']) {
+      const saved = JSON.parse(rawDoc(db, id)) as Template;
+      for (const k of NEW_KEYS) expect(productsOf(saved), `${id}.${k}`).toHaveProperty(k);
+    }
+    expect(productsOf(JSON.parse(rawDoc(db, 'neon')) as Template).nameStyle).toBe('separado');
   });
 });

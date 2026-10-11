@@ -10,7 +10,9 @@ import {
   FONT_KEYS,
   IMAGE_KEYS,
   LIMITS,
+  NAME_STYLES,
   PAGE_LABELS,
+  PRODUCTS_ZONE_MIN,
   RANGES,
   REQUIRED_BLOCKS,
   WEIGHTS,
@@ -142,6 +144,8 @@ const introEl = z.object({
   radius: num(RANGES.introRadius, 'Las esquinas'),
 });
 
+const ZONE_MIN_MESSAGE = `La zona de productos debe medir al menos ${PRODUCTS_ZONE_MIN.w} % de ancho y ${PRODUCTS_ZONE_MIN.h} % de alto.`;
+
 const productsEl = z.object({
   ...auto,
   type: z.literal('products'),
@@ -159,7 +163,16 @@ const productsEl = z.object({
   priceShape: oneOf(['pill', 'round', 'square'], 'La forma del precio'),
   sold: oneOf(['sello', 'cinta', 'gris'], 'El estilo de agotado'),
   soldFill: colorRef,
-});
+  photoW: num(RANGES.photoScale, 'El ancho de la foto'),
+  photoH: num(RANGES.photoScale, 'El alto de la foto'),
+  nameStyle: oneOf(NAME_STYLES, 'El estilo del nombre'),
+  nameColor: colorRef,
+  nameFill: colorRef,
+  nameGlow: z.boolean({ error: 'Debe ser verdadero o falso.' }),
+})
+  // La zona de productos tiene un mínimo propio (el rango genérico dejaría una zona de 3 %); solo aplica a este bloque
+  .refine((el) => el.w >= PRODUCTS_ZONE_MIN.w, { path: ['w'], error: ZONE_MIN_MESSAGE })
+  .refine((el) => el.h >= PRODUCTS_ZONE_MIN.h, { path: ['h'], error: ZONE_MIN_MESSAGE });
 
 const termsEl = z.object({
   ...auto,

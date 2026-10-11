@@ -18,15 +18,39 @@
  * Alegra (Champong) y un combo con ese componente agotado:
  *   APP_URL=http://127.0.0.1:3000 npx tsx backend/tests/fixtures/dev-mock.ts
  * Usa SEED_USERNAME y SEED_PASSWORD si cambiaste el acceso (por defecto admin / AsiaPop2026).
+ *
+ * Opciones de la feature 007 (datos de Alegra guardados en el equipo):
+ *   - `MOCK_ITEMS=N`: en lugar de los artículos de siempre, genera N artículos activos repartidos en 20 categorías
+ *     (con nombres de distinta longitud, algunos muy largos, y unos pocos sin categoría), con fotos del simulador.
+ *   - `MOCK_DELAY_MS=N`: cada respuesta de la API de Alegra espera N ms (hace visible la pantalla de carga).
+ *   - `MOCK_LOG=1`: imprime una línea por petición a la API (método, ruta y búsqueda; sin cabeceras ni credenciales),
+ *     para comprobar que abrir una pantalla con datos guardados no consulta a Alegra.
  */
 import http from 'node:http';
 import { startAlegraMock } from './alegra-mock';
 
+const generated = Math.max(0, Math.floor(Number(process.env.MOCK_ITEMS ?? 0)) || 0);
+const delayMs = Math.max(0, Math.floor(Number(process.env.MOCK_DELAY_MS ?? 0)) || 0);
+/** 20 categorías para `MOCK_ITEMS`; las últimas tienen nombres largos para probar que las etiquetas no desbordan. */
+const GENERATED_CATEGORIES = [
+  'RAMEN', 'SNACKS', 'BEBIDAS', 'SALSAS', 'ARROCES', 'DULCES', 'TÉ', 'CAFÉ', 'ALGAS', 'CONGELADOS',
+  'MOCHIS', 'GALLETAS', 'CONDIMENTOS', 'ACEITES', 'UTENSILIOS',
+  'Bebidas y refrescos tradicionales de importación asiática',
+  'Fideos instantáneos y sopas listas para preparar en casa',
+  'Salsas, pastas fermentadas y condimentos picantes de Corea',
+  'Dulces, chocolates y golosinas de temporada para regalar',
+  'Utensilios, vajilla y accesorios para servir a la mesa',
+].map((name, i) => ({ id: `c${i + 1}`, name }));
+
 const mock = await startAlegraMock({
-  categories: [
-    { id: 'c1', name: 'RAMEN' },
-    { id: 'c2', name: 'SNACKS' },
-  ],
+  categories:
+    generated > 0
+      ? GENERATED_CATEGORIES
+      : [
+          { id: 'c1', name: 'RAMEN' },
+          { id: 'c2', name: 'SNACKS' },
+        ],
+  delayMs,
 });
 const allFail = process.env.MOCK_ALL_PHOTOS_FAIL === '1';
 /** Foto con la forma real de Alegra (dirección firmada del CDN; aquí del simulador). */
@@ -44,7 +68,38 @@ const base = (n: number) => ({
   images: [photo(routeFor(n), true, n)],
   description: 'Fideos instantáneos coreanos con caldo intenso y picante. Ideal para preparar rápido.',
 });
-mock.setItems([
+/** N artículos activos para `MOCK_ITEMS`: nombres de distinta longitud y, cada 17, sin categoría. */
+function generatedItems(n: number) {
+  const words = ['Ramen', 'Kimchi', 'Pepero', 'Mochi', 'Té verde', 'Salsa picante', 'Arroz', 'Galletas', 'Algas', 'Bebida'];
+  const route = (i: number) => (process.env.MOCK_IMG ? '/img/generic.png' : i % 2 ? '/img/generic.jpg' : '/img/generic.png');
+  return Array.from({ length: n }, (_, k) => {
+    const i = k + 1;
+    const word = words[i % words.length]!;
+    const name =
+      i % 9 === 0
+        ? `${word} edición especial de colección con sabor intenso y empaque grande para compartir número ${i}`
+        : i % 4 === 0
+          ? `${word} sabor original ${i}`
+          : `${word} ${i}`;
+    const category = i % 17 === 0 ? null : GENERATED_CATEGORIES[i % GENERATED_CATEGORIES.length]!;
+    return {
+      id: String(i),
+      name,
+      price: 3000 + (i % 25) * 700,
+      status: 'active',
+      description: 'Producto de muestra del simulador para probar listas largas.',
+      images: [photo(route(i), true, i)],
+      category,
+      ...(i % 13 === 0 ? { inventory: { availableQuantity: 0, trackInventory: true } } : {}),
+    };
+  });
+}
+
+if (generated > 0) {
+  mock.setItems(generatedItems(generated));
+  console.log(`Simulador con ${generated} artículos en ${GENERATED_CATEGORIES.length} categorías` + (delayMs ? `, ${delayMs} ms por respuesta` : ''));
+} else {
+  mock.setItems([
   { ...base(1), id: '1', name: 'Shin Ramyun', price: 9000, category: { id: 'c1', name: 'RAMEN' } },
   { ...base(2), id: '2', name: 'Champong', price: 9000, category: { id: 'c1', name: 'RAMEN' }, inventory: { availableQuantity: 0, trackInventory: true } },
   { ...base(3), id: '3', name: 'Soon Veggie', price: 9000, category: { id: 'c1', name: 'RAMEN' } },
@@ -63,12 +118,14 @@ mock.setItems([
   },
   // La foto responde 403: Alegra la informa pero no se puede obtener
   { ...base(9), id: '9', name: 'Foto prohibida', price: 6000, category: { id: 'c2', name: 'SNACKS' }, images: [photo('/img/forbidden', true)] },
-]);
+  ]);
+}
 
 // Reenvía el puerto fijo 3920 al servidor simulado
 http
   .createServer((req, res) => {
     const target = new URL(req.url ?? '/', mock.url);
+    if (process.env.MOCK_LOG === '1') console.log(`${req.method} ${target.pathname}${target.search}`);
     http.get(target, { headers: req.headers }, (r) => {
       res.writeHead(r.statusCode ?? 500, r.headers);
       r.pipe(res);

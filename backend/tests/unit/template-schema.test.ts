@@ -43,6 +43,12 @@ const products = (over: Record<string, unknown> = {}, id = 'products') => ({
   priceShape: 'pill',
   sold: 'sello',
   soldFill: 'a1',
+  photoW: 100,
+  photoH: 100,
+  nameStyle: 'burbuja',
+  nameColor: 'a1',
+  nameFill: 'transparent',
+  nameGlow: false,
   x: 0,
   y: 10.4,
   w: 100,
@@ -191,6 +197,65 @@ describe('esquema de plantillas', () => {
       expect(paths(doc([t]))).toContain('templates.0.pages.productos.els.0.cardRadius');
       t.pages.productos.els = [products({ bubbleRadius: 41 }), footer()];
       expect(paths(doc([t]))).toContain('templates.0.pages.productos.els.0.bubbleRadius');
+    });
+
+    it('valida los rangos y valores de los campos nuevos del bloque de productos (feature 007)', () => {
+      const issue = (over: Record<string, unknown>) => {
+        const t = template();
+        t.pages.productos.els = [products(over), footer()];
+        return workspaceSchema.safeParse(doc([t]));
+      };
+      const msgs = (over: Record<string, unknown>) => {
+        const r = issue(over);
+        return r.success ? [] : r.error.issues.map((i) => `${String(i.path.slice(-1)[0])}: ${i.message}`);
+      };
+      expect(msgs({ photoW: 49 })).toContain('photoW: El ancho de la foto: el mínimo es 50.');
+      expect(msgs({ photoW: 151 })).toContain('photoW: El ancho de la foto: el máximo es 150.');
+      expect(msgs({ photoH: 49 })).toContain('photoH: El alto de la foto: el mínimo es 50.');
+      expect(msgs({ photoH: 151 })).toContain('photoH: El alto de la foto: el máximo es 150.');
+      expect(issue({ photoW: 50, photoH: 150 }).success).toBe(true);
+      expect(msgs({ nameStyle: 'afuera' })).toContain('nameStyle: El estilo del nombre: valor no válido.');
+      expect(issue({ nameStyle: 'separado' }).success).toBe(true);
+      const colorMsg = 'Debe ser un color de la paleta, un #RRGGBB, "none" o "transparent".';
+      for (const field of ['nameColor', 'nameFill']) {
+        expect(msgs({ [field]: 'rosa' })).toContain(`${field}: ${colorMsg}`);
+        for (const ok of ['bg', 'a2', '#00ff66', 'none', 'transparent']) {
+          expect(issue({ [field]: ok }).success, `${field}=${ok}`).toBe(true);
+        }
+      }
+      expect(paths(withPages((p) => { p.productos.els = [products({ nameGlow: 'si' }), footer()]; }))).toContain(
+        'templates.0.pages.productos.els.0.nameGlow',
+      );
+      expect(issue({ nameGlow: true }).success).toBe(true);
+    });
+
+    it('exige los seis campos nuevos: un bloque de productos sin ellos se rechaza', () => {
+      const t = template();
+      const old = products() as Record<string, unknown>;
+      for (const key of ['photoW', 'photoH', 'nameStyle', 'nameColor', 'nameFill', 'nameGlow']) delete old[key];
+      t.pages.productos.els = [old, footer()];
+      const got = paths(doc([t]));
+      for (const key of ['photoW', 'photoH', 'nameStyle', 'nameColor', 'nameFill', 'nameGlow']) {
+        expect(got, key).toContain(`templates.0.pages.productos.els.0.${key}`);
+      }
+    });
+
+    it('la zona de productos debe medir al menos 40 % de ancho y 30 % de alto, y solo ella (feature 007)', () => {
+      const zone = 'La zona de productos debe medir al menos 40 % de ancho y 30 % de alto.';
+      const check = (over: Record<string, unknown>) => {
+        const t = template();
+        t.pages.productos.els = [products(over), footer()];
+        const r = workspaceSchema.safeParse(doc([t]));
+        return r.success ? [] : r.error.issues.map((i) => ({ path: i.path.join('.'), message: i.message }));
+      };
+      expect(check({ w: 39 })).toContainEqual({ path: 'templates.0.pages.productos.els.0.w', message: zone });
+      expect(check({ h: 29 })).toContainEqual({ path: 'templates.0.pages.productos.els.0.h', message: zone });
+      expect(check({ w: 40, h: 30 })).toEqual([]);
+      // el resto de los elementos conserva el rango genérico: un texto y una forma de 3 % siguen siendo válidos
+      const t = template();
+      const shape = { ...base, id: 's', type: 'shape', kind: 'rect', fill: 'a1', border: 'none', bw: 0, radius: 12, glow: 'none', x: 0, y: 0, w: 3, h: 3 };
+      t.pages.portada.els = [text('t1', { w: 3, h: 0.3 }), shape];
+      expect(workspaceSchema.safeParse(doc([t])).success).toBe(true);
     });
 
     it('valida los rangos de insignia, forma, imagen, introducción y pie', () => {

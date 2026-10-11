@@ -4,11 +4,13 @@ import {
   FONT_PAIRS,
   PALETTE_PRESETS,
   baseTemplate,
+  normalizeProductsBlocks,
 } from '../../src/catalog/template-presets';
 import { workspaceSchema } from '../../src/catalog/template.schema';
 import {
   BASE_IDS,
   PAGE_KEYS,
+  PRODUCTS_ZONE_MIN,
   REQUIRED_BLOCKS,
   TOKEN_NAMES,
   isAutoBlock,
@@ -153,6 +155,114 @@ describe('plantillas base', () => {
       expect(els.find((e) => e.type === 'text')).toMatchObject({ text: 'Políticas de compra' });
       expect(els.find((e) => e.type === 'terms')).toMatchObject({ chipFill: 'bg', chipText: 'a1', boxFill: '#E8DFD0' });
       expect(els.some((e) => e.type === 'footer')).toBe(true);
+    });
+  });
+
+  describe('bloque de productos: tamaño de la foto y nombre (feature 007)', () => {
+    const productsOf = (id: (typeof BASE_IDS)[number]) =>
+      baseTemplate(id).pages.productos.els.find((e) => e.type === 'products')!;
+
+    it('Neón Noche trae el nombre separado, en neón (acento 1), sobre un rótulo oscuro y con resplandor', () => {
+      expect(productsOf('neon')).toMatchObject({
+        photoW: 100,
+        photoH: 100,
+        nameStyle: 'separado',
+        nameColor: 'a1',
+        nameFill: 'bg',
+        nameGlow: true,
+      });
+    });
+
+    it.each(['pop', 'kawaii', 'kraft'] as const)('%s conserva el nombre dentro de la burbuja', (id) => {
+      expect(productsOf(id)).toMatchObject({
+        photoW: 100,
+        photoH: 100,
+        nameStyle: 'burbuja',
+        nameColor: 'a1',
+        nameFill: 'transparent',
+        nameGlow: false,
+      });
+    });
+
+    it.each(BASE_IDS)('%s: la zona de productos de fábrica cumple el mínimo', (id) => {
+      const el = productsOf(id);
+      expect(el.w).toBeGreaterThanOrEqual(PRODUCTS_ZONE_MIN.w);
+      expect(el.h).toBeGreaterThanOrEqual(PRODUCTS_ZONE_MIN.h);
+    });
+  });
+
+  describe('normalizeProductsBlocks', () => {
+    const NEW_KEYS = ['photoW', 'photoH', 'nameStyle', 'nameColor', 'nameFill', 'nameGlow'] as const;
+    /** La plantilla como la dejó la feature 006: sin los seis campos nuevos. */
+    const legacy = (id: (typeof BASE_IDS)[number]) => {
+      const t = baseTemplate(id);
+      for (const el of t.pages.productos.els) {
+        if (el.type === 'products') for (const k of NEW_KEYS) delete (el as unknown as Record<string, unknown>)[k];
+      }
+      return t;
+    };
+    const blockOf = (t: ReturnType<typeof baseTemplate>) => t.pages.productos.els.find((e) => e.type === 'products')!;
+
+    it('la plantilla neon recibe los valores de Neón Noche; cualquier otra, los de la burbuja', () => {
+      expect(blockOf(normalizeProductsBlocks(legacy('neon')))).toMatchObject({
+        photoW: 100,
+        photoH: 100,
+        nameStyle: 'separado',
+        nameColor: 'a1',
+        nameFill: 'bg',
+        nameGlow: true,
+      });
+      for (const id of ['pop', 'kawaii', 'kraft'] as const) {
+        expect(blockOf(normalizeProductsBlocks(legacy(id))), id).toMatchObject({
+          photoW: 100,
+          photoH: 100,
+          nameStyle: 'burbuja',
+          nameColor: 'a1',
+          nameFill: 'transparent',
+          nameGlow: false,
+        });
+      }
+    });
+
+    it('solo manda el id `neon`: una copia con otro id y base neon no se vuelve separada', () => {
+      const t = { ...legacy('neon'), id: 'mi-neon' };
+      expect(blockOf(normalizeProductsBlocks(t))).toMatchObject({ nameStyle: 'burbuja', nameFill: 'transparent', nameGlow: false });
+    });
+
+    it('con los seis campos presentes devuelve lo mismo (idempotente) y no pisa lo que la persona eligió', () => {
+      const t = baseTemplate('pop');
+      Object.assign(blockOf(t), { nameStyle: 'separado', nameColor: '#00FF66', photoW: 80 });
+      const once = normalizeProductsBlocks(t);
+      expect(once).toEqual(t);
+      expect(normalizeProductsBlocks(once)).toEqual(once);
+    });
+
+    it('completa solo los campos que faltan', () => {
+      const t = legacy('neon');
+      Object.assign(blockOf(t), { nameColor: '#00FF66' });
+      expect(blockOf(normalizeProductsBlocks(t))).toMatchObject({ nameColor: '#00FF66', nameStyle: 'separado', nameFill: 'bg' });
+    });
+
+    it('devuelve una copia: no modifica la plantilla recibida ni comparte referencias', () => {
+      const t = legacy('neon');
+      const out = normalizeProductsBlocks(t);
+      expect(out).not.toBe(t);
+      expect('nameStyle' in blockOf(t)).toBe(false);
+      expect(out.pages.productos.els).not.toBe(t.pages.productos.els);
+    });
+
+    it('no toca los demás elementos ni las demás páginas', () => {
+      const t = legacy('kraft');
+      const out = normalizeProductsBlocks(t);
+      expect(out.pages.portada).toEqual(t.pages.portada);
+      expect(out.pages.politicas).toEqual(t.pages.politicas);
+      const others = (x: typeof t) => x.pages.productos.els.filter((e) => e.type !== 'products');
+      expect(others(out)).toEqual(others(t));
+    });
+
+    it('el resultado valida contra el esquema', () => {
+      const r = workspaceSchema.safeParse({ templates: BASE_IDS.map((id) => normalizeProductsBlocks(legacy(id))), defaultId: 'neon' });
+      expect(r.success, r.success ? '' : JSON.stringify(r.error.issues)).toBe(true);
     });
   });
 

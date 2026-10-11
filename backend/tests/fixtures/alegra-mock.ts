@@ -34,6 +34,12 @@ export interface AlegraMockOptions {
   categories?: AlegraCategoryRaw[];
   /** Cantidad de respuestas 429 iniciales antes de responder normalmente. */
   rateLimitFirst?: number;
+  /**
+   * Milisegundos que espera cada respuesta de la API (`/company`, `/items`, `/item-categories`) antes de enviarse
+   * (feature 007: hace visible la pantalla de carga). La petición se registra en `requests` al llegar, no al responder.
+   * Las fotos (`/img/*`) no esperan. Sin la opción, el comportamiento no cambia.
+   */
+  delayMs?: number;
 }
 
 export const PNG_1X1 = Buffer.from(
@@ -64,9 +70,7 @@ export async function startAlegraMock(opts: AlegraMockOptions = {}): Promise<Ale
   let limited = opts.rateLimitFirst ?? 0;
   let currentItems = opts.items ?? [];
 
-  const server = http.createServer((req, res) => {
-    const url = new URL(req.url ?? '/', 'http://localhost');
-    requests.push({ method: req.method ?? 'GET', path: url.pathname, search: url.search });
+  const respond = (req: http.IncomingMessage, res: http.ServerResponse, url: URL) => {
     const send = (status: number, body: unknown, headers: Record<string, string> = {}) => {
       res.writeHead(status, { 'Content-Type': 'application/json', ...headers });
       res.end(JSON.stringify(body));
@@ -145,6 +149,18 @@ export async function startAlegraMock(opts: AlegraMockOptions = {}): Promise<Ale
       return send(200, paged(items));
     }
     return send(404, { message: 'not found' });
+  };
+
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    requests.push({ method: req.method ?? 'GET', path: url.pathname, search: url.search });
+    const delay = opts.delayMs && !url.pathname.startsWith('/img/') ? opts.delayMs : 0;
+    if (delay > 0) {
+      const timer = setTimeout(() => respond(req, res, url), delay);
+      res.on('close', () => clearTimeout(timer));
+      return;
+    }
+    respond(req, res, url);
   });
 
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));

@@ -2,7 +2,7 @@ import { HttpError } from '../api/errors';
 import type { Db } from '../db/database';
 import { BusinessSettingsRepo } from './settings.repo';
 import type { Template, TemplateDoc, TemplateSummary, WorkspaceState } from './template';
-import { BASE_TEMPLATES } from './template-presets';
+import { BASE_TEMPLATES, normalizeProductsBlocks } from './template-presets';
 import type { BusinessSettings } from './types';
 
 interface TemplateRow {
@@ -39,8 +39,17 @@ function toDoc(t: Template): TemplateDoc {
   return { version: t.version, palette: t.palette, fonts: t.fonts, pages: t.pages };
 }
 
+/**
+ * El documento guardado como `Template`. Las plantillas guardadas antes de la feature 007 no traen los campos del
+ * tamaño de la foto ni del nombre: se completan aquí, al leer, sin escribir en la base (`normalizeProductsBlocks`).
+ */
 function toTemplate(row: TemplateRow): Template {
-  return { id: row.id, name: row.name, base: row.base as Template['base'], ...(JSON.parse(row.doc_json) as TemplateDoc) };
+  return normalizeProductsBlocks({
+    id: row.id,
+    name: row.name,
+    base: row.base as Template['base'],
+    ...(JSON.parse(row.doc_json) as TemplateDoc),
+  });
 }
 
 /**
@@ -151,7 +160,7 @@ export class TemplateRepo {
     const rows = this.rows();
     const row = rows.find((r) => r.id === default_template_id) ?? rows[0];
     // Siempre hay al menos una plantilla; esta reserva solo protege de una base editada a mano
-    return row ? toTemplate(row) : structuredClone(BASE_TEMPLATES[0]!);
+    return row ? toTemplate(row) : normalizeProductsBlocks(BASE_TEMPLATES[0]!);
   }
 
   /**

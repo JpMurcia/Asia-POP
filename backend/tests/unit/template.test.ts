@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   AUTO_BLOCK_TYPES,
   PAGE_KEYS,
+  PRODUCTS_ZONE_MIN,
+  RANGES,
   REQUIRED_BLOCKS,
   paletteWarnings,
   resolveColor,
@@ -156,5 +158,15 @@ describe('REQUIRED_BLOCKS', () => {
     expect(REQUIRED_BLOCKS.seccion).toEqual({ intro: 1, products: 0, terms: 0, footer: 0 });
     expect(REQUIRED_BLOCKS.productos).toEqual({ intro: 0, products: 1, terms: 0, footer: 1 });
     expect(REQUIRED_BLOCKS.politicas).toEqual({ intro: 0, products: 0, terms: 1, footer: 1 });
+  });
+});
+
+describe('constantes del bloque de productos (feature 007)', () => {
+  it('la escala de la foto va de 50 a 150 %', () => {
+    expect(RANGES.photoScale).toEqual([50, 150]);
+  });
+
+  it('la zona de productos mide como mínimo 40 % de ancho y 30 % de alto', () => {
+    expect(PRODUCTS_ZONE_MIN).toEqual({ w: 40, h: 30 });
   });
 });

@@ -134,6 +134,12 @@ const draftProducts = (o: Partial<Omit<ProductsEl, 'id'>> = {}): Omit<ProductsEl
   priceShape: 'pill',
   sold: 'sello',
   soldFill: 'a1',
+  photoW: 100,
+  photoH: 100,
+  nameStyle: 'burbuja',
+  nameColor: 'a1',
+  nameFill: 'transparent',
+  nameGlow: false,
   x: 4,
   y: 12,
   w: 92,
@@ -263,7 +269,7 @@ function neon(): Template {
         els: els('neon-c', [
           draftText({ name: 'Título de sección', text: 'Catálogo {seccion}', size: 26, color: '#111111', upper: true, ls: 0.4, x: 21, y: 1.5, w: 58, h: 6.8 }),
           logo,
-          draftProducts({ x: 0, y: 10.4, w: 100, h: 85.2, ringW: 3, cardRadius: 17, bubbleRadius: 28 }),
+          draftProducts({ x: 0, y: 10.4, w: 100, h: 85.2, ringW: 3, cardRadius: 17, bubbleRadius: 28, nameStyle: 'separado', nameFill: 'bg', nameGlow: true }),
           footer,
         ]),
       },
@@ -436,4 +442,41 @@ export const BASE_TEMPLATES: Template[] = [neon(), pop(), kawaii(), kraft()];
 /** Una copia independiente de la plantilla base: se puede modificar sin afectar a las demás llamadas. */
 export function baseTemplate(id: BaseId): Template {
   return FACTORIES[id]();
+}
+
+/** Los seis campos que la feature 007 agregó al bloque de productos, con su valor de fábrica por plantilla. */
+const NEON_PRODUCT_DEFAULTS = {
+  photoW: 100,
+  photoH: 100,
+  nameStyle: 'separado',
+  nameColor: 'a1',
+  nameFill: 'bg',
+  nameGlow: true,
+} as const satisfies Partial<ProductsEl>;
+const OTHER_PRODUCT_DEFAULTS = {
+  photoW: 100,
+  photoH: 100,
+  nameStyle: 'burbuja',
+  nameColor: 'a1',
+  nameFill: 'transparent',
+  nameGlow: false,
+} as const satisfies Partial<ProductsEl>;
+
+/**
+ * Completa los campos del bloque de productos que falten en una plantilla guardada antes de la feature 007: la de
+ * id `neon` recibe el nombre separado en neón de Neón Noche y cualquier otra el nombre dentro de la burbuja, de modo
+ * que solo Neón Noche cambia de aspecto. Pura e idempotente: devuelve una copia, no toca los campos presentes y no
+ * escribe en ninguna parte (lo guardado cambia cuando la persona pulsa Guardar en Apariencia).
+ */
+export function normalizeProductsBlocks(template: Template): Template {
+  const defaults = template.id === 'neon' ? NEON_PRODUCT_DEFAULTS : OTHER_PRODUCT_DEFAULTS;
+  const out = structuredClone(template);
+  for (const page of Object.values(out.pages)) {
+    page.els = page.els.map((el) => {
+      if (el.type !== 'products') return el;
+      const present = Object.fromEntries(Object.entries(el).filter(([, v]) => v !== undefined));
+      return { ...defaults, ...present } as ProductsEl;
+    });
+  }
+  return out;
 }
