@@ -72,7 +72,7 @@ describe('GET /api/alegra/data', () => {
   });
 
   it('nunca consulta a Alegra, ni siquiera mientras descarga: responde al instante con el avance', async () => {
-    const { agent, mock } = await start({ delayMs: 150 });
+    const { agent } = await start({ delayMs: 150 });
     await agent.put('/api/settings/alegra').send(creds).expect(200);
     const mid = (await agent.get('/api/alegra/data').expect(200)).body;
     expect(mid.state).toBe('syncing');
