@@ -104,7 +104,7 @@ function RangeField({
   onChange: FieldRendererProps['onChange'];
 }) {
   const scale = desc.scale ?? 1;
-  const stored = typeof value === 'number' ? value : desc.min / scale;
+  const stored = typeof value === 'number' ? value : (desc.fallback ?? desc.min / scale);
   const shown = Math.round(stored * scale * 100) / 100;
   const isCircle = desc.circleAt !== undefined && shown >= desc.circleAt;
   return (

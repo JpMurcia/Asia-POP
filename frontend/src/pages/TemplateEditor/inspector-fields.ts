@@ -2,6 +2,7 @@ import {
   FONT_KEYS,
   FONT_LABELS,
   RANGES,
+  TEXT_DEFAULTS,
   WEIGHTS,
   isAutoBlock,
   type PageBg,
@@ -28,6 +29,8 @@ export type FieldDesc =
       scale?: number;
       /** Desde este valor la esquina es un círculo (imágenes). */
       circleAt?: number;
+      /** Valor que se muestra cuando la propiedad falta (opcionales de 007, como la altura de línea). */
+      fallback?: number;
     }
   | { kind: 'segmented'; key: string; label: string; options: readonly (readonly [string | number, string])[] }
   | { kind: 'select'; key: string; label: string; options: readonly (readonly [string, string])[] }
@@ -89,6 +92,7 @@ function ownFields(el: PageElement, template: Template): FieldDesc[] {
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
         seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
         range('ls', 'Espaciado', RANGES.ls, 0.5),
+        { ...(range('lh', 'Altura de línea', RANGES.lh, 0.05, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },
         heading('Color y efectos'),
         color('color', 'Relleno'),

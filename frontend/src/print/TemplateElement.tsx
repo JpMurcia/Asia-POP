@@ -3,6 +3,7 @@ import {
   CIRCLE_RADIUS,
   PAGE_H,
   PAGE_W,
+  TEXT_DEFAULTS,
   hasTokens,
   resolveColor,
   resolveTokens,
@@ -127,7 +128,7 @@ function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSP
     // `--fit` lo escribe useFit en los textos con datos insertables; los demás lo dejan en 1
     fontSize: `calc(${el.size}px * var(--fit, 1))`,
     fontWeight: weightFor(key, el.weight),
-    lineHeight: 1.05,
+    lineHeight: el.lh ?? TEXT_DEFAULTS.lh,
     color: c(el.color),
     textAlign: el.align,
     letterSpacing: `${el.ls}px`,
@@ -171,7 +172,7 @@ function FitText({
   fonts: Template['fonts'];
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useFit(ref, [content, el.size, el.weight, el.ls, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h], {
+  useFit(ref, [content, el.size, el.weight, el.ls, el.lh, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h], {
     axis: 'both',
   });
   return (

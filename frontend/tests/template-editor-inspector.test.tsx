@@ -521,3 +521,27 @@ describe('alinear a la página (feature 007)', () => {
     expect(screen.queryByRole('group', { name: 'Alinear a la página' })).not.toBeInTheDocument();
   });
 });
+
+describe('altura de línea de un texto (feature 007)', () => {
+  const lineHeightOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!.style.lineHeight;
+
+  it('aparece después de Espaciado, de 0.8 a 2.5 en pasos de 0.05, y muestra 1.05 si el texto no la tiene', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    const labels = Array.from(screen.getByTestId('inspector').querySelectorAll('input[type="range"]')).map((i) => i.getAttribute('aria-label'));
+    expect(labels.indexOf('Altura de línea')).toBe(labels.indexOf('Espaciado') + 1);
+    expect(bounds('Altura de línea')).toEqual([0.8, 2.5]);
+    expect(range('Altura de línea').step).toBe('0.05');
+    expect(Number(range('Altura de línea').value)).toBe(1.05);
+  });
+
+  it('moverla cambia el texto en el lienzo y un deslizamiento continuo se deshace en un paso', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    fireEvent.change(range('Altura de línea'), { target: { value: '1.5' } });
+    fireEvent.change(range('Altura de línea'), { target: { value: '2' } });
+    expect(lineHeightOf('neon-p2')).toBe('2');
+    click('Deshacer');
+    expect(lineHeightOf('neon-p2')).toBe('1.05');
+  });
+});

@@ -224,6 +224,28 @@ describe('TemplatePage', () => {
     });
   });
 
+  describe('altura de línea (feature 007)', () => {
+    const textOf = (container: HTMLElement, id: string) => find(container, id)!.querySelector<HTMLElement>('.tpl-text')!;
+
+    it('un texto sin lh se dibuja con 1.05, como antes de la feature', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push({ ...draftText({ text: 'Viejo' }), id: 'viejo' });
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      expect(textOf(container, 'viejo').style.lineHeight).toBe('1.05');
+    });
+
+    it('usa la altura de línea del texto, también en uno con datos insertables', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push(
+        { ...draftText({ text: 'Libre', lh: 1.6 }), id: 'libre' },
+        { ...draftText({ text: 'Tel {telefonos}', lh: 2 }), id: 'con-dato' },
+      );
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      expect(textOf(container, 'libre').style.lineHeight).toBe('1.6');
+      expect(textOf(container, 'con-dato').style.lineHeight).toBe('2');
+    });
+  });
+
   describe('formas e imágenes', () => {
     it('una forma usa su relleno, borde y esquinas; un círculo es 50 % y una píldora 999 px', () => {
       const t = baseTemplate('pop'); // portada: círculo de acento 2

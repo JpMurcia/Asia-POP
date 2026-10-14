@@ -77,14 +77,14 @@ Aplicación web: `backend/src/`, `backend/tests/`, `frontend/src/`, `frontend/te
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T014 [P] [US2] En `frontend/tests/template-page.test.tsx` agregar pruebas que fallen: un texto sin `lh` tiene `line-height: 1.05` (igual que hoy); con `lh: 1.6` tiene `line-height: 1.6`; un texto con datos insertables (`{telefonos}`) también recibe `lh`
-- [ ] T015 [P] [US2] En `frontend/tests/template-editor-inspector.test.tsx` agregar pruebas que fallen: un texto muestra el control "Altura de línea" después de "Espaciado" con mínimo 0.8, máximo 2.5 y paso 0.05; en un texto sin `lh` el control muestra 1.05; moverlo actualiza el `line-height` del texto en el lienzo; varios cambios del deslizador dentro de 800 ms se deshacen en un solo paso (FR-009)
+- [X] T014 [P] [US2] En `frontend/tests/template-page.test.tsx` agregar pruebas que fallen: un texto sin `lh` tiene `line-height: 1.05` (igual que hoy); con `lh: 1.6` tiene `line-height: 1.6`; un texto con datos insertables (`{telefonos}`) también recibe `lh`
+- [X] T015 [P] [US2] En `frontend/tests/template-editor-inspector.test.tsx` agregar pruebas que fallen: un texto muestra el control "Altura de línea" después de "Espaciado" con mínimo 0.8, máximo 2.5 y paso 0.05; en un texto sin `lh` el control muestra 1.05; moverlo actualiza el `line-height` del texto en el lienzo; varios cambios del deslizador dentro de 800 ms se deshacen en un solo paso (FR-009)
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] En `frontend/src/print/TemplateElement.tsx`, en `textStyle`, reemplazar `lineHeight: 1.05` por `lineHeight: el.lh ?? TEXT_DEFAULTS.lh` (importado de `backend/src/catalog/template`) y agregar `el.lh` a la lista de dependencias de `useFit` en `FitText` (research §2); comprobar que T014 pasa
-- [ ] T017 [US2] En `frontend/src/pages/TemplateEditor/inspector-fields.ts` agregar al descriptor `range` un campo opcional `fallback?: number` y, en el caso `text` de `ownFields`, `{ ...range('lh', 'Altura de línea', RANGES.lh, 0.05, ''), fallback: TEXT_DEFAULTS.lh }` justo después de `range('ls', …)`
-- [ ] T018 [US2] En `frontend/src/pages/TemplateEditor/FieldRenderer.tsx` hacer que `RangeField` use `desc.fallback` cuando `value` es `undefined`, y que el valor mostrado de `lh` tenga dos decimales; comprobar que T015 pasa
+- [X] T016 [US2] En `frontend/src/print/TemplateElement.tsx`, en `textStyle`, reemplazar `lineHeight: 1.05` por `lineHeight: el.lh ?? TEXT_DEFAULTS.lh` (importado de `backend/src/catalog/template`) y agregar `el.lh` a la lista de dependencias de `useFit` en `FitText` (research §2); comprobar que T014 pasa
+- [X] T017 [US2] En `frontend/src/pages/TemplateEditor/inspector-fields.ts` agregar al descriptor `range` un campo opcional `fallback?: number` y, en el caso `text` de `ownFields`, `{ ...range('lh', 'Altura de línea', RANGES.lh, 0.05, ''), fallback: TEXT_DEFAULTS.lh }` justo después de `range('ls', …)`
+- [X] T018 [US2] En `frontend/src/pages/TemplateEditor/FieldRenderer.tsx` hacer que `RangeField` use `desc.fallback` cuando `value` es `undefined`, y que el valor mostrado de `lh` tenga dos decimales; comprobar que T015 pasa
 
 **Checkpoint**: US2 funciona sola sobre la fase 2; US1 sigue en verde.
 
