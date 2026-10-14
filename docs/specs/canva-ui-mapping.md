@@ -13,6 +13,9 @@
 
 ---
 
+> 📋 El inventario campo por campo (barra superior, barra lateral, barra contextual por tipo de elemento, página y
+> pie del lienzo) está en [canva-fields-inventory.md](./canva-fields-inventory.md).
+
 ## 0. Punto de partida: Asia-POP ya tiene un editor estilo Canva
 
 La feature 003 construyó un editor a pantalla completa con la misma anatomía. Por eso este trabajo **no es una réplica desde cero**: consiste en medir la referencia, encontrar las diferencias y decidir cuáles vale la pena cerrar.
