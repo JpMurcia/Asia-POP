@@ -2,6 +2,9 @@
 
 **Estado**: borrador · **Fecha**: 2026-10-14 · Complementa [canva-ui-mapping.md](./canva-ui-mapping.md)
 
+> 🚧 **Provisional hasta medirlo con REA.** Ver [PENDIENTES-REA.md](./PENDIENTES-REA.md): REA es la base obligatoria de
+> las mejoras y este documento se revisa contra sus mediciones.
+
 > **Origen y confianza.** Este inventario **no** se midió en vivo: el contenedor no llega a `canva.com` ni a tu
 > Vivaldi. Sale de la documentación pública de Canva y de guías de uso
 > ([bordes y esquinas](https://www.canva.com/help/add-borders-round-corners/),

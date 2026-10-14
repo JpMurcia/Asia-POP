@@ -2,6 +2,9 @@
 
 **Estado**: borrador · **Fecha**: 2026-10-14 · **Uso previsto**: entrada para `/speckit-specify` de una futura feature de evolución del editor (`/apariencia`, feature [003](../../specs/003-catalog-template-editor/spec.md))
 
+> 🚧 **Provisional hasta medirlo con REA.** Ver [PENDIENTES-REA.md](./PENDIENTES-REA.md): REA es la base obligatoria de
+> las mejoras y este documento se revisa contra sus mediciones.
+
 > ⚠️ **El mapeo en vivo de Canva con REA todavía no se ha ejecutado.** Esta sesión corre en un contenedor en la nube: su
 > `127.0.0.1:9222` no es el del computador donde está abierto Vivaldi, y la política de red del contenedor bloquea
 > `canva.com`. Por eso este documento separa con cuidado:
