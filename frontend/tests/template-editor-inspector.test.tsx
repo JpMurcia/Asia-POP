@@ -545,3 +545,26 @@ describe('altura de línea de un texto (feature 007)', () => {
     expect(lineHeightOf('neon-p2')).toBe('1.05');
   });
 });
+
+describe('tachado de un texto (feature 007)', () => {
+  const decorationOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!.style.textDecorationLine;
+  const strike = () => screen.getByRole('switch', { name: 'Tachado' });
+
+  it('aparece después de Mayúsculas, apagado si el texto no lo tiene', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    const switches = screen.getAllByRole('switch').map((s) => s.getAttribute('aria-label'));
+    expect(switches.indexOf('Tachado')).toBe(switches.indexOf('Mayúsculas') + 1);
+    expect(strike()).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('activarlo tacha el texto en el lienzo y deshacer lo quita', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    fireEvent.click(strike());
+    expect(strike()).toHaveAttribute('aria-checked', 'true');
+    expect(decorationOf('neon-p2')).toBe('line-through');
+    click('Deshacer');
+    expect(decorationOf('neon-p2')).toBe('');
+  });
+});

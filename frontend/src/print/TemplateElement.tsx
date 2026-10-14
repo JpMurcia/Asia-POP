@@ -133,6 +133,8 @@ function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSP
     textAlign: el.align,
     letterSpacing: `${el.ls}px`,
     textTransform: el.upper ? 'uppercase' : 'none',
+    // Del color del texto (currentColor); CSS tacha cada línea de un texto de varias
+    textDecorationLine: (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : undefined,
     WebkitTextStroke: el.strokeW > 0 && stroke !== 'transparent' ? `calc(${el.strokeW}px * var(--fit, 1)) ${stroke}` : undefined,
     paintOrder: 'stroke fill',
     textShadow: glow !== 'transparent' ? glowText(glow) : undefined,

@@ -98,13 +98,13 @@ Aplicación web: `backend/src/`, `backend/tests/`, `frontend/src/`, `frontend/te
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T019 [P] [US3] En `frontend/tests/template-page.test.tsx` agregar pruebas que fallen: un texto sin `strike` no tiene `text-decoration-line`; con `strike: true` tiene `line-through`; con `strike: true`, contorno, resplandor y `upper` conserva `-webkit-text-stroke`, `text-shadow` y `text-transform: uppercase`
-- [ ] T020 [P] [US3] En `frontend/tests/template-editor-inspector.test.tsx` agregar pruebas que fallen: un texto muestra el interruptor "Tachado" (`role="switch"`) después de "Mayúsculas", apagado si no hay `strike`; activarlo pone `line-through` en el lienzo; deshacer lo quita
+- [X] T019 [P] [US3] En `frontend/tests/template-page.test.tsx` agregar pruebas que fallen: un texto sin `strike` no tiene `text-decoration-line`; con `strike: true` tiene `line-through`; con `strike: true`, contorno, resplandor y `upper` conserva `-webkit-text-stroke`, `text-shadow` y `text-transform: uppercase`
+- [X] T020 [P] [US3] En `frontend/tests/template-editor-inspector.test.tsx` agregar pruebas que fallen: un texto muestra el interruptor "Tachado" (`role="switch"`) después de "Mayúsculas", apagado si no hay `strike`; activarlo pone `line-through` en el lienzo; deshacer lo quita
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] En `frontend/src/print/TemplateElement.tsx`, en `textStyle`, agregar `textDecorationLine: (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : undefined` (color por defecto = color del texto, research §3); comprobar que T019 pasa
-- [ ] T022 [US3] En `frontend/src/pages/TemplateEditor/inspector-fields.ts`, en el caso `text` de `ownFields`, agregar `{ kind: 'toggle', key: 'strike', label: 'Tachado' }` justo después del toggle de Mayúsculas; comprobar que T020 pasa
+- [X] T021 [US3] En `frontend/src/print/TemplateElement.tsx`, en `textStyle`, agregar `textDecorationLine: (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : undefined` (color por defecto = color del texto, research §3); comprobar que T019 pasa
+- [X] T022 [US3] En `frontend/src/pages/TemplateEditor/inspector-fields.ts`, en el caso `text` de `ownFields`, agregar `{ kind: 'toggle', key: 'strike', label: 'Tachado' }` justo después del toggle de Mayúsculas; comprobar que T020 pasa
 
 **Checkpoint**: las tres historias funcionan juntas.
 

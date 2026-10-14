@@ -94,6 +94,7 @@ function ownFields(el: PageElement, template: Template): FieldDesc[] {
         range('ls', 'Espaciado', RANGES.ls, 0.5),
         { ...(range('lh', 'Altura de línea', RANGES.lh, 0.05, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },
+        { kind: 'toggle', key: 'strike', label: 'Tachado' },
         heading('Color y efectos'),
         color('color', 'Relleno'),
         color('stroke', 'Contorno', 'none'),

@@ -246,6 +246,37 @@ describe('TemplatePage', () => {
     });
   });
 
+  describe('tachado (feature 007)', () => {
+    const textOf = (container: HTMLElement, id: string) => find(container, id)!.querySelector<HTMLElement>('.tpl-text')!;
+
+    it('un texto sin strike no se tacha y uno con strike sí', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push(
+        { ...draftText({ text: 'Normal' }), id: 'normal' },
+        { ...draftText({ text: '$25.000', strike: true }), id: 'antes' },
+        { ...draftText({ text: 'Apagado', strike: false }), id: 'apagado' },
+      );
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      expect(textOf(container, 'normal').style.textDecorationLine).toBe('');
+      expect(textOf(container, 'antes').style.textDecorationLine).toBe('line-through');
+      expect(textOf(container, 'apagado').style.textDecorationLine).toBe('');
+    });
+
+    it('convive con contorno, resplandor y mayúsculas', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push({
+        ...draftText({ text: 'Oferta', strike: true, stroke: '#000000', strokeW: 2, glow: 'a1', upper: true }),
+        id: 'todo',
+      });
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      const style = textOf(container, 'todo').style;
+      expect(style.textDecorationLine).toBe('line-through');
+      expect(style.getPropertyValue('-webkit-text-stroke')).not.toBe('');
+      expect(style.textShadow).not.toBe('');
+      expect(style.textTransform).toBe('uppercase');
+    });
+  });
+
   describe('formas e imágenes', () => {
     it('una forma usa su relleno, borde y esquinas; un círculo es 50 % y una píldora 999 px', () => {
       const t = baseTemplate('pop'); // portada: círculo de acento 2
