@@ -61,7 +61,7 @@
 | Campo | Control | Opciones / valores | Asia-POP | Valor |
 | --- | --- | --- | --- | --- |
 | Posición → Organizar | Botones | Traer adelante, Enviar atrás, Al frente, Al fondo | ⚠️ en `Layers` (reordenar) | — |
-| Posición → Alinear a la página | Botones | Arriba, Centro (V), Abajo, Izquierda, Centro (H), Derecha | ❌ (solo guía al arrastrar) | **Alta**, barato |
+| Posición → Alinear a la página | Botones | Arriba, Centro (V), Abajo, Izquierda, Centro (H), Derecha | ✅ (feature 007) | — |
 | Posición → Pestaña Capas | Lista | Arrastrar para reordenar, todos/superpuestos | ✅ `Layers` | — |
 | Posición → Avanzado | Números | Ancho, Alto, X, Y, Rotación (°), bloqueo de proporción | ⚠️ X/Y/Ancho/Alto en %; rotación en slider; sin bloqueo de proporción | Media |
 | Transparencia | Slider + número | 0–100 | ✅ Opacidad 0–100 % | — |
@@ -82,12 +82,12 @@
 | Tamaño de fuente | Número con − / + y lista | ⏳ (lista de presets; máximo alto) | ✅ slider (`RANGES.textSize`) | — |
 | Color del texto | Selector: colores del documento, de marca, por defecto, selector libre, cuentagotas | Sólido o degradado | ✅ color de paleta o personalizado | — |
 | Negrita / Cursiva | Toggles | Ctrl+B / Ctrl+I (según la familia) | ⚠️ Peso 400/600/700/900; sin cursiva | Media |
-| Subrayado / Tachado | Toggles | Ctrl+U | ❌ | Media (tachado = precio anterior en promos) |
+| Subrayado / Tachado | Toggles | Ctrl+U | ⚠️ Tachado ✅ (feature 007); sin subrayado | — |
 | Mayúsculas | Toggle | aA / AA | ✅ | — |
 | Alineación | Ciclo | Izquierda, Centro, Derecha, Justificado | ⚠️ sin Justificado | Baja |
 | Lista | Ciclo | Viñetas, Numerada | ❌ | Baja |
 | Espaciado → Letras | Slider | ⏳ (aprox. −200 a 800) | ✅ `ls` | — |
-| Espaciado → Altura de línea | Slider | ⏳ (aprox. 0,5 a 2,5) | ❌ | **Alta** (textos de varias líneas) |
+| Espaciado → Altura de línea | Slider | ⏳ (aprox. 0,5 a 2,5) | ✅ 0,8–2,5 (feature 007) | — |
 | Espaciado → Ancla | Botones | Arriba, Centro, Abajo | ❌ | Media |
 | Efectos → Estilo | Rejilla | Ninguno, Sombra, Elevar, Hueco, Separar, Contorno, Eco, Glitch, Neón, Fondo | ⚠️ Contorno ✅, Neón ✅ (`glow`); el resto ❌ | Media (Sombra y Fondo) |
 | Efectos → parámetros | Sliders por efecto | Sombra: desplazamiento, dirección, desenfoque, transparencia, color. Fondo: redondez, separación, transparencia, color. Contorno: grosor, color | ⚠️ contorno (grosor y color), neón (color) | Media |
@@ -170,9 +170,9 @@ Ordenado por **valor para el catálogo ÷ costo**. Todo es una línea más en `i
 
 | # | Campo | Por qué | Costo |
 | --- | --- | --- | --- |
-| 1 | **Altura de línea** (texto) | Los textos de varias líneas hoy no se pueden ajustar | Bajo: un `range` y una propiedad en el modelo |
-| 2 | **Alinear a la página** (6 botones) | Centrar con precisión sin arrastrar | Bajo: acción en el reductor |
-| 3 | **Tachado** (texto) | Precio anterior en promociones | Bajo |
+| 1 | ✅ **Altura de línea** (texto) — feature 007 | Los textos de varias líneas hoy no se pueden ajustar | Bajo: un `range` y una propiedad en el modelo |
+| 2 | ✅ **Alinear a la página** (6 botones) — feature 007 | Centrar con precisión sin arrastrar | Bajo: acción en el reductor |
+| 3 | ✅ **Tachado** (texto) — feature 007 | Precio anterior en promociones | Bajo |
 | 4 | **Sombra y Fondo** como efectos de texto | Legibilidad sobre fotos | Medio (render en `TemplatePage` y PDF) |
 | 5 | **Subidos** (logo y fotos propias) | Hoy solo hay 5 imágenes fijas | Medio-alto: almacenamiento local, ya hay `multer`/`sharp` |
 | 6 | **PDF para imprimir**: sangrado y marcas de corte | Si el catálogo va a imprenta | Medio (Puppeteer + márgenes) |

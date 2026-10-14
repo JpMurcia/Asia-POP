@@ -4,6 +4,7 @@ import {
   FONT_LABELS,
   PAGE_H,
   PAGE_W,
+  TEXT_DEFAULTS,
   resolveColor,
   type FontKey,
   type PageElement,
@@ -31,6 +32,11 @@ interface Measured {
   color: string | null;
   bg: string | null;
   fontFamily: string | null;
+  /** Del cuerpo del texto, en px (feature 007). */
+  fontSize: number | null;
+  lineHeight: number | null;
+  decoration: string | null;
+  bodyH: number | null;
 }
 interface PageMeasure {
   key: PageKey;
@@ -61,6 +67,8 @@ const MEASURE = `(() => {
         x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight,
         opacity: cs.opacity, rot: (Math.atan2(m.b, m.a) * 180) / Math.PI,
         color: bcs ? bcs.color : null, bg: bcs ? bcs.backgroundColor : null, fontFamily: bcs ? bcs.fontFamily : null,
+        fontSize: bcs ? parseFloat(bcs.fontSize) : null, lineHeight: bcs ? parseFloat(bcs.lineHeight) : null,
+        decoration: bcs ? bcs.textDecorationLine : null, bodyH: body ? body.offsetHeight : null,
       });
     });
     const footer = sheet.querySelector('[data-testid=page-footer]');
@@ -142,6 +150,11 @@ function expectMatchesDocument(t: Template, measure: Measure) {
         const key: FontKey = el.font === 'title' ? t.fonts.title : el.font === 'body' ? t.fonts.body : el.font;
         expect(familyOf(m.fontFamily!), `${at} fuente`).toBe(FONT_LABELS[key]);
       }
+      if (el.type === 'text') {
+        // Altura de línea y tachado (feature 007): sin los campos, los valores de siempre
+        expect(m.lineHeight! / m.fontSize!, `${at} altura de línea`).toBeCloseTo(el.lh ?? TEXT_DEFAULTS.lh, 2);
+        expect(m.decoration, `${at} tachado`).toBe((el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : 'none');
+      }
       if (el.type === 'shape') {
         expect(m.bg, `${at} relleno`).toBe(rgb(resolveColor(t.palette, el.fill)));
       }
@@ -218,5 +231,24 @@ describe('elementos ocultos, girados y fuera de la hoja', () => {
     expect(measure.scrollWidth).toBe(baselineWidth);
     expect(measure.scrollWidth).toBe(measure.clientWidth);
     expect(r.pdfPages).toBe(r.structure.totalPages);
+  }, 120_000);
+});
+
+describe('altura de línea y tachado (feature 007, FR-013, SC-004)', () => {
+  it('un texto de tres líneas con lh 1.6 y tachado se dibuja igual que su documento', async () => {
+    const t = copyOf(baseTemplate('neon'), 'tlh', 'Neón con promoción');
+    t.pages.portada.els.push({
+      ...draftText({ text: 'Línea uno\nLínea dos\nLínea tres', size: 20, lh: 1.6, strike: true, x: 10, y: 60, w: 80, h: 20 }),
+      id: 'promo',
+    });
+    await h.save((ws) => ({ templates: [...ws.templates, t] }));
+    const r = await h.generate({ prepare: { templateId: 'tlh' } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    const promo = measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === 'promo')!;
+    expect(promo.lineHeight).toBeCloseTo(32, 1); // 20 px × 1.6
+    expect(promo.decoration).toBe('line-through');
+    // tres líneas exactas: el alto del texto es 3 × la altura de línea
+    expect(promo.bodyH! / promo.lineHeight!).toBeCloseTo(3, 1);
   }, 120_000);
 });

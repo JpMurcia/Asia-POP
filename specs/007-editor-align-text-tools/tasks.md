@@ -112,11 +112,11 @@ Aplicación web: `backend/src/`, `backend/tests/`, `frontend/src/`, `frontend/te
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T023 En `backend/tests/integration/pdf-template-fidelity.test.ts` medir en Chrome real, además de lo que ya mide, `lineHeight` y `textDecorationLine` de los textos; agregar un caso con una plantilla que tenga un texto multilínea con `lh: 1.6` y `strike: true` y comprobar que la vista de impresión coincide con el documento, incluidos el alto medido y que hay `line-through` (FR-013, SC-004)
-- [ ] T024 Regenerar con `backend/tests/fixtures/visual-sample.ts` los PDF de las 4 plantillas base y compararlos con `specs/007-editor-align-text-tools/visual/baseline/` página a página (texto con `pdf-parse` y captura por página); registrar el resultado en `specs/007-editor-align-text-tools/visual/README.md`: sin diferencias (SC-003, FR-015)
-- [ ] T025 [P] Actualizar el texto de ayuda de atajos en `frontend/src/pages/TemplateEditor/Inspector.tsx` (`.ed-tip`) solo si hiciera falta mencionar la alineación; si no aporta, dejarlo como está y anotarlo en la tarea
-- [ ] T026 [P] Marcar en `docs/specs/canva-fields-inventory.md` (sección 6) los ítems 1–3 como implementados en la feature 007, y en la tabla de la sección 3 cambiar "Alinear a la página", "Altura de línea" y "Tachado" a ✅
-- [ ] T027 Ejecutar `npm test`, `npm run test:pdf`, `npm run lint` y `npm run build` en la raíz; recorrer a mano los escenarios 1–6 de [quickstart.md](./quickstart.md); confirmar que `package.json` no ganó dependencias
+- [X] T023 En `backend/tests/integration/pdf-template-fidelity.test.ts` medir en Chrome real, además de lo que ya mide, `lineHeight` y `textDecorationLine` de los textos; agregar un caso con una plantilla que tenga un texto multilínea con `lh: 1.6` y `strike: true` y comprobar que la vista de impresión coincide con el documento, incluidos el alto medido y que hay `line-through` (FR-013, SC-004)
+- [X] T024 Regenerar con `backend/tests/fixtures/visual-sample.ts` los PDF de las 4 plantillas base y compararlos con `specs/007-editor-align-text-tools/visual/baseline/` página a página (texto con `pdf-parse` y captura por página); registrar el resultado en `specs/007-editor-align-text-tools/visual/README.md`: sin diferencias (SC-003, FR-015)
+- [X] T025 [P] Actualizar el texto de ayuda de atajos en `frontend/src/pages/TemplateEditor/Inspector.tsx` (`.ed-tip`) solo si hiciera falta mencionar la alineación; si no aporta, dejarlo como está y anotarlo en la tarea — **Resultado**: no hace falta; la ayuda describe atajos de teclado y la feature no agrega ninguno (las seis acciones son botones visibles con su etiqueta)
+- [X] T026 [P] Marcar en `docs/specs/canva-fields-inventory.md` (sección 6) los ítems 1–3 como implementados en la feature 007, y en la tabla de la sección 3 cambiar "Alinear a la página", "Altura de línea" y "Tachado" a ✅
+- [X] T027 Ejecutar `npm test`, `npm run test:pdf`, `npm run lint` y `npm run build` en la raíz; recorrer a mano los escenarios 1–6 de [quickstart.md](./quickstart.md); confirmar que `package.json` no ganó dependencias
 
 ---
 
