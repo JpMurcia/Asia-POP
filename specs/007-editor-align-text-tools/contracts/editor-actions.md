@@ -22,9 +22,9 @@ Un elemento `type: "text"` acepta dos claves opcionales más. Las demás claves 
 | --- | --- |
 | `lh` y `strike` válidos | `200`; `GET` los devuelve iguales |
 | Sin `lh` ni `strike` (plantilla anterior) | `200`; `GET` **no** los agrega |
-| `lh: 3` | `400 validation_error`, `details[].field` = `templates[i].pages.<página>.els[j].lh`, mensaje "La altura de línea: el máximo es 2.5." |
-| `lh: "1.2"` | `400`, "La altura de línea debe ser un número." |
-| `strike: "sí"` | `400`, `…els[j].strike`, "Debe ser verdadero o falso." |
+| `lh: 3` | `422 invalid_templates`, `details[].field` = `templates[i].pages.<página>.els[j].lh`, mensaje "La altura de línea: el máximo es 2.5." |
+| `lh: "1.2"` | `422`, "La altura de línea debe ser un número." |
+| `strike: "sí"` | `422`, `…els[j].strike`, "Debe ser verdadero o falso." |
 
 En los tres casos de error no cambian ni las plantillas, ni el negocio, ni la revisión (mismo comportamiento que 003).
 

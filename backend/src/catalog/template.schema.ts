@@ -103,6 +103,9 @@ const textEl = z.object({
   align: oneOf(['left', 'center', 'right'], 'La alineación'),
   upper: z.boolean({ error: 'Debe ser verdadero o falso.' }),
   ls: num(RANGES.ls, 'El espaciado'),
+  // Opcionales: si faltan, se dibujan con TEXT_DEFAULTS. Hay que declararlos: z.object descarta las claves que no conoce
+  lh: num(RANGES.lh, 'La altura de línea').optional(),
+  strike: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
 });
 
 const badgeEl = z.object({

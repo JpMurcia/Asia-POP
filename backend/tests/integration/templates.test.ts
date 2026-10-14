@@ -322,3 +322,54 @@ describe('seguridad', () => {
     for (const r of responses) expect(JSON.stringify(r.body) + r.text + JSON.stringify(r.headers)).not.toContain(TOKEN);
   });
 });
+
+describe('Altura de línea y tachado de los textos (feature 007)', () => {
+  /** Primer texto de la portada de la primera plantilla, con su índice para armar la ruta del campo. */
+  const firstText = (templates: Template[]) => {
+    const els = templates[0]!.pages.portada.els;
+    const idx = els.findIndex((e) => e.type === 'text');
+    expect(idx).toBeGreaterThanOrEqual(0);
+    return { el: els[idx] as unknown as Record<string, unknown>, idx };
+  };
+
+  it('guarda lh y strike y los devuelve iguales al releer (FR-014)', async () => {
+    const { agent } = await loggedInAgent();
+    const ws = await load(agent);
+    const templates = structuredClone(ws.templates);
+    const { el, idx } = firstText(templates);
+    el.lh = 1.4;
+    el.strike = true;
+    await agent.put('/api/settings/templates').send(body(ws, { templates })).expect(200);
+    const saved = (await load(agent)).templates[0]!.pages.portada.els[idx]!;
+    expect(saved).toMatchObject({ lh: 1.4, strike: true });
+  });
+
+  it('una plantilla cuyos textos no tienen lh ni strike no los gana al guardar (FR-015)', async () => {
+    const { agent } = await loggedInAgent();
+    const ws = await load(agent);
+    const texts = (t: Template[]) => t.flatMap((x) => Object.values(x.pages).flatMap((p) => p.els)).filter((e) => e.type === 'text');
+    expect(texts(ws.templates).length).toBeGreaterThan(0);
+    expect(texts(ws.templates).every((e) => !('lh' in e) && !('strike' in e))).toBe(true);
+    await agent.put('/api/settings/templates').send(body(ws)).expect(200);
+    expect(texts((await load(agent)).templates).every((e) => !('lh' in e) && !('strike' in e))).toBe(true);
+  });
+
+  it.each([
+    ['lh', 3, 'La altura de línea: el máximo es 2.5.'],
+    ['lh', 0.5, 'La altura de línea: el mínimo es 0.8.'],
+    ['lh', '1.2', 'La altura de línea debe ser un número.'],
+    ['strike', 'sí', 'Debe ser verdadero o falso.'],
+  ])('rechaza %s = %j con 422, la ruta del campo y sin escribir nada (FR-016)', async (key, value, message) => {
+    const { agent } = await loggedInAgent();
+    const ws = await load(agent);
+    const templates = structuredClone(ws.templates);
+    const { el, idx } = firstText(templates);
+    el[key] = value;
+    const res = await agent.put('/api/settings/templates').send(body(ws, { templates })).expect(422);
+    expect(res.body.error).toBe('invalid_templates');
+    expect(res.body.details).toContainEqual(
+      expect.objectContaining({ field: `templates[0].pages.portada.els[${idx}].${key}`, message }),
+    );
+    expect(await load(agent)).toEqual(ws);
+  });
+});

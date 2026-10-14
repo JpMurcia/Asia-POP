@@ -26,8 +26,8 @@ Aplicación web: `backend/src/`, `backend/tests/`, `frontend/src/`, `frontend/te
 
 **Purpose**: Dejar la referencia contra la que se comprueba que nada existente cambió (SC-003).
 
-- [ ] T001 Capturar la **línea base** antes de tocar el render: con `backend/tests/fixtures/visual-sample.ts` generar el PDF de cada una de las 4 plantillas base (`neon`, `pop`, `kawaii`, `kraft`) con textos normales y con `LONG=1`, y guardarlos en `specs/007-editor-align-text-tools/visual/baseline/` (ver quickstart, Prerrequisitos)
-- [ ] T002 Ejecutar `npm test` y `npm run lint` en la raíz y anotar en `specs/007-editor-align-text-tools/visual/baseline/README.md` que partían en verde (fecha y conteo de pruebas)
+- [X] T001 Capturar la **línea base** antes de tocar el render: con `backend/tests/fixtures/visual-sample.ts` generar el PDF de cada una de las 4 plantillas base (`neon`, `pop`, `kawaii`, `kraft`) con textos normales y con `LONG=1`, y guardarlos en `specs/007-editor-align-text-tools/visual/baseline/` (ver quickstart, Prerrequisitos)
+- [X] T002 Ejecutar `npm test` y `npm run lint` en la raíz y anotar en `specs/007-editor-align-text-tools/visual/baseline/README.md` que partían en verde (fecha y conteo de pruebas)
 
 ---
 
@@ -37,10 +37,10 @@ Aplicación web: `backend/src/`, `backend/tests/`, `frontend/src/`, `frontend/te
 
 **⚠️ CRITICAL**: US2 y US3 no pueden empezar hasta terminar esta fase. US1 no la necesita.
 
-- [ ] T003 [P] En `backend/tests/integration/templates.test.ts` agregar pruebas que fallen: (a) guardar un texto con `lh: 1.4` y `strike: true` y releerlo con `GET /api/settings/templates` devuelve los mismos valores; (b) guardar una plantilla cuyos textos no tienen `lh` ni `strike` no los agrega al releer; (c) `lh: 3`, `lh: 0.5`, `lh: "1.2"` y `strike: "sí"` responden `400 validation_error` con `details[].field` terminado en `.lh` o `.strike` y los mensajes de [contracts/editor-actions.md](./contracts/editor-actions.md) §1, sin cambiar plantillas, negocio ni revisión
-- [ ] T004 En `backend/src/catalog/template.ts` agregar `lh: [0.8, 2.5]` a `RANGES`, los campos opcionales `lh?: number` y `strike?: boolean` a `TextEl` (con comentario JSDoc de su valor por defecto) y exportar `TEXT_DEFAULTS = { lh: 1.05, strike: false } as const`
-- [ ] T005 En `backend/src/catalog/template.schema.ts` agregar a `textEl`: `lh: num(RANGES.lh, 'La altura de línea').optional()` y `strike: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional()`; comprobar que T003 pasa (sin esto zod borra los campos al guardar, research §1)
-- [ ] T006 Confirmar que `draftText` en `backend/src/catalog/template-presets.ts` **no** escribe `lh` ni `strike` (data-model.md: los textos nuevos heredan los valores por defecto por el mismo camino que los viejos) y que `npm run typecheck -w backend` y `npm run build -w frontend` compilan
+- [X] T003 [P] En `backend/tests/integration/templates.test.ts` agregar pruebas que fallen: (a) guardar un texto con `lh: 1.4` y `strike: true` y releerlo con `GET /api/settings/templates` devuelve los mismos valores; (b) guardar una plantilla cuyos textos no tienen `lh` ni `strike` no los agrega al releer; (c) `lh: 3`, `lh: 0.5`, `lh: "1.2"` y `strike: "sí"` responden `422 invalid_templates` con `details[].field` terminado en `.lh` o `.strike` y los mensajes de [contracts/editor-actions.md](./contracts/editor-actions.md) §1, sin cambiar plantillas, negocio ni revisión
+- [X] T004 En `backend/src/catalog/template.ts` agregar `lh: [0.8, 2.5]` a `RANGES`, los campos opcionales `lh?: number` y `strike?: boolean` a `TextEl` (con comentario JSDoc de su valor por defecto) y exportar `TEXT_DEFAULTS = { lh: 1.05, strike: false } as const`
+- [X] T005 En `backend/src/catalog/template.schema.ts` agregar a `textEl`: `lh: num(RANGES.lh, 'La altura de línea').optional()` y `strike: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional()`; comprobar que T003 pasa (sin esto zod borra los campos al guardar, research §1)
+- [X] T006 Confirmar que `draftText` en `backend/src/catalog/template-presets.ts` **no** escribe `lh` ni `strike` (data-model.md: los textos nuevos heredan los valores por defecto por el mismo camino que los viejos) y que `npm run typecheck -w backend` y `npm run build -w frontend` compilan
 
 **Checkpoint**: el documento acepta, valida y conserva `lh` y `strike`; nada cambia en pantalla todavía.
 

@@ -25,7 +25,7 @@ npm run test:pdf   # PDF real en Chrome
 4. **Tachado (US3, FR-010 a FR-012, SC-006)**. Agrega "$25.000", actívale Tachado: una línea del color del texto lo atraviesa. Agrégale contorno, resplandor y mayúsculas: todo se conserva. Con un texto de dos líneas, ambas quedan tachadas. Cronometra componer "~~$25.000~~ $19.900" con dos textos: menos de 1 minuto.
 5. **Persistencia y PDF (FR-013, FR-014, SC-004)**. Guarda, recarga: altura de línea, tachado y posiciones siguen iguales. Duplica el texto y la plantilla: se conservan. Genera el catálogo con esa plantilla: en el PDF el texto tiene los mismos cortes de línea, la misma separación y el mismo tachado que el lienzo y la vista previa.
 6. **Compatibilidad (FR-015, SC-003)**. Sin tocar nada, abre la plantilla guardada antes de la feature: el indicador dice "Todo guardado" y sus textos se ven igual. Genera el PDF de las 4 plantillas base y compáralos página a página con la línea base: sin diferencias.
-7. **Validación (FR-016)**. Cubierto por las pruebas de integración (`templates.test.ts`): `lh: 3`, `lh: "1.2"` y `strike: "sí"` responden `400` con la ruta del campo y no cambian nada.
+7. **Validación (FR-016)**. Cubierto por las pruebas de integración (`templates.test.ts`): `lh: 3`, `lh: "1.2"` y `strike: "sí"` responden `422 invalid_templates` con la ruta del campo y no cambian nada.
 
 ## Criterios de salida
 
