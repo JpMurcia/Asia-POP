@@ -569,6 +569,29 @@
 .ed-actions button.ed-danger {
   color: #b3123f;
 }
+/* Alinear a la página (feature 007): seis botones de ícono bajo las acciones del elemento */
+.ed-align {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.ed-align button {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--ed-line);
+  background: #fffcf7;
+  color: var(--ed-ink);
+}
+.ed-align button:hover:not(:disabled) {
+  border-color: var(--ed-pink);
+  color: var(--ed-pink-dark);
+}
+.ed-align button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .ed-overflow {
   margin: 0;
   padding: 10px 12px;

@@ -476,3 +476,48 @@ describe('advertencia de bloque reducido (Edge Cases)', () => {
     expect(screen.queryByTestId('overflow-warning')).not.toBeInTheDocument();
   });
 });
+
+describe('alinear a la página (feature 007)', () => {
+  const LABELS = [
+    'Alinear a la izquierda',
+    'Centrar horizontalmente',
+    'Alinear a la derecha',
+    'Alinear arriba',
+    'Centrar verticalmente',
+    'Alinear abajo',
+  ];
+
+  it('con un elemento seleccionado muestra los seis botones en orden', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    const buttons = within(group('Alinear a la página')).getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(LABELS);
+  });
+
+  it('mueve el elemento en el lienzo y el campo X sigue la posición', async () => {
+    await start();
+    selectLayer(/^Banner/); // x 6, ancho 88
+    fireEvent.click(inGroup('Alinear a la página', 'Alinear a la izquierda'));
+    expect(canvasEl('neon-p2')!.style.left).toBe('0%');
+    expect(screen.getByLabelText('X %')).toHaveValue('0');
+    fireEvent.click(inGroup('Alinear a la página', 'Centrar horizontalmente'));
+    expect(canvasEl('neon-p2')!.style.left).toBe('6%');
+    fireEvent.click(inGroup('Alinear a la página', 'Alinear abajo'));
+    expect(canvasEl('neon-p2')!.style.top).toBe('91.8%');
+  });
+
+  it('con el elemento bloqueado los seis quedan deshabilitados y explican por qué', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    click('Bloquear');
+    for (const b of within(group('Alinear a la página')).getAllByRole('button')) {
+      expect(b).toBeDisabled();
+      expect(b).toHaveAttribute('title', 'Desbloquea el elemento para alinearlo');
+    }
+  });
+
+  it('sin selección no se muestran', async () => {
+    await start();
+    expect(screen.queryByRole('group', { name: 'Alinear a la página' })).not.toBeInTheDocument();
+  });
+});
