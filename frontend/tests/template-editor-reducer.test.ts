@@ -7,6 +7,7 @@ import {
   HISTORY_LIMIT,
   MERGE_WINDOW_MS,
   activeTemplate,
+  alignBox,
   createEditorState,
   editorReducer,
   isDirty,
@@ -564,22 +565,22 @@ describe('gestión de plantillas', () => {
 
   it('eliminar quita la plantilla; la predeterminada no se elimina', () => {
     const s = run(fresh(), { type: 'deleteTemplate', id: 'kraft' });
-    expect(s.workspace.templates.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii']);
+    expect(s.workspace.templates.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'base']);
     const blocked = run(fresh(), { type: 'deleteTemplate', id: 'neon' });
-    expect(blocked.workspace.templates).toHaveLength(4);
+    expect(blocked.workspace.templates).toHaveLength(5);
     expect(blocked.message?.text).toMatch(/predeterminada/i);
   });
 
   it('nunca queda sin plantillas', () => {
     let s = fresh();
-    for (const id of ['pop', 'kawaii', 'kraft']) s = run(s, { type: 'deleteTemplate', id });
+    for (const id of ['pop', 'kawaii', 'kraft', 'base']) s = run(s, { type: 'deleteTemplate', id });
     expect(s.workspace.templates.map((t) => t.id)).toEqual(['neon']);
     expect(run(s, { type: 'deleteTemplate', id: 'neon' }).workspace.templates).toHaveLength(1);
   });
 
   it('una predeterminada nueva sí permite eliminar la anterior', () => {
     const s = run(fresh(), { type: 'setDefault', id: 'pop' }, { type: 'deleteTemplate', id: 'neon' });
-    expect(s.workspace.templates.map((t) => t.id)).toEqual(['pop', 'kawaii', 'kraft']);
+    expect(s.workspace.templates.map((t) => t.id)).toEqual(['pop', 'kawaii', 'kraft', 'base']);
   });
 
   it('eliminar la que se edita abre la predeterminada y lo avisa; eliminar otra no cambia la abierta', () => {
@@ -789,5 +790,72 @@ describe('bloque de productos: tamaño de la zona y de la foto (feature 007)', (
       expect(run(s, { type: 'restoreProductSizes', id: 'mio' })).toBe(s);
       expect(run(s, { type: 'restoreProductSizes', id: 'no-existe' })).toBe(s);
     });
+  });
+});
+
+describe('alinear a la página (feature 007)', () => {
+  const box = { x: 10, y: 20, w: 30, h: 40 };
+  const align = (id: string, edge: Parameters<typeof alignBox>[1], now = T0): EditorAction => ({ type: 'align', id, edge, now });
+
+  it.each([
+    ['left', { x: 0 }],
+    ['hcenter', { x: 35 }],
+    ['right', { x: 70 }],
+    ['top', { y: 0 }],
+    ['vcenter', { y: 30 }],
+    ['bottom', { y: 60 }],
+  ] as const)('alignBox %s', (edge, expected) => {
+    expect(alignBox(box, edge)).toEqual(expected);
+  });
+
+  it('un elemento más ancho que la hoja va al borde sin cambiar de tamaño', () => {
+    expect(alignBox({ x: 5, y: 0, w: 120, h: 10 }, 'left')).toEqual({ x: 0 });
+    expect(alignBox({ x: 5, y: 0, w: 120, h: 10 }, 'hcenter')).toEqual({ x: -10 });
+  });
+
+  it('respeta los rangos de posición del editor', () => {
+    expect(alignBox({ x: 0, y: 0, w: 500, h: 500 }, 'right')).toEqual({ x: -300 });
+    expect(alignBox({ x: 0, y: 0, w: 3, h: 0.3 }, 'bottom')).toEqual({ y: 99.7 });
+  });
+
+  it('redondea a una décima, como el resto de posiciones', () => {
+    expect(alignBox({ x: 0, y: 0, w: 33.33, h: 10 }, 'hcenter')).toEqual({ x: 33.3 });
+  });
+
+  it('solo cambia el eje de la acción y agrega un paso', () => {
+    const s = withText();
+    const left = run(s, align('mio', 'left'));
+    expect(byId(left, 'mio')).toMatchObject({ x: 0, y: 20, w: 40, h: 10 });
+    const bottom = run(s, align('mio', 'bottom'));
+    expect(byId(bottom, 'mio')).toMatchObject({ x: 10, y: 90, w: 40, h: 10 });
+    expect(left.past).toHaveLength(s.past.length + 1);
+  });
+
+  it('un elemento bloqueado, inexistente o ya alineado devuelve el mismo estado, sin paso nuevo', () => {
+    const s = withText();
+    const locked = run(s, { type: 'toggleLock', id: 'mio' });
+    expect(run(locked, align('mio', 'left'))).toBe(locked);
+    expect(run(s, align('nada', 'left'))).toBe(s);
+    const once = run(s, align('mio', 'left'));
+    expect(run(once, align('mio', 'left', T0 + 10))).toBe(once);
+  });
+
+  it('dos alineaciones seguidas son dos pasos y se deshacen y rehacen', () => {
+    const s = withText();
+    const two = run(s, align('mio', 'left'), align('mio', 'top', T0 + 10));
+    expect(two.past).toHaveLength(s.past.length + 2);
+    const back = run(two, { type: 'undo' });
+    expect(byId(back, 'mio')).toMatchObject({ x: 0, y: 20 });
+    const start = run(back, { type: 'undo' });
+    expect(byId(start, 'mio')).toMatchObject({ x: 10, y: 20 });
+    expect(byId(run(start, { type: 'redo' }, { type: 'redo' }), 'mio')).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('alinea un bloque automático una vez desbloqueado', () => {
+    const s = run(fresh(), { type: 'selectPage', page: 'productos' });
+    const products = els(s).find((e) => e.type === 'products')!;
+    expect(run(s, align(products.id, 'left'))).toBe(s);
+    const free = run(s, { type: 'toggleLock', id: products.id }, align(products.id, 'left'));
+    expect(byId(free, products.id)!.x).toBe(0);
   });
 });

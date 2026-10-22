@@ -652,13 +652,13 @@ describe('bloque de productos: nombre del producto (feature 007)', () => {
     expect(order(group('Distribución'), screen.getByText('Nombre del producto', { selector: '.ed-heading' }))).toBeTruthy();
   });
 
-  it('el estilo se elige entre Separado y Dentro de la burbuja, y cambia el lienzo', async () => {
+  it('el estilo se elige entre Separado y En la burbuja, y cambia el lienzo', async () => {
     await onProducts();
     // Neón Noche viene con el nombre separado
     expect(inGroup('Estilo del nombre', 'Separado')).toHaveAttribute('aria-pressed', 'true');
     expect(nameTag()).not.toBeNull();
-    fireEvent.click(inGroup('Estilo del nombre', 'Dentro de la burbuja'));
-    expect(inGroup('Estilo del nombre', 'Dentro de la burbuja')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(inGroup('Estilo del nombre', 'En la burbuja'));
+    expect(inGroup('Estilo del nombre', 'En la burbuja')).toHaveAttribute('aria-pressed', 'true');
     expect(nameTag()).toBeNull();
     expect(canvas().querySelector('[data-part="bubble"] .pb-name')).not.toBeNull();
     fireEvent.click(inGroup('Estilo del nombre', 'Separado'));
@@ -670,7 +670,7 @@ describe('bloque de productos: nombre del producto (feature 007)', () => {
     expect(group('Color del nombre')).toBeInTheDocument();
     expect(group('Fondo del rótulo')).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Resplandor neón' })).toHaveAttribute('aria-checked', 'true');
-    fireEvent.click(inGroup('Estilo del nombre', 'Dentro de la burbuja'));
+    fireEvent.click(inGroup('Estilo del nombre', 'En la burbuja'));
     expect(group('Color del nombre')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Fondo del rótulo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('switch', { name: 'Resplandor neón' })).not.toBeInTheDocument();
@@ -699,5 +699,97 @@ describe('bloque de productos: nombre del producto (feature 007)', () => {
     await onProducts();
     expect(inGroup('Estilo', 'Sello')).toBeInTheDocument();
     expect(screen.getAllByRole('group', { name: 'Estilo' })).toHaveLength(1);
+  });
+});
+
+describe('alinear a la página (feature 007)', () => {
+  const LABELS = [
+    'Alinear a la izquierda',
+    'Centrar horizontalmente',
+    'Alinear a la derecha',
+    'Alinear arriba',
+    'Centrar verticalmente',
+    'Alinear abajo',
+  ];
+
+  it('con un elemento seleccionado muestra los seis botones en orden', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    const buttons = within(group('Alinear a la página')).getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(LABELS);
+  });
+
+  it('mueve el elemento en el lienzo y el campo X sigue la posición', async () => {
+    await start();
+    selectLayer(/^Banner/); // x 6, ancho 88
+    fireEvent.click(inGroup('Alinear a la página', 'Alinear a la izquierda'));
+    expect(canvasEl('neon-p2')!.style.left).toBe('0%');
+    expect(screen.getByLabelText('X %')).toHaveValue('0');
+    fireEvent.click(inGroup('Alinear a la página', 'Centrar horizontalmente'));
+    expect(canvasEl('neon-p2')!.style.left).toBe('6%');
+    fireEvent.click(inGroup('Alinear a la página', 'Alinear abajo'));
+    expect(canvasEl('neon-p2')!.style.top).toBe('91.8%');
+  });
+
+  it('con el elemento bloqueado los seis quedan deshabilitados y explican por qué', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    click('Bloquear');
+    for (const b of within(group('Alinear a la página')).getAllByRole('button')) {
+      expect(b).toBeDisabled();
+      expect(b).toHaveAttribute('title', 'Desbloquea el elemento para alinearlo');
+    }
+  });
+
+  it('sin selección no se muestran', async () => {
+    await start();
+    expect(screen.queryByRole('group', { name: 'Alinear a la página' })).not.toBeInTheDocument();
+  });
+});
+
+describe('altura de línea de un texto (feature 007)', () => {
+  const lineHeightOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!.style.lineHeight;
+
+  it('aparece después de Espaciado, de 0.8 a 2.5 en pasos de 0.05, y muestra 1.05 si el texto no la tiene', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    const labels = Array.from(screen.getByTestId('inspector').querySelectorAll('input[type="range"]')).map((i) => i.getAttribute('aria-label'));
+    expect(labels.indexOf('Altura de línea')).toBe(labels.indexOf('Espaciado') + 1);
+    expect(bounds('Altura de línea')).toEqual([0.8, 2.5]);
+    expect(range('Altura de línea').step).toBe('0.05');
+    expect(Number(range('Altura de línea').value)).toBe(1.05);
+  });
+
+  it('moverla cambia el texto en el lienzo y un deslizamiento continuo se deshace en un paso', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    fireEvent.change(range('Altura de línea'), { target: { value: '1.5' } });
+    fireEvent.change(range('Altura de línea'), { target: { value: '2' } });
+    expect(lineHeightOf('neon-p2')).toBe('2');
+    click('Deshacer');
+    expect(lineHeightOf('neon-p2')).toBe('1.05');
+  });
+});
+
+describe('tachado de un texto (feature 007)', () => {
+  const decorationOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!.style.textDecorationLine;
+  const strike = () => screen.getByRole('switch', { name: 'Tachado' });
+
+  it('aparece después de Mayúsculas, apagado si el texto no lo tiene', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    const switches = screen.getAllByRole('switch').map((s) => s.getAttribute('aria-label'));
+    expect(switches.indexOf('Tachado')).toBe(switches.indexOf('Mayúsculas') + 1);
+    expect(strike()).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('activarlo tacha el texto en el lienzo y deshacer lo quita', async () => {
+    await start();
+    selectLayer(/^Banner/);
+    fireEvent.click(strike());
+    expect(strike()).toHaveAttribute('aria-checked', 'true');
+    expect(decorationOf('neon-p2')).toBe('line-through');
+    click('Deshacer');
+    expect(decorationOf('neon-p2')).toBe('');
   });
 });

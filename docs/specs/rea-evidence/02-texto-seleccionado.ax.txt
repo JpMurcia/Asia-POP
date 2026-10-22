@@ -1,0 +1,339 @@
+- document:
+  - heading "Editor de Canva" [level=1]
+  - text: Terminó la carga.
+  - paragraph:
+    - link "Saltar navegación":
+      - /url: "#_r_0_2"
+  - paragraph:
+    - link "Saltar e ir al contenido principal":
+      - /url: "#_r_0_3"
+  - banner:
+    - menubar "Principal":
+      - group "Controles del documento":
+        - menuitem "Inicio"
+        - menuitem "Archivo"
+        - menuitem "Redimensionar"
+        - menuitem "Editar"
+        - menuitem "Se guardaron todos los cambios"
+      - group "Compartir y publicar":
+        - textbox "Título del diseño": Documento A4 Catálogo Nueva Colección Elegante Beige
+        - text: Documento A4 Catálogo Nueva Colección Elegante Beige
+        - menuitem "Probar gratis por 30 días"
+        - button "Jp Murcia":
+          - img
+        - menuitem "Estadísticas"
+        - menuitem "Ver todos los comentarios"
+        - menuitem "Imprime con Canva"
+        - menuitem "Compartir"
+  - complementary "Panel lateral":
+    - heading "Panel lateral" [level=2]
+    - tablist "Panel lateral":
+      - tab "Plantillas"
+      - tab "Elementos"
+      - tab "Texto"
+      - tab "Marca": Pro Marca
+      - tab "Archivos subidos"
+      - tab "Herramientas"
+      - tab "Proyectos"
+      - tab "Apps"
+  - button "Acceso al editor"
+  - main "Cuadro":
+    - toolbar "Controles estándares del elemento seleccionado":
+      - 'button "Activar selector de fuentes. Fuente actual: RoxboroughCF"':
+        - paragraph: RoxboroughCF
+      - group "Tamaño de la fuente":
+        - button "Reduce el tamaño de la fuente"
+        - combobox "Tamaño de la fuente": "24"
+        - button "Aumenta el tamaño de la fuente"
+      - button "Color actual de texto Marrón oscuro apagado":
+        - img "#603614"
+      - button "Negrita"
+      - button "Itálica"
+      - button "Subrayar"
+      - button "Tachado"
+      - button "Mayúscula"
+      - 'button "Modifica la alineación del texto. Alineación actual: A la izquierda"'
+      - button "Lista"
+      - button "Configuración avanzada"
+      - button "Transparencia"
+      - button "Efectos"
+      - button "Animar"
+      - button "Posición"
+      - button "Copiar estilo"
+    - application "Lienzo"
+    - group "controles de página":
+      - text: Página 2 -
+      - textbox "Título de la página": Agregar título de página
+      - text: Agregar título de página
+      - button "Subir página"
+      - button "Bajar página"
+      - button "Ocultar página"
+      - button "Bloquear página"
+      - button "Duplicar la página"
+      - button "Eliminar la página"
+      - button "Agregar una página"
+    - application "Contenido del editor":
+      - group "Página 2":
+        - img "Woman in Denim Jacket, Jeans, Scarf and Hat"
+        - group "Presenta una paleta de colores cálidos y fríos, con texturas suaves como la lana y el terciopelo....":
+          - paragraph: Presenta una paleta de colores cálidos y fríos, con texturas suaves como la lana y el terciopelo. Prendas destacadas incluyen abrigos largos y bufandas extragrandes.
+        - group "La versatilidad es clave, con prendas adaptables a diferentes estilos y ocasiones. Los accesorios...":
+          - paragraph: La versatilidad es clave, con prendas adaptables a diferentes estilos y ocasiones. Los accesorios, como sombreros de ala ancha y botas de montaña, completan los conjuntos.
+        - group "Nueva colección":
+          - paragraph: Nueva colección
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Delgada"
+          - img "Diamond Star Silhouette"
+    - group "controles de página":
+      - text: Página 3 -
+      - textbox "Título de la página": Agregar título de página
+      - text: Agregar título de página
+      - button "Subir página"
+      - button "Bajar página"
+      - button "Ocultar página"
+      - button "Bloquear página"
+      - button "Duplicar la página"
+      - button "Eliminar la página"
+      - button "Agregar una página"
+    - application "Contenido del editor":
+      - group "Página 3":
+        - img "Woman in Denim Jacket and Jeans on the Stairs"
+        - img "Naranja claro y Rectángulo"
+        - img "Woman in Denim Jacket, Jeans and Boots"
+        - img "Woman in Brown Coat with Leopard Scarf"
+        - group "Grupo":
+          - text: Contiene 3 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Azul y Círculo"
+          - img "Celeste pastel apagado y Círculo"
+          - img "Azul claro y Círculo"
+        - img "Delgada"
+        - img "Delgada"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Marrón apagado y Círculo"
+          - img "Negro y Círculo"
+        - img "Delgada"
+        - group "Grupo":
+          - text: Contiene 3 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Marrón apagado y Círculo"
+          - img "Naranja apagado y Círculo"
+          - img "Naranja pastel apagado y Círculo"
+        - img "Delgada"
+        - group "Jumper de jean":
+          - paragraph: Jumper de jean
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - group "Talle:":
+            - paragraph: "Talle:"
+          - group "1 | 2 | 3 | 4":
+            - paragraph: 1 | 2 | 3 | 4
+        - group "Color:":
+          - paragraph: "Color:"
+        - group "Es una pieza versátil y moderna, ofrece comodidad y estilo en igual medida.":
+          - paragraph:
+            - emphasis: Es una pieza versátil y moderna, ofrece comodidad y estilo en igual medida.
+        - group "Bucaneras":
+          - paragraph: Bucaneras
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - group "Talle:":
+            - paragraph: "Talle:"
+          - group "1 | 2 | 3":
+            - paragraph: 1 | 2 | 3
+        - group "Color:":
+          - paragraph: "Color:"
+        - group "Confeccionadas en cuero sintético de alta calidad, estas bucaneras ofrecen comodidad y elegancia...":
+          - paragraph:
+            - emphasis: Confeccionadas en cuero sintético de alta calidad, estas bucaneras ofrecen comodidad y elegancia en igual medida.
+        - group "Saco de paño":
+          - paragraph: Saco de paño
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - group "Talle:":
+            - paragraph: "Talle:"
+          - group "1 | 2 | 3 | 4":
+            - paragraph: 1 | 2 | 3 | 4
+        - group "Color:":
+          - paragraph: "Color:"
+        - group "Confeccionado en paño de alta calidad, este saco ofrece una combinación perfecta de sofisticación...":
+          - paragraph:
+            - emphasis: Confeccionado en paño de alta calidad, este saco ofrece una combinación perfecta de sofisticación y comodidad.
+        - img "Diamond Star Silhouette"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Delgada"
+          - img "Diamond Star Silhouette"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Delgada"
+          - img "Diamond Star Silhouette"
+    - group "controles de página":
+      - text: Página 4 -
+      - textbox "Título de la página": Agregar título de página
+      - text: Agregar título de página
+      - button "Subir página"
+      - button "Bajar página"
+      - button "Ocultar página"
+      - button "Bloquear página"
+      - button "Duplicar la página"
+      - button "Eliminar la página"
+      - button "Agregar una página"
+    - application "Contenido del editor":
+      - group "Página 4":
+        - img "Woman in Casual Brown Dress Shirt and Slacks"
+        - img "Woman in Grey Dress Shirt"
+        - img "Delgada"
+        - group "Camisa Ensigna":
+          - paragraph: Camisa Ensigna
+        - group "Confeccionada en algodón suave, esta camisa ofrece comodidad y estilo en igual medida. El diseño...":
+          - paragraph:
+            - emphasis: Confeccionada en algodón suave, esta camisa ofrece comodidad y estilo en igual medida. El diseño presenta un corte clásico y entallado que realza la figura femenina.
+        - img "Delgada"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - group "Talle:":
+            - paragraph: "Talle:"
+          - group "1 | 2 | 3 | 4":
+            - paragraph: 1 | 2 | 3 | 4
+        - group "Color:":
+          - paragraph: "Color:"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Marrón apagado y Círculo"
+          - img "Verde apagado y Círculo"
+        - group "Camisa Margarita":
+          - paragraph: Camisa Margarita
+        - group "Confeccionada en algodón de alta calidad, esta camisa ofrece un tacto suave. El diseño presenta u...":
+          - paragraph:
+            - emphasis: Confeccionada en algodón de alta calidad, esta camisa ofrece un tacto suave. El diseño presenta un corte clásico y entallado que realza la figura femenina, con detalles de cuello en V y botones que añaden un toque de elegancia.
+        - img "Delgada"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - group "Talle:":
+            - paragraph: "Talle:"
+          - group "1 | 2 | 3 | 4":
+            - paragraph: 1 | 2 | 3 | 4
+        - group "Color:":
+          - paragraph: "Color:"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Marrón apagado y Círculo"
+          - img "Verde apagado y Círculo"
+        - img "Diamond Star Silhouette"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Delgada"
+          - img "Diamond Star Silhouette"
+    - button "Redimensionar la selección desde el borde izquierdo"
+    - button "Redimensionar la selección desde el borde derecho"
+    - button "Redimensionar la selección desde la esquina superior izquierda"
+    - button "Redimensionar la selección desde la esquina superior derecha"
+    - button "Redimensionar la selección desde la esquina inferior izquierda"
+    - button "Redimensionar la selección desde la esquina inferior derecha"
+    - button "Rotar la selección":
+      - img
+    - button "Mover la selección":
+      - img
+    - toolbar "Controles estándares del elemento seleccionado":
+      - button "Comentar"
+      - button "Bloquear"
+      - button "Duplicar"
+      - button "Eliminar"
+      - button "Más"
+    - group "controles de página":
+      - text: Página 5 -
+      - textbox "Título de la página": Agregar título de página
+      - text: Agregar título de página
+      - button "Subir página"
+      - button "Bajar página"
+      - button "Ocultar página"
+      - button "Bloquear página"
+      - button "Duplicar la página"
+      - button "Eliminar la página"
+      - button "Agregar una página"
+    - application "Contenido del editor":
+      - group "Página 5":
+        - img "Naranja claro y Rectángulo"
+        - img "Stylish Woman in Scarf and Sunglasses"
+        - img "Woman with Sunglasses On"
+        - img "Woman with Hat and Scarf"
+        - img "Naranja claro y Rectángulo"
+        - img "Stylish Woman in Coat and Scarf"
+        - img "Stylish Woman in Scarf and Sunglasses"
+        - img "Woman with Sunglasses On"
+        - img "Delgada"
+        - img "Delgada"
+        - img "Delgada"
+        - img "Delgada"
+        - img "Delgada"
+        - img "Delgada"
+        - group "Accesorios":
+          - paragraph: Accesorios
+        - group "Aros Elena":
+          - paragraph: Aros Elena
+        - group "Sombrero":
+          - paragraph: Sombrero
+        - group "Pañuelo Sandra":
+          - paragraph: Pañuelo Sandra
+        - group "Pañuelo Lorna":
+          - paragraph: Pañuelo Lorna
+        - group "Anteojos":
+          - paragraph: Anteojos
+        - group "Pañuelo Miranda":
+          - paragraph: Pañuelo Miranda
+        - group "$5.000":
+          - paragraph: $5.000
+        - group "$6.000":
+          - paragraph: $6.000
+        - group "$5.000":
+          - paragraph: $5.000
+        - group "$6.000":
+          - paragraph: $6.000
+        - group "$8.000":
+          - paragraph: $8.000
+        - group "$5.000":
+          - paragraph: $5.000
+    - group "controles de página":
+      - text: Página 6 -
+      - textbox "Título de la página": Agregar título de página
+      - text: Agregar título de página
+      - button "Subir página"
+      - button "Bajar página" [disabled]
+      - button "Ocultar página"
+      - button "Bloquear página"
+      - button "Duplicar la página"
+      - button "Eliminar la página"
+      - button "Agregar una página"
+    - application "Contenido del editor":
+      - group "Página 6":
+        - img "Stylish Woman in Coat, Scarf and Sunglasses"
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "web icon"
+          - group "www.sitioincreible.com.ar":
+            - paragraph: www.sitioincreible.com.ar
+        - group "Encuentra tu próximo conjunto favorito.":
+          - paragraph: Encuentra tu
+          - paragraph: próximo conjunto
+          - paragraph: favorito.
+        - group "Grupo":
+          - text: Contiene 2 elementos y Para explorar los contenidos del grupo, presiona “Enter”.
+          - img "Location outline icon"
+          - group "Calle Cualquiera 123, Cualquier Lugar.":
+            - paragraph: Calle Cualquiera 123,
+            - paragraph: Cualquier Lugar.
+    - button "Agregar una página":
+      - heading "Agregar una página" [level=5]
+    - button "Agregar un tipo de página"
+  - contentinfo:
+    - button "Notas"
+    - button "Muestra el temporizador": Temporizador
+    - slider "Ampliar o reducir": "-0.548"
+    - combobox "Opciones de zoom": 58%
+    - button "Páginas"
+    - button "4 de 6"
+    - button "Vista de cuadrícula"
+    - button "Presentar en pantalla completa"
+    - button "Obtén ayuda"
+  - text: Cuadro El panel lateral es donde puedes aplicar plantillas o agregar elementos. Para ir al editor, presiona “Ctrl+F2”. La navegación principal contiene botones con opciones para trabajar sobre el documento. Para pasar de un botón a otro, usa las teclas de flechas a la izquierda y a la derecha y, para activar un botón, usa la tecla Enter. Para ir al lienzo, presiona “Ctrl+F2”. El título del diseño tiene el nombre de tu diseño. Para editar el título del diseño, presiona la tecla Enter. Para dejar de editar el título del diseño, presiona la tecla Escape. Este botón abre el menú con las opciones para compartir e imprimir tu diseño. Cambiar a lista con viñetas
