@@ -274,6 +274,7 @@ El mockup actualizado muestra cuatro detalles que las pantallas actuales no tien
 - Los datos del catálogo (tienda, banner, teléfonos, dirección y políticas) son únicos y compartidos por todas las plantillas.
 - Las plantillas "Pop crema", "Kawaii pastel" y "Kraft minimal" tienen fondos claros. La constitución v1.1.0 (principio IV) exige que la plantilla predeterminada de fábrica (Neón Noche) siga `docs/Cat.pdf`; las demás son alternativas que elige el responsable y no se comparan con Cat.pdf.
 - La generación sigue siendo solo manual; por eso no se incorpora la columna "Origen" del Historial del mockup.
+- Nota (feature 008): el inspector de texto agrupa altura de línea, espaciado y anclaje vertical en un panel «Configuración avanzada»; ver `specs/008-text-advanced-settings/`.
 - La aprobación visual del responsable de la feature 002 (sus SC-001 y SC-007) sigue pendiente. El PDF actual se toma como línea base de SC-003 y se valida junto con esa aprobación.
 - Las cuatro tipografías que hoy no están en el proyecto (Bungee, Zen Maru Gothic, Space Grotesk y DM Serif Display) deben quedar disponibles sin conexión. Qué librerías, si alguna, hacen falta además para el editor se decide y justifica en el plan; el mockup resuelve el arrastre, el redimensionado y la selección de color sin librerías externas.
 - El historial de deshacer y rehacer vive solo durante la sesión de edición; no se guarda.

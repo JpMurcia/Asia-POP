@@ -60,6 +60,8 @@ export type FieldDesc =
     }
   /** Párrafo con `role="status"`; con `text` vacío no se dibuja. */
   | { kind: 'note'; id: string; text: string }
+  /** Panel plegable (feature 008, «Configuración avanzada»): agrupa campos; cerrado por defecto. */
+  | { kind: 'section'; id: string; label: string; fields: readonly FieldDesc[] }
   | { kind: 'button'; label: string; action: FieldAction };
 
 /** Acciones que un botón del inspector le pide al editor. */
@@ -112,6 +114,9 @@ export const IMAGE_OPTIONS = [
   ['chat', 'Contacto'],
 ] as const;
 
+/** Identificador del panel «Configuración avanzada» del texto (el inspector recuerda si está abierto). */
+export const ADVANCED_TEXT_SECTION = 'text-advanced';
+
 const WEIGHT_LABELS: Record<(typeof WEIGHTS)[number], string> = { 400: 'Normal', 600: 'Semi', 700: 'Negrita', 900: 'Black' };
 
 /** Campos propios del tipo de elemento (sin posición, rotación ni opacidad). */
@@ -127,11 +132,18 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         range('size', 'Tamaño', RANGES.textSize, 1),
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
         seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
-        { ...(seg('vAlign', 'Anclaje vertical', [['top', 'Arriba'], ['middle', 'Centro'], ['bottom', 'Abajo']]) as Extract<FieldDesc, { kind: 'segmented' }>), fallback: TEXT_DEFAULTS.vAlign },
-        { ...(range('ls', 'Espaciado', RANGES.ls, 0.1) as Extract<FieldDesc, { kind: 'range' }>), numeric: true, decimals: 1 },
-        { ...(range('lh', 'Altura de línea', RANGES.lh, 0.01, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh, numeric: true, decimals: 2 },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },
         { kind: 'toggle', key: 'strike', label: 'Tachado' },
+        {
+          kind: 'section',
+          id: ADVANCED_TEXT_SECTION,
+          label: 'Configuración avanzada',
+          fields: [
+            { ...(range('lh', 'Altura de línea', RANGES.lh, 0.01, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh, numeric: true, decimals: 2 },
+            { ...(range('ls', 'Espaciado', RANGES.ls, 0.1) as Extract<FieldDesc, { kind: 'range' }>), numeric: true, decimals: 1 },
+            { ...(seg('vAlign', 'Anclaje vertical', [['top', 'Arriba'], ['middle', 'Centro'], ['bottom', 'Abajo']]) as Extract<FieldDesc, { kind: 'segmented' }>), fallback: TEXT_DEFAULTS.vAlign },
+          ],
+        },
         heading('Color y efectos'),
         color('color', 'Relleno'),
         color('stroke', 'Contorno', 'none'),

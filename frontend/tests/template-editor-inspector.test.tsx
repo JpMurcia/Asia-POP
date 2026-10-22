@@ -53,6 +53,7 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
         expect(within(group('Insertar dato')).getByRole('button', { name: chip })).toBeInTheDocument();
       }
       expect(bounds('Tamaño')).toEqual([8, 140]);
+      fireEvent.click(screen.getByRole('button', { name: 'Configuración avanzada' }));
       expect(bounds('Espaciado')).toEqual([-10, 60]);
       expect(bounds('Opacidad')).toEqual([0, 100]);
       expect(bounds('Rotación')).toEqual([-180, 180]);
@@ -750,11 +751,14 @@ describe('alinear a la página (feature 007)', () => {
 describe('altura de línea de un texto (feature 007)', () => {
   const lineHeightOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!.style.lineHeight;
 
-  it('aparece después de Espaciado, de 0.5 a 2.5 en pasos de 0.01 (feature 008), y muestra 1.05 si el texto no la tiene', async () => {
+  const openAdvanced = () => fireEvent.click(screen.getByRole('button', { name: 'Configuración avanzada' }));
+
+  it('vive en «Configuración avanzada» antes de Espaciado, de 0.5 a 2.5 en pasos de 0.01 (feature 008), y muestra 1.05 si el texto no la tiene', async () => {
     await start();
     selectLayer(/^Banner/);
+    openAdvanced();
     const labels = Array.from(screen.getByTestId('inspector').querySelectorAll('input[type="range"]')).map((i) => i.getAttribute('aria-label'));
-    expect(labels.indexOf('Altura de línea')).toBe(labels.indexOf('Espaciado') + 1);
+    expect(labels.indexOf('Altura de línea')).toBe(labels.indexOf('Espaciado') - 1);
     expect(bounds('Altura de línea')).toEqual([0.5, 2.5]);
     expect(range('Altura de línea').step).toBe('0.01');
     expect(Number(range('Altura de línea').value)).toBe(1.05);
@@ -763,6 +767,7 @@ describe('altura de línea de un texto (feature 007)', () => {
   it('moverla cambia el texto en el lienzo y un deslizamiento continuo se deshace en un paso', async () => {
     await start();
     selectLayer(/^Banner/);
+    openAdvanced();
     fireEvent.change(range('Altura de línea'), { target: { value: '1.5' } });
     fireEvent.change(range('Altura de línea'), { target: { value: '2' } });
     expect(lineHeightOf('neon-p2')).toBe('2');

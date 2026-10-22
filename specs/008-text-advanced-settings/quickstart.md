@@ -59,3 +59,14 @@ Esperado: con altura de línea 0,5 / 1,37 / 2,5, espaciado −10 / 60 y anclaje 
 1. Abrir una plantilla, seleccionar un título de varias líneas y abrir «Configuración avanzada».
 2. Mover los tres ajustes; el lienzo cambia en menos de 0,2 s.
 3. Guardar, recargar, generar el PDF y comparar con el lienzo.
+
+## Resultados de la validación (2026-10-22)
+
+| Verificación | Resultado |
+|--------------|-----------|
+| §1 Línea base byte a byte (T027) | 8 de 8 PDF **idénticos** a los capturados con el commit `4b4f704` |
+| §2–§4 Esquema, render, inspector y panel | Pruebas verdes: frontend 798 y backend 1108 (`tsc` limpio en ambos) |
+| §5 Fidelidad en Chrome | Altura de línea 0,5 / 1,37 / 2,5, espaciado −10 / 0 / 33,3 / 60 y anclaje arriba / centro / abajo coinciden con el documento; borde del texto a < 0,5 % de la caja |
+| SC-005 (< 0,2 s) | Sin medición cronometrada: cada parche vuelve a dibujar solo el elemento editado (`TemplateElement` memorizado) |
+| §6 Revisión manual | **Pendiente** (T029): requiere mirar el editor con una persona |
+

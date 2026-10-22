@@ -82,10 +82,10 @@
 
 **Independent Test**: seleccionar un texto, ver el panel cerrado, abrirlo (un clic) con los tres ajustes, seleccionar otro texto y comprobar que sigue abierto; una forma no muestra el panel.
 
-- [ ] T022 [US4] En `inspector-fields.ts`: descriptor `{ kind: 'section'; id; label; fields }`; para texto, mover «Altura de línea», «Espaciado» y «Anclaje vertical» a la sección «Configuración avanzada» (orden de `contracts/editor-ui.md` §2) y quitarlos de «Tipografía»
-- [ ] T023 [US4] En `FieldRenderer.tsx`: dibujar `section` como cabecera `button` con nombre y `aria-expanded` más la región plegable (cerrada por defecto), pasando `open` y `onToggle` desde `Inspector.tsx`; en `Inspector.tsx` guardar el abierto/cerrado en `useState` del propio `Inspector` (no del `FieldRenderer`, que lleva `key={el.id}`); estilos en `editor.css`
-- [ ] T024 [P] [US4] Pruebas en `frontend/tests/text-advanced-settings.test.tsx` (bloque US4): el panel existe y está cerrado; abrirlo muestra los tres ajustes (deslizador + campo numérico + tres botones); ninguno de los tres aparece fuera del panel; seleccionar otro texto conserva el estado abierto; una forma, imagen o insignia no muestra el panel; un texto bloqueado deja los controles deshabilitados con la indicación existente; el resto de controles de texto conserva su orden
-- [ ] T025 [US4] Actualizar las pruebas existentes que buscaban «Altura de línea» y «Espaciado» fuera de un panel (por ejemplo en `frontend/tests/template-editor-inspector.test.tsx` y `template-editor-style.test.tsx`): abrir antes el panel
+- [X] T022 [US4] En `inspector-fields.ts`: descriptor `{ kind: 'section'; id; label; fields }`; para texto, mover «Altura de línea», «Espaciado» y «Anclaje vertical» a la sección «Configuración avanzada» (orden de `contracts/editor-ui.md` §2) y quitarlos de «Tipografía»
+- [X] T023 [US4] En `FieldRenderer.tsx`: dibujar `section` como cabecera `button` con nombre y `aria-expanded` más la región plegable (cerrada por defecto), pasando `open` y `onToggle` desde `Inspector.tsx`; en `Inspector.tsx` guardar el abierto/cerrado en `useState` del propio `Inspector` (no del `FieldRenderer`, que lleva `key={el.id}`); estilos en `editor.css`
+- [X] T024 [P] [US4] Pruebas en `frontend/tests/text-advanced-settings.test.tsx` (bloque US4): el panel existe y está cerrado; abrirlo muestra los tres ajustes (deslizador + campo numérico + tres botones); ninguno de los tres aparece fuera del panel; seleccionar otro texto conserva el estado abierto; una forma, imagen o insignia no muestra el panel; un texto bloqueado deja los controles deshabilitados con la indicación existente; el resto de controles de texto conserva su orden
+- [X] T025 [US4] Actualizar las pruebas existentes que buscaban «Altura de línea» y «Espaciado» fuera de un panel (por ejemplo en `frontend/tests/template-editor-inspector.test.tsx` y `template-editor-style.test.tsx`): abrir antes el panel
 
 **Checkpoint**: las cuatro historias funcionan.
 
@@ -93,11 +93,11 @@
 
 ## Phase 7: Polish y verificación final
 
-- [ ] T026 [P] Revisar la tolerancia de rendimiento: cambiar cada ajuste en el editor no vuelve a dibujar otros elementos (`TemplateElement` memorizado) y se ve en < 0,2 s (SC-005); anotar el resultado en `quickstart.md`
-- [ ] T027 Ejecutar la línea base byte a byte (`npx tsx tests/fixtures/pdf-baseline.ts`) y `npx vite build`; las 4 plantillas base y `base` deben salir idénticas (SC-001, SC-007, FR-015)
-- [ ] T028 Ejecutar los conjuntos completos `npx vitest run` en `backend/` y `frontend/` (los archivos de Chrome que fallen por carga se repiten solos con `--fileParallelism=false`) y `npx tsc --noEmit` en ambos
+- [X] T026 [P] Revisar la tolerancia de rendimiento: cambiar cada ajuste en el editor no vuelve a dibujar otros elementos (`TemplateElement` memorizado) y se ve en < 0,2 s (SC-005); anotar el resultado en `quickstart.md`
+- [X] T027 Ejecutar la línea base byte a byte (`npx tsx tests/fixtures/pdf-baseline.ts`) y `npx vite build`; las 4 plantillas base y `base` deben salir idénticas (SC-001, SC-007, FR-015)
+- [X] T028 Ejecutar los conjuntos completos `npx vitest run` en `backend/` y `frontend/` (los archivos de Chrome que fallen por carga se repiten solos con `--fileParallelism=false`) y `npx tsc --noEmit` en ambos
 - [ ] T029 [P] Revisión manual de `quickstart.md` §6 (≈ 3 min) y marcar los resultados en su sección de validación
-- [ ] T030 [P] Actualizar el README (editor de plantillas: Configuración avanzada) y `specs/003-catalog-template-editor/spec.md` con una nota breve; marcar lo confirmado y lo no medido (unidad del interletrado de Canva) en `docs/specs/PENDIENTES-REA.md`
+- [X] T030 [P] Actualizar el README (editor de plantillas: Configuración avanzada) y `specs/003-catalog-template-editor/spec.md` con una nota breve; marcar lo confirmado y lo no medido (unidad del interletrado de Canva) en `docs/specs/PENDIENTES-REA.md`
 
 ---
 

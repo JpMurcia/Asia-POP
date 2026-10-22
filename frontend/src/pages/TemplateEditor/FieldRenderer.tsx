@@ -19,7 +19,14 @@ export interface FieldRendererProps {
   onChange: (patch: Record<string, unknown>, mergeKey?: string) => void;
   /** Acción de un botón del inspector (por ejemplo, «Restaurar tamaños originales»). */
   onAction?: (action: FieldAction) => void;
+  /** Paneles plegables abiertos, por `id` (feature 008). El estado lo guarda quien dibuja el inspector. */
+  sectionOpen?: Readonly<Record<string, boolean>>;
+  onSectionToggle?: (id: string) => void;
+  /** Elemento bloqueado: los campos dentro de los paneles quedan deshabilitados. */
+  locked?: boolean;
 }
+
+export const LOCKED_SECTION_HINT = 'Desbloquea el elemento para cambiar estos ajustes';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -202,7 +209,7 @@ function NumberField({
 }
 
 /** Dibuja la lista de descriptores de `inspector-fields.ts`: una línea por propiedad. */
-export default function FieldRenderer({ fields, values, palette, onChange, onAction }: FieldRendererProps) {
+export default function FieldRenderer({ fields, values, palette, onChange, onAction, sectionOpen, onSectionToggle, locked }: FieldRendererProps) {
   return (
     <>
       {fields.map((f, i) => {
@@ -213,6 +220,38 @@ export default function FieldRenderer({ fields, values, palette, onChange, onAct
                 {f.label}
               </div>
             );
+
+          case 'section': {
+            const open = sectionOpen?.[f.id] === true;
+            return (
+              <div key={`section-${f.id}`} className="ed-section" data-open={open ? 'true' : undefined}>
+                <button
+                  type="button"
+                  className="ed-section-head"
+                  aria-expanded={open}
+                  aria-controls={`ed-section-${f.id}`}
+                  onClick={() => onSectionToggle?.(f.id)}
+                >
+                  <span>{f.label}</span>
+                  <span aria-hidden="true" className="ed-section-chevron" />
+                </button>
+                {open && (
+                  <fieldset id={`ed-section-${f.id}`} className="ed-section-body" disabled={locked} title={locked ? LOCKED_SECTION_HINT : undefined}>
+                    <FieldRenderer
+                      fields={f.fields}
+                      values={values}
+                      palette={palette}
+                      onChange={onChange}
+                      onAction={onAction}
+                      sectionOpen={sectionOpen}
+                      onSectionToggle={onSectionToggle}
+                      locked={locked}
+                    />
+                  </fieldset>
+                )}
+              </div>
+            );
+          }
 
           case 'color':
             return <ColorField key={f.key} desc={f} value={values[f.key]} palette={palette} onChange={onChange} />;

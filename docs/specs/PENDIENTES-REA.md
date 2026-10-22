@@ -91,7 +91,7 @@ La feature está implementada (`specs/010-base-template-product-card/`). Lo que 
   - rango y paso de **altura de línea** (hoy 0,8–2,5, paso 0,05, por defecto 1,05),
   - **dónde** están y **cómo se ven** las acciones de alinear (hoy seis botones en el inspector),
   - cómo se presenta el **tachado** (hoy un interruptor tras Mayúsculas).
-- [ ] **P3.2** Si hay diferencias que valga la pena cerrar: `/speckit-clarify` sobre la 007 (o una feature nueva
+- [x] **P3.2** (cerrado por la feature 008, `specs/008-text-advanced-settings/`: altura de línea 0,5–2,5 con paso 0,01, espaciado −10…60 px, anclaje vertical y panel «Configuración avanzada»; **sin medir**: la unidad exacta del interletrado de Canva, que se dejó en píxeles por decisión del responsable) Si hay diferencias que valga la pena cerrar: `/speckit-clarify` sobre la 007 (o una feature nueva
       008 si el cambio es grande) → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
       **Regla**: `TEXT_DEFAULTS.lh` sigue en 1,05 aunque Canva use otro valor, porque cambiarlo alteraría las
       plantillas ya guardadas (FR-015). Un valor por defecto distinto solo aplicaría a textos nuevos, y requiere

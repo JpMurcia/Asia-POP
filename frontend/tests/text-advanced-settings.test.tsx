@@ -13,6 +13,12 @@ const field = (label: string) => screen.getByLabelText(`${label} (valor)`) as HT
 const textOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!;
 const BANNER = 'neon-p2'; // el texto «Banner» de la portada de Neón Noche (lleva un dato insertable: se ajusta)
 
+/** Abre «Configuración avanzada» (cerrado por defecto) si no lo está. */
+function openAdvanced() {
+  const head = screen.getByRole('button', { name: 'Configuración avanzada' });
+  if (head.getAttribute('aria-expanded') !== 'true') fireEvent.click(head);
+}
+
 /** Escribe el valor en el campo numérico y lo confirma al salir, como hace la persona. */
 function type(label: string, value: string) {
   const input = field(label);
@@ -24,6 +30,7 @@ async function start() {
   mockEditorApi();
   await renderEditor();
   selectLayer(/^Banner/);
+  openAdvanced();
 }
 
 describe('altura de línea (US1)', () => {
@@ -98,6 +105,7 @@ describe('espaciado entre letras (US2)', () => {
     await renderEditor();
     goToPage('Productos');
     selectLayer(/^Título de sección/);
+    openAdvanced();
     expect(field('Espaciado').value).toBe('0.4');
     expect(Number(slider('Espaciado').value)).toBe(0.4);
   });
@@ -201,5 +209,85 @@ describe('anclaje vertical en el inspector (US3)', () => {
     fireEvent.click(anchor('Abajo'));
     fireEvent.click(screen.getByRole('button', { name: 'Duplicar' }));
     expect(anchor('Abajo')).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+describe('panel «Configuración avanzada» (US4)', () => {
+  const head = () => screen.getByRole('button', { name: 'Configuración avanzada' });
+  const inspector = () => screen.getByTestId('inspector');
+  const select = async () => {
+    mockEditorApi();
+    await renderEditor();
+    selectLayer(/^Banner/);
+  };
+
+  it('el panel existe y está cerrado por defecto, sin los tres ajustes a la vista', async () => {
+    await select();
+    expect(head()).toHaveAttribute('aria-expanded', 'false');
+    for (const label of ['Altura de línea', 'Espaciado']) expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Anclaje vertical' })).not.toBeInTheDocument();
+  });
+
+  it('abrirlo (un clic) muestra los tres ajustes, cada número con deslizador y campo', async () => {
+    await select();
+    fireEvent.click(head());
+    expect(head()).toHaveAttribute('aria-expanded', 'true');
+    for (const label of ['Altura de línea', 'Espaciado']) {
+      expect(slider(label)).toBeInTheDocument();
+      expect(field(label)).toBeInTheDocument();
+    }
+    const anchor = within(screen.getByRole('group', { name: 'Anclaje vertical' }));
+    for (const name of ['Arriba', 'Centro', 'Abajo']) expect(anchor.getByRole('button', { name })).toBeInTheDocument();
+    fireEvent.click(head());
+    expect(head()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('ninguno de los tres se repite fuera del panel y el resto de controles de texto conserva su orden', async () => {
+    await select();
+    fireEvent.click(head());
+    const panel = document.getElementById(head().getAttribute('aria-controls')!)!;
+    for (const label of ['Altura de línea', 'Espaciado']) {
+      expect(screen.getAllByLabelText(label)).toHaveLength(1);
+      expect(panel.contains(slider(label))).toBe(true);
+    }
+    expect(screen.getAllByRole('group', { name: 'Anclaje vertical' })).toHaveLength(1);
+    expect(panel.contains(screen.getByRole('group', { name: 'Anclaje vertical' }))).toBe(true);
+    const order = ['Fuente', 'Tamaño', 'Peso', 'Alineación', 'Mayúsculas', 'Tachado'].map((l) => {
+      const el = screen.getByLabelText(l, { selector: 'select, input, button, [role=group], [role=switch]' }) ?? screen.getByRole('group', { name: l });
+      return el;
+    });
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(order.at(-1)!.compareDocumentPosition(head()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('seleccionar otro texto conserva el estado abierto', async () => {
+    await select();
+    fireEvent.click(head());
+    goToPage('Productos');
+    selectLayer(/^Título de sección/);
+    expect(head()).toHaveAttribute('aria-expanded', 'true');
+    expect(slider('Altura de línea')).toBeInTheDocument();
+  });
+
+  it('una forma, una imagen o la página sin selección no muestran el panel', async () => {
+    mockEditorApi();
+    await renderEditor();
+    expect(screen.queryByRole('button', { name: 'Configuración avanzada' })).not.toBeInTheDocument();
+    selectLayer(/^Marco/); // la imagen del marco de la portada
+    expect(screen.queryByRole('button', { name: 'Configuración avanzada' })).not.toBeInTheDocument();
+  });
+
+  it('con el texto bloqueado el panel se abre, pero sus controles quedan deshabilitados y explican por qué', async () => {
+    await select();
+    fireEvent.click(screen.getByRole('button', { name: 'Bloquear' }));
+    fireEvent.click(head());
+    expect(slider('Altura de línea')).toBeDisabled();
+    expect(field('Espaciado')).toBeDisabled();
+    expect(within(screen.getByRole('group', { name: 'Anclaje vertical' })).getByRole('button', { name: 'Arriba' })).toBeDisabled();
+    expect(inspector().querySelector('fieldset')).toHaveAttribute('title', 'Desbloquea el elemento para cambiar estos ajustes');
+    fireEvent.click(screen.getByRole('button', { name: 'Desbloquear' }));
+    expect(slider('Altura de línea')).not.toBeDisabled();
   });
 });

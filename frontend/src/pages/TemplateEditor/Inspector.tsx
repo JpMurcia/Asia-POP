@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ELEMENT_LABELS,
   PAGE_LABELS,
@@ -42,6 +43,8 @@ function extrasFor(el: PageElement) {
  */
 export default function Inspector({ template, page, el, actions, overflow }: InspectorProps) {
   const { bg, els } = template.pages[page];
+  // Los paneles plegables recuerdan si estaban abiertos al cambiar de elemento; se pierden al salir del editor (FR-011)
+  const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({});
 
   return (
     <aside className="ed-inspector" data-testid="inspector">
@@ -83,6 +86,9 @@ export default function Inspector({ template, page, el, actions, overflow }: Ins
             fields={fieldsFor(el, template, extrasFor(el))}
             values={el as unknown as Record<string, unknown>}
             palette={template.palette}
+            locked={el.locked}
+            sectionOpen={sectionOpen}
+            onSectionToggle={(id) => setSectionOpen((s) => ({ ...s, [id]: !s[id] }))}
             onChange={(patch, mergeKey) => actions.patch(el.id, patch as Partial<PageElement>, mergeKey ? `${el.id}:${mergeKey}` : undefined)}
             onAction={(action) => {
               if (action === 'restoreProductSizes') actions.restoreProductSizes(el.id);
