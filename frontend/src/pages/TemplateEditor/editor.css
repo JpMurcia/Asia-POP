@@ -901,6 +901,19 @@
   color: var(--ed-ink);
   outline: none;
 }
+.ed-field-value-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.ed-num-compact {
+  flex-direction: row;
+  width: 64px;
+}
+.ed-num-compact input {
+  height: 26px;
+  text-align: right;
+}
 .ed-layers {
   display: flex;
   flex-direction: column;

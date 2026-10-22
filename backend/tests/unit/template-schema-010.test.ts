@@ -44,7 +44,7 @@ describe('esquema de plantilla: campos de la feature 010', () => {
     ['priceGlow', 'si'],
     ['soldGlow', 1],
     ['bubbleShadow', 'no'],
-    ['descLh', 0.5],
+    ['descLh', 0.4],
     ['descLh', 2.6],
   ])('rechaza %s = %s', (key, value) => {
     expect(paths(withProducts({ [key]: value }))).toContain(`templates.0.pages.productos.els.${productsIndex()}.${key}`);

@@ -31,6 +31,10 @@ export type FieldDesc =
       circleAt?: number;
       /** Valor que se muestra cuando la propiedad falta (opcionales de 007, como la altura de línea). */
       fallback?: number;
+      /** Campo numérico junto al deslizador (feature 008): escribir el valor, con coma o punto, sin pasar por el deslizador. */
+      numeric?: boolean;
+      /** Decimales del campo numérico (por defecto 2). */
+      decimals?: number;
     }
   | { kind: 'segmented'; key: string; label: string; options: readonly (readonly [string | number, string])[] }
   | { kind: 'select'; key: string; label: string; options: readonly (readonly [string, string])[] }
@@ -116,8 +120,8 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         range('size', 'Tamaño', RANGES.textSize, 1),
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
         seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
-        range('ls', 'Espaciado', RANGES.ls, 0.5),
-        { ...(range('lh', 'Altura de línea', RANGES.lh, 0.05, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh },
+        { ...(range('ls', 'Espaciado', RANGES.ls, 0.1) as Extract<FieldDesc, { kind: 'range' }>), numeric: true, decimals: 1 },
+        { ...(range('lh', 'Altura de línea', RANGES.lh, 0.01, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh, numeric: true, decimals: 2 },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },
         { kind: 'toggle', key: 'strike', label: 'Tachado' },
         heading('Color y efectos'),

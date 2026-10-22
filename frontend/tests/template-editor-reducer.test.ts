@@ -859,3 +859,65 @@ describe('alinear a la página (feature 007)', () => {
     expect(byId(free, products.id)!.x).toBe(0);
   });
 });
+
+describe('ajustes avanzados de texto (feature 008)', () => {
+  const patch = (s: EditorState, p: Partial<TextEl>, now = T0, key?: string): EditorState =>
+    run(s, { type: 'patch', id: 'mio', patch: p, now, ...(key ? { key } : {}) });
+  const mio = (s: EditorState) => byId(s, 'mio') as TextEl;
+
+  it.each([
+    [9, 2.5],
+    [0.1, 0.5],
+    [1.375, 1.38],
+    [1.37, 1.37],
+  ])('la altura de línea %s se guarda como %s', (typed, saved) => {
+    expect(mio(patch(withText(), { lh: typed })).lh).toBe(saved);
+  });
+
+  it.each([
+    [99, 60],
+    [-99, -10],
+    [12.34, 12.3],
+    [-10, -10],
+  ])('el espaciado %s se guarda como %s', (typed, saved) => {
+    expect(mio(patch(withText(), { ls: typed })).ls).toBe(saved);
+  });
+
+  it('un parche que no cambia el valor no agrega paso ni vacía el rehacer', () => {
+    const s0 = patch(patch(withText(), { lh: 1.5 }), { lh: 2 }, T0 + 5_000);
+    const undone = run(s0, { type: 'undo' });
+    expect(undone.future).toHaveLength(1);
+    const same = patch(undone, { lh: 1.5 }, T0 + 9_000);
+    expect(same).toBe(undone);
+    expect(same.future).toHaveLength(1);
+  });
+
+  it('escribir un valor fuera de rango que ya está en el límite tampoco agrega paso', () => {
+    const s0 = patch(withText(), { lh: 2.5 });
+    expect(patch(s0, { lh: 9 }, T0 + 5_000)).toBe(s0);
+  });
+
+  it('el valor por defecto de un opcional ausente cuenta como «sin cambio» (lh 1,05, anclaje centro)', () => {
+    const s = withText();
+    expect(mio(s).lh).toBeUndefined();
+    expect(patch(s, { lh: 1.05 })).toBe(s);
+    expect(patch(s, { vAlign: 'middle' })).toBe(s);
+    expect(mio(patch(s, { vAlign: 'bottom' })).vAlign).toBe('bottom');
+  });
+
+  it('un arrastre continuo (misma clave) es un solo paso de deshacer', () => {
+    let s = withText();
+    const before = s.past.length;
+    for (const [i, v] of [0.6, 0.9, 1.4, 2].entries()) s = patch(s, { lh: v }, T0 + i * 100, 'lh');
+    expect(mio(s).lh).toBe(2);
+    expect(s.past.length).toBe(before + 1);
+    expect(mio(run(s, { type: 'undo' })).lh).toBeUndefined();
+  });
+
+  it('un elemento que no es texto no se recorta ni se descarta', () => {
+    const s = run(fresh(), { type: 'selectPage', page: 'portada' });
+    const shape = els(s).find((e) => e.type === 'shape' || e.type === 'image')!;
+    const next = run(s, { type: 'patch', id: shape.id, patch: { x: shape.x }, now: T0 });
+    expect(next.past.length).toBe(s.past.length + 1);
+  });
+});

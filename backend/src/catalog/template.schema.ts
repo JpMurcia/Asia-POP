@@ -110,6 +110,7 @@ const textEl = z.object({
   // Opcionales: si faltan, se dibujan con TEXT_DEFAULTS. Hay que declararlos: z.object descarta las claves que no conoce
   lh: num(RANGES.lh, 'La altura de línea').optional(),
   strike: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  vAlign: oneOf(['top', 'middle', 'bottom'], 'La alineación vertical').optional(),
 });
 
 const badgeEl = z.object({

@@ -358,7 +358,7 @@ describe('Altura de línea y tachado de los textos (feature 007)', () => {
 
   it.each([
     ['lh', 3, 'La altura de línea: el máximo es 2.5.'],
-    ['lh', 0.5, 'La altura de línea: el mínimo es 0.8.'],
+    ['lh', 0.4, 'La altura de línea: el mínimo es 0.5.'],
     ['lh', '1.2', 'La altura de línea debe ser un número.'],
     ['strike', 'sí', 'Debe ser verdadero o falso.'],
   ])('rechaza %s = %j con 422, la ruta del campo y sin escribir nada (FR-016)', async (key, value, message) => {

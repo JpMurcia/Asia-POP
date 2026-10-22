@@ -4,6 +4,7 @@ import {
   LIMITS,
   PRODUCTS_ZONE_MIN,
   RANGES,
+  TEXT_DEFAULTS,
   isAutoBlock,
   type BaseId,
   type FontKey,
@@ -15,6 +16,7 @@ import {
   type PaletteKey,
   type ProductsEl,
   type Template,
+  type TextEl,
 } from '../../../../backend/src/catalog/template';
 import { baseTemplate } from '../../../../backend/src/catalog/template-presets';
 import { isHexColor } from '../../../../backend/src/catalog/theme';
@@ -227,6 +229,25 @@ function sanitize(el: PageElement, patch: Partial<PageElement>): Partial<PageEle
   return rest;
 }
 
+const clampTo = ([min, max]: readonly [number, number], n: number, decimals: number): number => {
+  const f = 10 ** decimals;
+  return Math.round(Math.min(max, Math.max(min, n)) * f) / f;
+};
+
+/**
+ * Ajustes de texto (feature 008): la altura de línea y el espaciado se recortan a su rango y se redondean (lo que se
+ * escribe en un campo numérico puede salirse de él), y un parche que no cambia ningún valor se descarta para que no
+ * agregue un paso de deshacer. `null` = no hay nada que cambiar. Para los opcionales se compara el valor efectivo.
+ */
+function settleText(el: TextEl, patch: Partial<PageElement>): Partial<PageElement> | null {
+  const next = { ...patch } as Partial<TextEl>;
+  if (typeof next.lh === 'number') next.lh = clampTo(RANGES.lh, next.lh, 2);
+  if (typeof next.ls === 'number') next.ls = clampTo(RANGES.ls, next.ls, 1);
+  const current = { ...TEXT_DEFAULTS, ...el } as unknown as Record<string, unknown>;
+  const changed = Object.entries(next).some(([k, v]) => current[k] !== v);
+  return changed ? (next as Partial<PageElement>) : null;
+}
+
 /**
  * Recortes del bloque de productos (feature 007): la zona no baja de `PRODUCTS_ZONE_MIN` y la foto queda entre 50 %
  * y el máximo que cabe en la zona (ya recortada). Solo se recorta lo que trae el parche: cambiar la zona o la
@@ -317,6 +338,11 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
       if (!el) return s;
       let patch = sanitize(el, action.patch);
       let notice: string | null = null;
+      if (el.type === 'text') {
+        const settled = settleText(el, patch);
+        if (!settled) return s;
+        patch = settled;
+      }
       if (el.type === 'products') ({ patch, notice } = clampProducts(el, patch));
       const history = action.record === false ? {} : record(s, action.key ?? null, action.now);
       const next: EditorState = {

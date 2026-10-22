@@ -9,7 +9,9 @@ cd backend && npx vitest run tests/unit
 cd backend && npx tsx tests/fixtures/pdf-baseline.ts
 ```
 
-Esperado: los 8 PDF de la línea base de la 007 salen **idénticos** (SC-001, SC-007) y la plantilla `base` (010) también.
+Esperado: los 8 PDF de la línea base salen **idénticos** (SC-001, SC-007).
+
+> **Cómo se compara (T001)**: la línea base de la 007 ya no sirve (es anterior a la 005). Se usa la herramienta de la 010: `BASELINE_DIR=<carpeta> npx tsx tests/fixtures/pdf-baseline.ts capture` con el código de **antes** y `… compare` con el de **ahora**. Punto de partida capturado el 2026-10-22 con el commit `4b4f704` (8 PDF: 4 plantillas × normal y largo); se compara en T027.
 
 ## 2. Modelo y esquema
 

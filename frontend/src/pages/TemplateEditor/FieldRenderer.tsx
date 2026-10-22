@@ -114,7 +114,21 @@ function RangeField({
     <div className="ed-field">
       <div className="ed-field-label">
         <span>{desc.label}</span>
-        <span className="ed-field-value">{`${shown}${desc.unit ?? ''}`}</span>
+        {desc.numeric ? (
+          <span className="ed-field-value ed-field-value-input">
+            <NumberField
+              label={`${desc.label} (valor)`}
+              compact
+              deferred
+              decimals={desc.decimals ?? 2}
+              value={shown}
+              onCommit={(n) => onChange({ [desc.key]: Math.round((n / scale) * 1000) / 1000 })}
+            />
+            {desc.unit}
+          </span>
+        ) : (
+          <span className="ed-field-value">{`${shown}${desc.unit ?? ''}`}</span>
+        )}
       </div>
       <input
         type="range"
@@ -140,11 +154,17 @@ function NumberField({
   value,
   onCommit,
   deferred = false,
+  decimals = 1,
+  compact = false,
 }: {
   label: string;
   value: number;
   onCommit: (n: number) => void;
   deferred?: boolean;
+  /** Decimales que se muestran del valor guardado (por defecto 1). */
+  decimals?: number;
+  /** Sin el rótulo visible: el campo va junto a otro control que ya lo nombra. El nombre accesible se conserva. */
+  compact?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const parse = (text: string): number | null => {
@@ -158,12 +178,12 @@ function NumberField({
     setDraft(null);
   };
   return (
-    <label className="ed-num">
-      <span>{label}</span>
+    <label className={compact ? 'ed-num ed-num-compact' : 'ed-num'}>
+      {!compact && <span>{label}</span>}
       <input
         inputMode="decimal"
         aria-label={label}
-        value={draft ?? String(round1(value))}
+        value={draft ?? String(Math.round(value * 10 ** decimals) / 10 ** decimals)}
         onChange={(e) => {
           const text = e.target.value;
           setDraft(text);

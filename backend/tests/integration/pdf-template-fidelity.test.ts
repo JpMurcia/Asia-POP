@@ -252,3 +252,23 @@ describe('altura de línea y tachado (feature 007, FR-013, SC-004)', () => {
     expect(promo.bodyH! / promo.lineHeight!).toBeCloseTo(3, 1);
   }, 120_000);
 });
+
+describe('altura de línea ampliada (feature 008, US1, SC-003)', () => {
+  it.each([0.5, 1.37, 2.5])('un texto de tres líneas con lh %s corta igual en el lienzo y en el PDF y cabe en su caja', async (lh) => {
+    const id = `tlh008-${String(lh).replace('.', '_')}`;
+    const t = copyOf(baseTemplate('neon'), id, `Neón lh ${lh}`);
+    t.pages.portada.els.push({
+      ...draftText({ text: 'Línea uno\nLínea dos\nLínea tres', size: 20, lh, x: 10, y: 55, w: 80, h: 30 }),
+      id: 'tres',
+    });
+    await h.save((ws) => ({ templates: [...ws.templates, t] }));
+    const r = await h.generate({ prepare: { templateId: id } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    const el = measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === 'tres')!;
+    expect(el.lineHeight! / el.fontSize!).toBeCloseTo(lh, 2);
+    // tres líneas exactas, como en el lienzo
+    expect(el.bodyH! / el.lineHeight!).toBeCloseTo(3, 1);
+    expect(el.bodyH!).toBeLessThanOrEqual(el.h + 1);
+  }, 120_000);
+});

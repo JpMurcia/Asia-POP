@@ -10,8 +10,8 @@
 
 ## Phase 1: Setup (comprobación de partida)
 
-- [ ] T001 Reconstruir `frontend/dist` (`npx vite build` en `frontend/`) y comprobar que la línea base de PDFs de la feature 007 sigue idéntica con `npx tsx tests/fixtures/pdf-baseline.ts` en `backend/` (8 PDF + la plantilla `base`); anotar el resultado como punto de partida en `specs/008-text-advanced-settings/quickstart.md` §1
-- [ ] T002 [P] Localizar y listar las pruebas existentes que fijan los rangos viejos (altura de línea 0,8 o paso 0,05; espaciado −2…12 o paso 0,5; control «Espaciado» o «Altura de línea» dentro de «Tipografía») con `grep` en `backend/tests` y `frontend/tests`; dejar la lista en un comentario de la tarea T012 (no tocar aún)
+- [X] T001 Reconstruir `frontend/dist` (`npx vite build` en `frontend/`) y comprobar que la línea base de PDFs de la feature 007 sigue idéntica con `npx tsx tests/fixtures/pdf-baseline.ts` en `backend/` (8 PDF + la plantilla `base`); anotar el resultado como punto de partida en `specs/008-text-advanced-settings/quickstart.md` §1
+- [X] T002 [P] Localizar y listar las pruebas existentes que fijan los rangos viejos (altura de línea 0,8 o paso 0,05; espaciado −2…12 o paso 0,5; control «Espaciado» o «Altura de línea» dentro de «Tipografía») con `grep` en `backend/tests` y `frontend/tests`; dejar la lista en un comentario de la tarea T012 (no tocar aún)
 
 ---
 
@@ -19,12 +19,12 @@
 
 **Propósito**: el modelo, el esquema, el reductor y el campo numérico compartido. Ninguna historia puede cerrarse sin esto.
 
-- [ ] T003 En `backend/src/catalog/template.ts`: `RANGES.lh = [0.5, 2.5]`, `RANGES.ls = [-10, 60]`; agregar `vAlign?: 'top' | 'middle' | 'bottom'` a `TextEl` y `vAlign: 'middle'` a `TEXT_DEFAULTS` (con la nota de por qué es «middle»: así se dibuja hoy); actualizar los comentarios de rango
-- [ ] T004 En `backend/src/catalog/template.schema.ts`: declarar `vAlign` opcional con `oneOf(['top','middle','bottom'], 'La alineación vertical')` en `textEl` (z.object descarta claves desconocidas); `lh`, `ls` y `descLh` ya leen `RANGES`
-- [ ] T005 [P] Prueba nueva `backend/tests/unit/template-schema-008.test.ts`: `lh` acepta 0,5 y 2,5 y rechaza 0,4 y 9; `ls` acepta −10 y 60 y rechaza −11 y 61; `vAlign` acepta los tres valores, rechaza «centro» y se conserva al guardar y leer; una plantilla sin `vAlign` se valida y se lee sin el campo; los valores antiguos (0,8; −2; 12; 3; 0,4) siguen válidos
-- [ ] T006 En `frontend/src/pages/TemplateEditor/useTemplateEditor.ts` (`case 'patch'`): para elementos de texto, recortar `lh` y `ls` a `RANGES` y redondearlos (lh a 2 decimales, ls a 1) y, si tras recortar ningún valor del parche difiere del elemento, devolver el estado sin agregar historia (conservar el `mergeKey` del arrastre)
-- [ ] T007 [P] Pruebas del reductor en `frontend/tests/template-editor-reducer.test.ts` (bloque nuevo «ajustes avanzados de texto (feature 008)»): recorte de 9→2,5 y 0,1→0,5 en `lh`, de 99→60 y −99→−10 en `ls`; redondeo 1,375→1,38; un parche idéntico no agrega paso ni vacía el rehacer; un arrastre (mismo `key`) sigue siendo un solo paso; un elemento que no es texto no se recorta
-- [ ] T008 En `frontend/src/pages/TemplateEditor/inspector-fields.ts` y `FieldRenderer.tsx`: ampliar el descriptor `range` con `numeric?: boolean` y `decimals?: number`; con `numeric` dibujar, junto al deslizador, un campo de texto con la lógica de `NumberField` (coma o punto; vacío o letras restauran el valor; recorte al confirmar con Enter o al salir; `aria-label` «<etiqueta> (valor)»), sincronizado con el deslizador (FR-011, FR-003)
+- [X] T003 En `backend/src/catalog/template.ts`: `RANGES.lh = [0.5, 2.5]`, `RANGES.ls = [-10, 60]`; agregar `vAlign?: 'top' | 'middle' | 'bottom'` a `TextEl` y `vAlign: 'middle'` a `TEXT_DEFAULTS` (con la nota de por qué es «middle»: así se dibuja hoy); actualizar los comentarios de rango
+- [X] T004 En `backend/src/catalog/template.schema.ts`: declarar `vAlign` opcional con `oneOf(['top','middle','bottom'], 'La alineación vertical')` en `textEl` (z.object descarta claves desconocidas); `lh`, `ls` y `descLh` ya leen `RANGES`
+- [X] T005 [P] Prueba nueva `backend/tests/unit/template-schema-008.test.ts`: `lh` acepta 0,5 y 2,5 y rechaza 0,4 y 9; `ls` acepta −10 y 60 y rechaza −11 y 61; `vAlign` acepta los tres valores, rechaza «centro» y se conserva al guardar y leer; una plantilla sin `vAlign` se valida y se lee sin el campo; los valores antiguos (0,8; −2; 12; 3; 0,4) siguen válidos
+- [X] T006 En `frontend/src/pages/TemplateEditor/useTemplateEditor.ts` (`case 'patch'`): para elementos de texto, recortar `lh` y `ls` a `RANGES` y redondearlos (lh a 2 decimales, ls a 1) y, si tras recortar ningún valor del parche difiere del elemento, devolver el estado sin agregar historia (conservar el `mergeKey` del arrastre)
+- [X] T007 [P] Pruebas del reductor en `frontend/tests/template-editor-reducer.test.ts` (bloque nuevo «ajustes avanzados de texto (feature 008)»): recorte de 9→2,5 y 0,1→0,5 en `lh`, de 99→60 y −99→−10 en `ls`; redondeo 1,375→1,38; un parche idéntico no agrega paso ni vacía el rehacer; un arrastre (mismo `key`) sigue siendo un solo paso; un elemento que no es texto no se recorta
+- [X] T008 En `frontend/src/pages/TemplateEditor/inspector-fields.ts` y `FieldRenderer.tsx`: ampliar el descriptor `range` con `numeric?: boolean` y `decimals?: number`; con `numeric` dibujar, junto al deslizador, un campo de texto con la lógica de `NumberField` (coma o punto; vacío o letras restauran el valor; recorte al confirmar con Enter o al salir; `aria-label` «<etiqueta> (valor)»), sincronizado con el deslizador (FR-011, FR-003)
 
 **Checkpoint**: modelo, esquema, reductor y campo numérico listos; `npx vitest run` de T005 y T007 en verde.
 
@@ -36,10 +36,10 @@
 
 **Independent Test**: seleccionar un texto de tres líneas, llevar la altura de línea a 0,5, 1,37 y 2,5 y comprobar que lienzo y PDF coinciden; abrir una plantilla antigua y ver que nada cambió.
 
-- [ ] T009 [US1] En `frontend/src/pages/TemplateEditor/inspector-fields.ts` (campos de texto): «Altura de línea» con `RANGES.lh`, paso 0,01, `numeric`, `decimals: 2` y `fallback: TEXT_DEFAULTS.lh` (todavía dentro de «Tipografía»; US4 lo mueve al panel)
-- [ ] T010 [P] [US1] Prueba nueva `frontend/tests/text-advanced-settings.test.tsx` (bloque US1): el campo muestra 1,05 en un texto sin `lh`; escribir `1,37` y `1.37` guarda 1,37; `9` ⇒ 2,5 y `0,1` ⇒ 0,5 con el valor final visible; letras o vacío restauran el valor; el deslizador llega a 0,5 y a 2,5; el estilo del texto en el lienzo usa ese `line-height`
-- [ ] T011 [P] [US1] Prueba de fidelidad en `backend/tests/integration/pdf-template-fidelity.test.ts`: un título de tres líneas con `lh` 0,5 / 1,37 / 2,5 corta igual en el lienzo y en el PDF de Chrome (SC-003) y cabe en su caja
-- [ ] T012 [US1] Actualizar las pruebas existentes de la lista de T002 que fijan la altura de línea 0,8 o el paso 0,05 (por ejemplo en `frontend/tests/template-editor-inspector.test.tsx` y `backend/tests/unit/template-schema.test.ts`) sin debilitar lo que comprueban
+- [X] T009 [US1] En `frontend/src/pages/TemplateEditor/inspector-fields.ts` (campos de texto): «Altura de línea» con `RANGES.lh`, paso 0,01, `numeric`, `decimals: 2` y `fallback: TEXT_DEFAULTS.lh` (todavía dentro de «Tipografía»; US4 lo mueve al panel)
+- [X] T010 [P] [US1] Prueba nueva `frontend/tests/text-advanced-settings.test.tsx` (bloque US1): el campo muestra 1,05 en un texto sin `lh`; escribir `1,37` y `1.37` guarda 1,37; `9` ⇒ 2,5 y `0,1` ⇒ 0,5 con el valor final visible; letras o vacío restauran el valor; el deslizador llega a 0,5 y a 2,5; el estilo del texto en el lienzo usa ese `line-height`
+- [X] T011 [P] [US1] Prueba de fidelidad en `backend/tests/integration/pdf-template-fidelity.test.ts`: un título de tres líneas con `lh` 0,5 / 1,37 / 2,5 corta igual en el lienzo y en el PDF de Chrome (SC-003) y cabe en su caja
+- [X] T012 [US1] Actualizar las pruebas existentes de la lista de T002 que fijan la altura de línea 0,8 o el paso 0,05 (por ejemplo en `frontend/tests/template-editor-inspector.test.tsx` y `backend/tests/unit/template-schema.test.ts`) sin debilitar lo que comprueban
 
 **Checkpoint**: US1 completa y probada por sí sola (mínimo entregable).
 

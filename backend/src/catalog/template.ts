@@ -106,9 +106,10 @@ export const RANGES = {
   opacity: [0, 1],
   textSize: [8, 140],
   strokeW: [0, 8],
-  ls: [-2, 12],
-  /** Altura de línea del texto, como múltiplo del tamaño de la letra (feature 007). */
-  lh: [0.8, 2.5],
+  /** Espaciado entre letras, en píxeles (feature 008: de −2…12 a −10…60; contiene por completo el rango anterior). */
+  ls: [-10, 60],
+  /** Altura de línea del texto, como múltiplo del tamaño de la letra (feature 007; 008 baja el mínimo de 0,8 a 0,5). */
+  lh: [0.5, 2.5],
   badgeSize: [8, 48],
   shapeBw: [0, 12],
   shapeRadius: [0, 80],
@@ -165,6 +166,9 @@ interface ElementBase {
   locked: boolean;
 }
 
+/** Anclaje vertical de un texto: arriba, al centro (como se dibujó siempre) o abajo. */
+export type VAlign = 'top' | 'middle' | 'bottom';
+
 export interface TextEl extends ElementBase {
   type: 'text';
   text: string;
@@ -182,13 +186,15 @@ export interface TextEl extends ElementBase {
   lh?: number;
   /** Tachado de todo el texto, del color del relleno. Opcional, como `lh`. */
   strike?: boolean;
+  /** Anclaje vertical del texto en su caja (feature 008). Opcional: si falta se dibuja centrado, como siempre; ver `TEXT_DEFAULTS`. */
+  vAlign?: VAlign;
 }
 
 /**
  * Valores de `lh` y `strike` cuando un texto no los trae: los del render anterior a la feature 007, para que las
  * plantillas ya guardadas se vean idénticas sin migrarlas. Es el único lugar donde viven.
  */
-export const TEXT_DEFAULTS = { lh: 1.05, strike: false } as const;
+export const TEXT_DEFAULTS = { lh: 1.05, strike: false, vAlign: 'middle' } as const satisfies { lh: number; strike: boolean; vAlign: VAlign };
 
 export interface BadgeEl extends ElementBase {
   type: 'badge';
