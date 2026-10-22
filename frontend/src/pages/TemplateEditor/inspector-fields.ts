@@ -1,6 +1,4 @@
 import {
-  FONT_KEYS,
-  FONT_LABELS,
   RANGES,
   TEXT_DEFAULTS,
   WEIGHTS,
@@ -45,6 +43,8 @@ export type FieldDesc =
       fallback?: string | number;
     }
   | { kind: 'select'; key: string; label: string; options: readonly (readonly [string, string])[] }
+  /** Selector de fuente (feature 009): reemplaza la lista desplegable de texto plano. */
+  | { kind: 'font'; key: string; label: string }
   | { kind: 'textarea'; key: string; label: string; rows?: number }
   | { kind: 'tokens'; key: string; label: string }
   | { kind: 'toggle'; key: string; label: string }
@@ -95,15 +95,6 @@ const seg = (key: string, label: string, options: readonly (readonly [string | n
   options,
 });
 
-/** Etiquetas del selector de fuente: título y cuerpo de la plantilla, y las seis familias. */
-export function fontOptions(template: Pick<Template, 'fonts'>): readonly (readonly [string, string])[] {
-  return [
-    ['title', `Título · ${FONT_LABELS[template.fonts.title]}`],
-    ['body', `Cuerpo · ${FONT_LABELS[template.fonts.body]}`],
-    ...FONT_KEYS.map((k) => [k, FONT_LABELS[k]] as const),
-  ];
-}
-
 export const IMAGE_OPTIONS = [
   ['logo', 'Logo'],
   ['collage', 'Collage'],
@@ -128,7 +119,7 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         { kind: 'textarea', key: 'text', label: 'Texto' },
         { kind: 'tokens', key: 'text', label: 'Insertar dato' },
         heading('Tipografía'),
-        { kind: 'select', key: 'font', label: 'Fuente', options: fontOptions(template) },
+        { kind: 'font', key: 'font', label: 'Fuente' },
         range('size', 'Tamaño', RANGES.textSize, 1),
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
         seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
@@ -157,7 +148,7 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         { kind: 'tokens', key: 'text', label: 'Insertar dato' },
         color('fill', 'Fondo'),
         color('color', 'Color del texto'),
-        { kind: 'select', key: 'font', label: 'Fuente', options: fontOptions(template) },
+        { kind: 'font', key: 'font', label: 'Fuente' },
         range('size', 'Tamaño', RANGES.badgeSize, 1),
       ];
     case 'shape': {

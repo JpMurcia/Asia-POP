@@ -105,3 +105,16 @@ export function colorPanel(field: string) {
 export function pickColor(field: string, name: string) {
   fireEvent.click(colorPanel(field).getByRole('button', { name }));
 }
+
+/** Abre el selector de fuente (si no lo está) y devuelve consultas sobre su panel (feature 009). */
+export function fontPanel() {
+  const button = screen.getByRole('button', { name: /^Fuente: / });
+  if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(button);
+  return within(screen.getByRole('dialog', { name: 'Fuente' }));
+}
+
+/** Elige una fuente por su nombre («Bungee», «Título · Fredoka»…) en el selector de fuente. */
+export function pickFont(name: string) {
+  const panel = fontPanel();
+  fireEvent.click(panel.getAllByRole('button', { name }).find((b) => b.getAttribute('aria-pressed') !== null)!);
+}

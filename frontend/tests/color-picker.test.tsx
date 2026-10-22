@@ -199,3 +199,113 @@ describe('selector de color: sin pérdida de capacidades', () => {
     expect(BASE_TEMPLATES.length).toBeGreaterThan(0);
   });
 });
+
+describe('selector de color: buscador (US2)', () => {
+  const search = () => screen.getByLabelText('Buscar color por nombre o código') as HTMLInputElement;
+  const typeQuery = (text: string) => fireEvent.change(search(), { target: { value: text } });
+  const enter = () => fireEvent.keyDown(search(), { key: 'Enter' });
+  const status = () => screen.getByRole('status');
+
+  it('al abrir el panel el foco va al buscador', async () => {
+    await start();
+    colorPanel('Relleno');
+    expect(search()).toHaveFocus();
+  });
+
+  it.each(['e91e8c', '#E91E8C', '#e91e8c'])('escribir «%s» propone el color y Enter lo aplica (un paso)', async (typed) => {
+    await start();
+    colorPanel('Relleno');
+    typeQuery(typed);
+    expect(screen.getByRole('button', { name: 'Aplicar #E91E8C' })).toBeInTheDocument();
+    enter();
+    expect(textColor()).toBe('rgb(233, 30, 140)');
+    expect(search().value).toBe('');
+    undo();
+    expect(canUndo()).toBe(false);
+  });
+
+  it('un código de 3 dígitos (#e91) se expande: #EE9911', async () => {
+    await start();
+    colorPanel('Relleno');
+    typeQuery('#e91');
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar #EE9911' }));
+    expect(textColor()).toBe('rgb(238, 153, 17)');
+  });
+
+  it.each(['#12', 'zzz'])('un código inválido («%s») no aplica nada, lo indica y conserva el color', async (typed) => {
+    await start();
+    const before = textColor();
+    colorPanel('Relleno');
+    typeQuery(typed);
+    enter();
+    expect(status()).toHaveTextContent('El código de color no es válido');
+    expect(textColor()).toBe(before);
+    expect(canUndo()).toBe(false);
+    typeQuery(`${typed}4`);
+    expect(status()).not.toHaveTextContent('El código de color no es válido');
+  });
+
+  it('buscar «acento» y «azul» filtra por nombre, sin importar mayúsculas ni tildes', async () => {
+    await start();
+    colorPanel('Relleno');
+    typeQuery('ACENTO');
+    const results = within(screen.getByRole('region', { name: 'Resultados de la búsqueda' }));
+    expect(results.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Acento 1', 'Acento 2', 'Acento 3']);
+    typeQuery('Azúl');
+    expect(within(screen.getByRole('region', { name: 'Resultados de la búsqueda' })).getAllByRole('button')).toHaveLength(1);
+    enter();
+    expect(textColor()).toBe('rgb(30, 136, 229)');
+  });
+
+  it('una búsqueda sin coincidencias muestra un mensaje y «Limpiar búsqueda» restaura la lista', async () => {
+    await start();
+    colorPanel('Relleno');
+    typeQuery('qqqq');
+    expect(screen.getByText('No hay colores con ese nombre')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar búsqueda' }));
+    expect(search().value).toBe('');
+    expect(screen.getByRole('region', { name: 'Colores de la plantilla' })).toBeInTheDocument();
+  });
+
+  it('cerrar y volver a abrir limpia el buscador', async () => {
+    await start();
+    colorPanel('Relleno');
+    typeQuery('rojo');
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+    colorPanel('Relleno');
+    expect(search().value).toBe('');
+  });
+});
+
+describe('selector de color: cuentagotas (US4)', () => {
+  const dropper = () => screen.queryByRole('button', { name: 'Cuentagotas' });
+
+  it('sin EyeDropper en el navegador el botón no aparece y nada más cambia', async () => {
+    await start();
+    colorPanel('Relleno');
+    expect(dropper()).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Color personalizado')).toBeInTheDocument();
+  });
+
+  it('con EyeDropper toma el color de la pantalla y lo aplica como color libre en mayúsculas (un paso)', async () => {
+    vi.stubGlobal('EyeDropper', class { open = () => Promise.resolve({ sRGBHex: '#1a2b3c' }); });
+    await start();
+    colorPanel('Relleno');
+    fireEvent.click(dropper()!);
+    await vi.waitFor(() => expect(textColor()).toBe('rgb(26, 43, 60)'));
+    expect(trigger('Relleno')).toHaveAccessibleName('Relleno: #1A2B3C');
+    undo();
+    expect(canUndo()).toBe(false);
+  });
+
+  it('si el cuentagotas se cancela (Escape) el color anterior se conserva y no hay paso nuevo', async () => {
+    vi.stubGlobal('EyeDropper', class { open = () => Promise.reject(new DOMException('cancelado', 'AbortError')); });
+    await start();
+    const before = textColor();
+    colorPanel('Relleno');
+    fireEvent.click(dropper()!);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(textColor()).toBe(before);
+    expect(canUndo()).toBe(false);
+  });
+});

@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PALETTE_PRESETS } from '../../backend/src/catalog/template-presets';
 import {
   colorPanel,
+  fontPanel,
+  pickFont,
   canvas,
   canvasEl,
   fireEvent,
@@ -203,7 +205,7 @@ describe('sección Estilo: tipografía (FR-017)', () => {
     await start();
     openElements();
     click('Agregar título');
-    fireEvent.change(screen.getByLabelText('Fuente'), { target: { value: 'grotesk' } });
+    pickFont('Space Grotesk');
     const id = Array.from(canvas().querySelectorAll('[data-el-type="text"]'))
       .map((n) => n.getAttribute('data-el-id')!)
       .find((i) => fontOf(i).includes('Space Grotesk'))!;
@@ -218,7 +220,7 @@ describe('sección Estilo: tipografía (FR-017)', () => {
     fireEvent.click(pair('Bungee + Poppins'));
     goToPage('Portada de sección');
     selectLayer(/^Nombre de sección/);
-    expect(screen.getByLabelText('Fuente')).toHaveValue('title');
-    expect(within(screen.getByLabelText('Fuente')).getByRole('option', { name: 'Título · Bungee' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fuente: Título · Bungee' })).toBeInTheDocument();
+    expect(fontPanel().getByRole('button', { name: 'Título · Bungee' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

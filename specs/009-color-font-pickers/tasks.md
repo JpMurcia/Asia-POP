@@ -52,8 +52,8 @@
 
 **Independent Test**: escribir `e91e8c`, `#E91E8C`, `#e91`, `#12`, `zzz` y «acento», y comprobar el resultado de cada caso.
 
-- [ ] T014 [US2] En `frontend/src/pages/TemplateEditor/ColorPicker.tsx`: buscador `input type="search"` «Buscar color por nombre o código»; un código válido muestra la muestra y el botón «Aplicar \<código\>» (Enter lo aplica y cierra el panel); un código inválido muestra «El código de color no es válido» en la región `role="status"` y no cambia nada; un nombre filtra los colores de la paleta y los básicos (sin mayúsculas ni tildes); sin coincidencias ⇒ «No hay colores con ese nombre» y «Limpiar búsqueda»; el texto se limpia al cerrar
-- [ ] T015 [P] [US2] Pruebas en `frontend/tests/color-picker.test.tsx` (bloque US2): `e91e8c`, `#E91E8C` y `#e91` + Enter aplican el color (un paso); `#12` y `zzz` + Enter muestran el mensaje y conservan el color; «acento» y «azul» filtran; «Ámbar»/«AMBAR» sin tildes ni mayúsculas; búsqueda sin resultados ⇒ mensaje y «Limpiar búsqueda» restaura la lista; cerrar y reabrir limpia el buscador
+- [X] T014 [US2] En `frontend/src/pages/TemplateEditor/ColorPicker.tsx`: buscador `input type="search"` «Buscar color por nombre o código»; un código válido muestra la muestra y el botón «Aplicar \<código\>» (Enter lo aplica y cierra el panel); un código inválido muestra «El código de color no es válido» en la región `role="status"` y no cambia nada; un nombre filtra los colores de la paleta y los básicos (sin mayúsculas ni tildes); sin coincidencias ⇒ «No hay colores con ese nombre» y «Limpiar búsqueda»; el texto se limpia al cerrar
+- [X] T015 [P] [US2] Pruebas en `frontend/tests/color-picker.test.tsx` (bloque US2): `e91e8c`, `#E91E8C` y `#e91` + Enter aplican el color (un paso); `#12` y `zzz` + Enter muestran el mensaje y conservan el color; «acento» y «azul» filtran; «Ámbar»/«AMBAR» sin tildes ni mayúsculas; búsqueda sin resultados ⇒ mensaje y «Limpiar búsqueda» restaura la lista; cerrar y reabrir limpia el buscador
 
 **Checkpoint**: US1 y US2 funcionan; el formato guardado no cambió.
 
@@ -65,10 +65,10 @@
 
 **Independent Test**: abrir el selector de fuente de un texto, ver las seis familias en su tipografía, la activa con marca, y cambiar con un clic.
 
-- [ ] T016 [US3] Componente `frontend/src/pages/TemplateEditor/FontPicker.tsx` (contrato §4): botón «Fuente: \<activa\>» escrito en su tipografía (`FONT_STACKS`), panel con buscador «Buscar fuente», grupo «Fuentes de la plantilla» («Título · …», «Cuerpo · …» y las usadas) y «Todas las fuentes» (las seis); cada opción es un botón con `aria-pressed`, el nombre con `style.fontFamily` de su pila y `data-check` en la activa; «Título»/«Cuerpo» se marcan solo si el elemento guarda esa referencia y guardan `title`/`body`; sin resultados ⇒ «No hay fuentes con ese nombre» y «Limpiar búsqueda»
-- [ ] T017 [US3] En `frontend/src/pages/TemplateEditor/inspector-fields.ts` y `FieldRenderer.tsx`: nuevo descriptor `{ kind: 'font'; key; label }` que reemplaza los dos `select` de fuente (texto e insignia) y se dibuja con `FontPicker` (con `locked` deshabilitado, igual que el color); retirar `fontOptions` de `inspector-fields.ts` si queda sin uso (mantener `FONT_LABELS`); estilos en `editor.css`
-- [ ] T018 [P] [US3] Pruebas nuevas `frontend/tests/font-picker.test.tsx`: las seis familias con su `fontFamily`, la activa con marca; orden «Fuentes de la plantilla» antes de «Todas las fuentes»; elegir «Título»/«Cuerpo» guarda `title`/`body`; elegir una familia la guarda; elegir la activa no agrega paso; «zen» y «DM» filtran sin mayúsculas ni tildes y sin resultados ⇒ mensaje; las insignias usan el mismo selector; bloqueado ⇒ deshabilitado
-- [ ] T019 [US3] Actualizar las pruebas existentes que usaban `getByLabelText('Fuente')` como `<select>` (por ejemplo la que lista las opciones «Título · Fredoka»… en `frontend/tests/template-editor-inspector.test.tsx`): abrir el selector y comprobar las mismas opciones por botones
+- [X] T016 [US3] Componente `frontend/src/pages/TemplateEditor/FontPicker.tsx` (contrato §4): botón «Fuente: \<activa\>» escrito en su tipografía (`FONT_STACKS`), panel con buscador «Buscar fuente», grupo «Fuentes de la plantilla» («Título · …», «Cuerpo · …» y las usadas) y «Todas las fuentes» (las seis); cada opción es un botón con `aria-pressed`, el nombre con `style.fontFamily` de su pila y `data-check` en la activa; «Título»/«Cuerpo» se marcan solo si el elemento guarda esa referencia y guardan `title`/`body`; sin resultados ⇒ «No hay fuentes con ese nombre» y «Limpiar búsqueda»
+- [X] T017 [US3] En `frontend/src/pages/TemplateEditor/inspector-fields.ts` y `FieldRenderer.tsx`: nuevo descriptor `{ kind: 'font'; key; label }` que reemplaza los dos `select` de fuente (texto e insignia) y se dibuja con `FontPicker` (con `locked` deshabilitado, igual que el color); retirar `fontOptions` de `inspector-fields.ts` si queda sin uso (mantener `FONT_LABELS`); estilos en `editor.css`
+- [X] T018 [P] [US3] Pruebas nuevas `frontend/tests/font-picker.test.tsx`: las seis familias con su `fontFamily`, la activa con marca; orden «Fuentes de la plantilla» antes de «Todas las fuentes»; elegir «Título»/«Cuerpo» guarda `title`/`body`; elegir una familia la guarda; elegir la activa no agrega paso; «zen» y «DM» filtran sin mayúsculas ni tildes y sin resultados ⇒ mensaje; las insignias usan el mismo selector; bloqueado ⇒ deshabilitado
+- [X] T019 [US3] Actualizar las pruebas existentes que usaban `getByLabelText('Fuente')` como `<select>` (por ejemplo la que lista las opciones «Título · Fredoka»… en `frontend/tests/template-editor-inspector.test.tsx`): abrir el selector y comprobar las mismas opciones por botones
 
 **Checkpoint**: US1, US2 y US3 funcionan.
 
@@ -80,8 +80,8 @@
 
 **Independent Test**: con `window.EyeDropper` simulado, tomar un color y comprobar que se aplica; sin él, comprobar que no hay botón.
 
-- [ ] T020 [US4] En `frontend/src/pages/TemplateEditor/ColorPicker.tsx`: botón «Cuentagotas» solo si `'EyeDropper' in window`; `new EyeDropper().open()` devuelve `{ sRGBHex }`, que se normaliza y se aplica como color libre (un paso); un rechazo o `AbortError` (Escape) se ignora y conserva el color anterior
-- [ ] T021 [P] [US4] Pruebas en `frontend/tests/color-picker.test.tsx` (bloque US4) con un `EyeDropper` simulado: sin él no hay botón y nada más cambia; con él, el color tomado se guarda en mayúsculas como `#RRGGBB`; si el doble rechaza con `AbortError` el color anterior se conserva y no hay paso nuevo
+- [X] T020 [US4] En `frontend/src/pages/TemplateEditor/ColorPicker.tsx`: botón «Cuentagotas» solo si `'EyeDropper' in window`; `new EyeDropper().open()` devuelve `{ sRGBHex }`, que se normaliza y se aplica como color libre (un paso); un rechazo o `AbortError` (Escape) se ignora y conserva el color anterior
+- [X] T021 [P] [US4] Pruebas en `frontend/tests/color-picker.test.tsx` (bloque US4) con un `EyeDropper` simulado: sin él no hay botón y nada más cambia; con él, el color tomado se guarda en mayúsculas como `#RRGGBB`; si el doble rechaza con `AbortError` el color anterior se conserva y no hay paso nuevo
 
 **Checkpoint**: las cuatro historias funcionan.
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LIMITS, type Palette, type Template } from '../../../../backend/src/catalog/template';
 import ColorPicker from './ColorPicker';
+import FontPicker from './FontPicker';
 import ImagePicker from './ImagePicker';
 import { clampBox } from './useTemplateEditor';
 import { TOKEN_CHIPS, type FieldAction, type FieldDesc } from './inspector-fields';
@@ -11,7 +12,7 @@ export interface FieldRendererProps {
   values: Record<string, unknown>;
   palette: Palette;
   /** La plantilla: de ella salen «Colores de la plantilla» (paleta y colores libres de cualquier página). */
-  template?: Pick<Template, 'palette' | 'pages'>;
+  template?: Pick<Template, 'palette' | 'pages' | 'fonts'>;
   /** `mergeKey` agrupa los cambios seguidos de un mismo campo (deslizar un rango) en un solo paso del historial. */
   onChange: (patch: Record<string, unknown>, mergeKey?: string) => void;
   /** Acción de un botón del inspector (por ejemplo, «Restaurar tamaños originales»). */
@@ -139,7 +140,7 @@ function NumberField({
 
 /** Dibuja la lista de descriptores de `inspector-fields.ts`: una línea por propiedad. */
 export default function FieldRenderer({ fields, values, palette, template, onChange, onAction, sectionOpen, onSectionToggle, locked }: FieldRendererProps) {
-  const colorSource = template ?? { palette, pages: {} as Template['pages'] };
+  const colorSource = template ?? { palette, pages: {} as Template['pages'], fonts: { title: 'fredoka', body: 'poppins' } as Template['fonts'] };
   return (
     <>
       {fields.map((f, i) => {
@@ -221,6 +222,9 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
                 </div>
               </div>
             );
+
+          case 'font':
+            return <FontPicker key={f.key} label={f.label} field={f.key} value={values[f.key]} template={colorSource} locked={locked} onChange={onChange} />;
 
           case 'select':
             return (

@@ -4,6 +4,7 @@ import {
   canvasEl,
   colorPanel,
   fireEvent,
+  fontPanel,
   goToPage,
   layers,
   mockEditorApi,
@@ -69,7 +70,11 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
     it('la fuente ofrece título, cuerpo y las seis familias', async () => {
       await start();
       await add('Agregar texto');
-      const options = within(screen.getByLabelText('Fuente')).getAllByRole('option').map((o) => o.textContent);
+      const panel = fontPanel();
+      const options = ['Fuentes de la plantilla', 'Todas las fuentes'].flatMap((g) =>
+        within(screen.getByRole('region', { name: g })).getAllByRole('button').map((o) => o.textContent!.replace('✓', '')),
+      );
+      expect(panel.getByRole('region', { name: 'Todas las fuentes' })).toBeInTheDocument();
       expect(options).toEqual([
         'Título · Fredoka',
         'Cuerpo · Poppins',

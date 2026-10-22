@@ -4,6 +4,7 @@ import {
   canvas,
   canvasEl,
   fireEvent,
+  fontPanel,
   goToPage,
   layers,
   mockEditorApi,
@@ -179,7 +180,7 @@ describe('atajos de teclado (FR-008)', () => {
       const texts = canvas().querySelectorAll('[data-el-type="text"]').length;
       const text = screen.getByLabelText('Texto') as HTMLTextAreaElement; // el contenido del texto seleccionado
       const name = screen.getByLabelText('Nombre de la plantilla');
-      const font = screen.getByLabelText('Fuente');
+      const font = fontPanel().getByLabelText('Buscar fuente'); // el buscador del selector de fuente
       for (const field of [text, name, font]) {
         fireEvent.keyDown(field, { key: 'Delete' });
         fireEvent.keyDown(field, { key: 'Backspace' });

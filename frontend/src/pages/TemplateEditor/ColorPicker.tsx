@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PALETTE_KEYS, PALETTE_LABELS, isPaletteKey, type Template } from '../../../../backend/src/catalog/template';
 import Popover from './Popover';
-import { colorOptions, hexOf, normalizeHex, type ColorOption } from './template-colors';
+import { colorOptions, hexOf, normalizeHex, searchColors, type ColorOption } from './template-colors';
 
 /** Indicación de un selector deshabilitado porque el elemento está bloqueado (igual que la de alinear). */
 export const LOCKED_HINT = 'Desbloquea el elemento para cambiar este ajuste';
@@ -11,6 +11,15 @@ const SWATCH_LABELS: Record<(typeof PALETTE_KEYS)[number], string> = { ...PALETT
 
 /** Cuántos colores libres se muestran antes de «Ver todos». */
 export const FREE_COLORS_SHOWN = 18;
+
+/** Lo que el navegador ofrece para tomar un color de la pantalla (solo Chromium); si falta, no se muestra el botón. */
+interface EyeDropperLike {
+  open: () => Promise<{ sRGBHex: string }>;
+}
+const eyeDropper = (): (new () => EyeDropperLike) | null =>
+  typeof window !== 'undefined' && 'EyeDropper' in window ? (window as unknown as { EyeDropper: new () => EyeDropperLike }).EyeDropper : null;
+
+export const INVALID_CODE = 'El código de color no es válido';
 
 export interface ColorPickerProps {
   /** Nombre del campo («Relleno», «Contorno»…): también es el del grupo. */
@@ -44,6 +53,8 @@ export default function ColorPicker({ label, field, value, template, none, locke
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [query, setQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const options = colorOptions(template, { none });
   const active = activeValue(options, template, value);
@@ -55,6 +66,38 @@ export default function ColorPicker({ label, field, value, template, none, locke
   const close = () => {
     setOpen(false);
     setShowAll(false);
+    setQuery('');
+    setError(null);
+  };
+
+  // Búsqueda: un código válido se propone para aplicar; el texto también filtra por nombre
+  const typedHex = normalizeHex(query);
+  const results = query.trim() === '' ? [] : searchColors(options, query);
+  const apply = (hex: string) => {
+    onChange({ [field]: hex });
+    setQuery('');
+    setError(null);
+  };
+  const confirm = () => {
+    if (typedHex) return apply(typedHex);
+    const first = results[0];
+    if (first) {
+      pick(first);
+      setQuery('');
+      setError(null);
+    } else if (query.trim() !== '') setError(INVALID_CODE);
+  };
+  const Dropper = eyeDropper();
+  const useDropper = () => {
+    if (!Dropper) return;
+    // Escape o cualquier rechazo cancela: el color anterior se conserva
+    new Dropper()
+      .open()
+      .then((r) => {
+        const hex = normalizeHex(r.sRGBHex);
+        if (hex) onChange({ [field]: hex });
+      })
+      .catch(() => undefined);
   };
 
   const plantilla = options.filter((o) => o.group === 'plantilla');
@@ -102,6 +145,46 @@ export default function ColorPicker({ label, field, value, template, none, locke
         <span className="ed-picker-name">{activeName}</span>
       </button>
       <Popover open={open} anchor={anchor} title={`Color: ${label}`} onClose={close}>
+        <input
+          type="search"
+          data-autofocus
+          className="ed-pick-search"
+          aria-label="Buscar color por nombre o código"
+          placeholder="Nombre o código (#E91E8C)"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              confirm();
+            }
+          }}
+        />
+        {typedHex && (
+          <button type="button" className="ed-pick-apply" onClick={() => apply(typedHex)}>
+            <span className="ed-picker-swatch" style={{ background: typedHex }} aria-hidden="true" />
+            {`Aplicar ${typedHex}`}
+          </button>
+        )}
+        {query.trim() !== '' && (results.length > 0 || !typedHex) && (
+          <section className="ed-pick-group" aria-label="Resultados de la búsqueda">
+            {results.length > 0 ? (
+              <div className="ed-swatches">{results.map(swatch)}</div>
+            ) : (
+              <>
+                <p className="ed-pick-empty">No hay colores con ese nombre</p>
+                <button type="button" className="ed-pick-more" onClick={() => setQuery('')}>
+                  Limpiar búsqueda
+                </button>
+              </>
+            )}
+          </section>
+        )}
+        {query.trim() === '' && (
+          <>
         <section className="ed-pick-group" aria-label="Colores de la plantilla">
           <div className="ed-pick-title">Colores de la plantilla</div>
           <div className="ed-swatches">
@@ -128,6 +211,8 @@ export default function ColorPicker({ label, field, value, template, none, locke
             {special.label}
           </button>
         )}
+          </>
+        )}
         <section className="ed-pick-group" aria-label="Otro color">
           <div className="ed-pick-title">Otro color</div>
           <input
@@ -139,9 +224,14 @@ export default function ColorPicker({ label, field, value, template, none, locke
             value={(activeHex ?? '#000000').toLowerCase()}
             onChange={(e) => onChange({ [field]: normalizeHex(e.target.value) ?? e.target.value.toUpperCase() }, field)}
           />
+          {Dropper && (
+            <button type="button" className="ed-pick-more" onClick={useDropper}>
+              Cuentagotas
+            </button>
+          )}
         </section>
         <p className="ed-pick-status" role="status">
-          {`Color activo: ${activeName}`}
+          {error ?? `Color activo: ${activeName}`}
         </p>
       </Popover>
     </div>
