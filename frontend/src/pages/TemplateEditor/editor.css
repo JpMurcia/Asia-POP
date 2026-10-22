@@ -1508,3 +1508,143 @@
   max-width: 100%;
   font-size: 12px;
 }
+
+/* Selectores de color y de fuente (feature 009). El panel va en un portal fuera de `.ed-root`: sin variables, solo literales. */
+.ed-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--ed-line, #f0dfc8);
+  background: #fffcf7;
+  color: var(--ed-ink, #2a1258);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ed-picker-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ed-picker-btn:focus-visible {
+  outline: 2px solid var(--ed-pink, #e5368c);
+  outline-offset: 2px;
+}
+.ed-picker-swatch {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(42, 18, 88, 0.25);
+}
+.ed-picker-swatch[data-none='true'] {
+  background: linear-gradient(135deg, #fff 45%, #e5368c 45%, #e5368c 55%, #fff 55%);
+}
+.ed-picker-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ed-popover {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #f0dfc8;
+  background: #fff;
+  color: #2a1258;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 12px 32px rgba(42, 18, 88, 0.22);
+}
+.ed-popover:focus {
+  outline: none;
+}
+.ed-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ed-popover-close {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ed-popover-close:hover,
+.ed-popover-close:focus-visible {
+  background: #fff7ec;
+  outline: 2px solid #e5368c;
+}
+.ed-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ed-pick-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ed-pick-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a6a92;
+}
+.ed-pick-more,
+.ed-pick-special {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #f0dfc8;
+  background: #fffcf7;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ed-pick-special[aria-pressed='true'] {
+  border-color: #e5368c;
+  box-shadow: 0 0 0 1px #e5368c;
+}
+.ed-popover .ed-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ed-popover .ed-swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(42, 18, 88, 0.2);
+  cursor: pointer;
+}
+.ed-popover .ed-swatch[aria-pressed='true'],
+.ed-popover .ed-swatch[data-active='true'] {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #e5368c;
+}
+.ed-pick-status {
+  margin: 0;
+  font-size: 12px;
+  color: #7a6a92;
+}

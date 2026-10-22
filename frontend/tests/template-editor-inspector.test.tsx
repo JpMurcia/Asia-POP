@@ -2,11 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   canvas,
   canvasEl,
+  colorPanel,
   fireEvent,
   goToPage,
   layers,
   mockEditorApi,
   openElements,
+  pickColor,
   renderEditor,
   screen,
   selectLayer,
@@ -84,14 +86,14 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
       await start();
       await add('Agregar título');
       expect(screen.queryByLabelText('Grosor del contorno')).not.toBeInTheDocument();
-      fireEvent.click(within(group('Contorno')).getByRole('button', { name: 'Acento 1' }));
+      pickColor('Contorno', 'Acento 1');
       expect(bounds('Grosor del contorno')).toEqual([0, 8]);
     });
 
     it('cambiar un campo actualiza el lienzo', async () => {
       await start();
       await add('Agregar título');
-      fireEvent.click(within(group('Relleno')).getByRole('button', { name: 'Acento 2' }));
+      pickColor('Relleno', 'Acento 2');
       const text = Array.from(canvas().querySelectorAll<HTMLElement>('[data-el-type="text"] .tpl-text')).find((t) => t.textContent === 'Nuevo título')!;
       expect(getComputedStyle(text).color).toBe('rgb(0, 255, 102)');
       setField('Texto', 'Hola mundo');
@@ -102,7 +104,7 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
     it('un color personalizado #RRGGBB queda fijo y en mayúsculas', async () => {
       await start();
       await add('Agregar título');
-      fireEvent.change(within(group('Relleno')).getByLabelText('Color personalizado'), { target: { value: '#12ab34' } });
+      fireEvent.change(colorPanel('Relleno').getByLabelText('Color personalizado'), { target: { value: '#12ab34' } });
       const text = Array.from(canvas().querySelectorAll<HTMLElement>('[data-el-type="text"] .tpl-text')).find((t) => t.textContent === 'Nuevo título')!;
       expect(getComputedStyle(text).color).toBe('rgb(18, 171, 52)');
     });
@@ -110,9 +112,9 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
     it('"ninguno" en el contorno lo quita', async () => {
       await start();
       await add('Agregar título');
-      fireEvent.click(within(group('Contorno')).getByRole('button', { name: 'Acento 1' }));
+      pickColor('Contorno', 'Acento 1');
       expect(screen.getByLabelText('Grosor del contorno')).toBeInTheDocument();
-      fireEvent.click(within(group('Contorno')).getByRole('button', { name: 'Ninguno' }));
+      pickColor('Contorno', 'Ninguno');
       expect(screen.queryByLabelText('Grosor del contorno')).not.toBeInTheDocument();
     });
 
@@ -180,7 +182,7 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
       for (const k of ['Rectángulo', 'Círculo', 'Píldora']) expect(inGroup('Forma', k)).toBeInTheDocument();
       expect(bounds('Esquinas')).toEqual([0, 80]);
       expect(screen.queryByLabelText('Grosor del borde')).not.toBeInTheDocument();
-      fireEvent.click(within(group('Borde')).getByRole('button', { name: 'Acento 3' }));
+      pickColor('Borde', 'Acento 3');
       expect(bounds('Grosor del borde')).toEqual([0, 12]);
     });
 
@@ -310,7 +312,7 @@ describe('fondo de la página (sin selección, FR-013)', () => {
   it('de color: un solo selector; elegir un color de la paleta cambia la hoja', async () => {
     await start();
     fireEvent.click(inGroup('Fondo', 'Color'));
-    fireEvent.click(within(group('Color')).getByRole('button', { name: 'Acento 2' }));
+    pickColor('Color', 'Acento 2');
     const page = canvas().querySelector<HTMLElement>('.tpl-page')!;
     expect(page.style.backgroundColor).toBe('rgb(0, 255, 102)');
     expect(canvas().querySelector('img.tpl-bg')).toBeNull();
@@ -679,10 +681,12 @@ describe('bloque de productos: nombre del producto (feature 007)', () => {
 
   it('los colores se eligen entre los de la paleta y cambian el rótulo', async () => {
     await onProducts();
-    fireEvent.click(within(group('Color del nombre')).getByRole('button', { name: 'Acento 2' }));
-    expect(within(group('Color del nombre')).getByRole('button', { name: 'Acento 2' })).toHaveAttribute('aria-pressed', 'true');
+    // El bloque de productos nace bloqueado y, con el elemento bloqueado, los selectores están deshabilitados (feature 009, FR-019)
+    fireEvent.click(screen.getByRole('button', { name: 'Desbloquear' }));
+    pickColor('Color del nombre', 'Acento 2');
+    expect(colorPanel('Color del nombre').getByRole('button', { name: 'Acento 2' })).toHaveAttribute('aria-pressed', 'true');
     expect(getComputedStyle(nameTag() as HTMLElement).color).toBe('rgb(0, 255, 102)');
-    fireEvent.click(within(group('Fondo del rótulo')).getByRole('button', { name: 'Transparente' }));
+    pickColor('Fondo del rótulo', 'Transparente');
     expect(getComputedStyle(nameTag() as HTMLElement).backgroundColor).toBe('rgba(0, 0, 0, 0)');
   });
 

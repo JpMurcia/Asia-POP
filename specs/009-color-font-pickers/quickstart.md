@@ -13,6 +13,8 @@ cd backend && BASELINE_DIR=<carpeta> npx tsx tests/fixtures/pdf-baseline.ts comp
 
 Esperado: 8 de 8 PDF **idénticos** (SC-001, FR-017). Esta feature no toca el render.
 
+> **Punto de partida (T001)**: línea base capturada el 2026-10-22 con el commit `77f5690` (8 PDF: 4 plantillas × normal y largo); se compara en T024.
+
 ## 2. Cálculos puros
 
 ```bash

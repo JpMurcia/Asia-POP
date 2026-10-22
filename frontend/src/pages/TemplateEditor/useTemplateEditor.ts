@@ -234,6 +234,10 @@ const clampTo = ([min, max]: readonly [number, number], n: number, decimals: num
   return Math.round(Math.min(max, Math.max(min, n)) * f) / f;
 };
 
+/** ¿Algún valor del parche difiere del actual? (comparación por valor de las claves del parche) */
+const changes = (current: Record<string, unknown>, patch: Record<string, unknown>): boolean =>
+  Object.entries(patch).some(([k, v]) => current[k] !== v);
+
 /**
  * Ajustes de texto (feature 008): la altura de línea y el espaciado se recortan a su rango y se redondean (lo que se
  * escribe en un campo numérico puede salirse de él), y un parche que no cambia ningún valor se descarta para que no
@@ -338,11 +342,10 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
       if (!el) return s;
       let patch = sanitize(el, action.patch);
       let notice: string | null = null;
-      if (el.type === 'text') {
-        const settled = settleText(el, patch);
-        if (!settled) return s;
-        patch = settled;
-      }
+      // Un parche que no cambia nada no agrega un paso de deshacer (texto: con sus valores por defecto; features 008 y 009)
+      const settled = el.type === 'text' ? settleText(el, patch) : changes(el as unknown as Record<string, unknown>, patch) ? patch : null;
+      if (!settled) return s;
+      patch = settled;
       if (el.type === 'products') ({ patch, notice } = clampProducts(el, patch));
       const history = action.record === false ? {} : record(s, action.key ?? null, action.now);
       const next: EditorState = {
@@ -373,6 +376,8 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
     }
 
     case 'patchBg':
+      // Elegir el valor que ya tiene el fondo no agrega un paso (feature 009)
+      if (!changes(currentPage(s).bg as unknown as Record<string, unknown>, action.patch as Record<string, unknown>)) return s;
       return {
         ...s,
         ...record(s, `bg:${s.page}:${Object.keys(action.patch).join(',')}`, action.now),

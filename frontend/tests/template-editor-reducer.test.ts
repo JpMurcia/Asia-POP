@@ -917,7 +917,53 @@ describe('ajustes avanzados de texto (feature 008)', () => {
   it('un elemento que no es texto no se recorta ni se descarta', () => {
     const s = run(fresh(), { type: 'selectPage', page: 'portada' });
     const shape = els(s).find((e) => e.type === 'shape' || e.type === 'image')!;
-    const next = run(s, { type: 'patch', id: shape.id, patch: { x: shape.x }, now: T0 });
+    const next = run(s, { type: 'patch', id: shape.id, patch: { x: shape.x + 1 }, now: T0 });
     expect(next.past.length).toBe(s.past.length + 1);
+  });
+});
+
+describe('parche sin cambio (feature 009)', () => {
+  const patchOf = (s: EditorState, id: string, p: Record<string, unknown>, now = T0, key?: string): EditorState =>
+    run(s, { type: 'patch', id, patch: p as Partial<PageElement>, now, ...(key ? { key } : {}) });
+
+  it('un parche idéntico en una forma no agrega paso ni vacía el rehacer', () => {
+    const s0 = run(fresh(), { type: 'selectPage', page: 'portada' });
+    const shape = els(s0).find((e) => e.type === 'shape' || e.type === 'image')!;
+    const changed = patchOf(patchOf(s0, shape.id, { x: 11 }), shape.id, { x: 22 }, T0 + 5_000);
+    const undone = run(changed, { type: 'undo' });
+    expect(undone.future).toHaveLength(1);
+    const same = patchOf(undone, shape.id, { x: 11 }, T0 + 9_000);
+    expect(same).toBe(undone);
+    expect(same.future).toHaveLength(1);
+  });
+
+  it('un parche distinto sí agrega un paso', () => {
+    const s0 = run(fresh(), { type: 'selectPage', page: 'portada' });
+    const shape = els(s0).find((e) => e.type === 'shape' || e.type === 'image')!;
+    expect(patchOf(s0, shape.id, { x: shape.x + 1 }).past.length).toBe(s0.past.length + 1);
+  });
+
+  it('una insignia o el bloque de productos tampoco agregan paso con un parche idéntico', () => {
+    const s0 = run(fresh(), { type: 'selectPage', page: 'productos' });
+    const block = els(s0).find((e) => e.type === 'products') as ProductsEl;
+    expect(patchOf(s0, block.id, { nameColor: block.nameColor, layout: block.layout })).toBe(s0);
+    const next = patchOf(s0, block.id, { nameColor: '#abcdef' });
+    expect(next.past.length).toBe(s0.past.length + 1);
+  });
+
+  it('el fondo de la página: elegir el valor actual no agrega paso, uno distinto sí', () => {
+    const s0 = run(fresh(), { type: 'selectPage', page: 'portada' });
+    const current = activeTemplate(s0).pages.portada.bg as unknown as Record<string, unknown>;
+    expect(run(s0, { type: 'patchBg', patch: { color: current.color } as never, now: T0 })).toBe(s0);
+    const next = run(s0, { type: 'patchBg', patch: { color: '#0A0B0C' } as never, now: T0 });
+    expect(next.past.length).toBe(s0.past.length + 1);
+  });
+
+  it('un arrastre (misma clave) sigue siendo un solo paso de deshacer', () => {
+    const s0 = run(fresh(), { type: 'selectPage', page: 'portada' });
+    const shape = els(s0).find((e) => e.type === 'shape' || e.type === 'image')!;
+    let s = s0;
+    for (const [i, c] of ['#111111', '#222222', '#333333'].entries()) s = patchOf(s, shape.id, { x: 10 + i + c.length }, T0 + i * 100, 'x');
+    expect(s.past.length).toBe(s0.past.length + 1);
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PALETTE_PRESETS } from '../../backend/src/catalog/template-presets';
 import {
+  colorPanel,
   canvas,
   canvasEl,
   fireEvent,
@@ -65,7 +66,7 @@ describe('sección Estilo: paleta (FR-014, FR-015)', () => {
     // otro texto con un color fijo #12AB34
     openElements();
     click('Agregar texto');
-    fireEvent.change(within(screen.getByRole('group', { name: 'Relleno' })).getByLabelText('Color personalizado'), { target: { value: '#12ab34' } });
+    fireEvent.change(colorPanel('Relleno').getByLabelText('Color personalizado'), { target: { value: '#12ab34' } });
     const fixed = Array.from(canvas().querySelectorAll('[data-el-type="text"]'))
       .map((n) => n.getAttribute('data-el-id')!)
       .find((id) => colorOf(id) === 'rgb(18, 171, 52)')!;
@@ -157,7 +158,7 @@ describe('advertencias de contraste (FR-016)', () => {
     await start();
     openElements();
     click('Agregar título');
-    fireEvent.change(within(screen.getByRole('group', { name: 'Relleno' })).getByLabelText('Color personalizado'), { target: { value: '#11052D' } });
+    fireEvent.change(colorPanel('Relleno').getByLabelText('Color personalizado'), { target: { value: '#11052D' } });
     click('Estilo');
     expect(screen.queryByTestId('palette-warnings')).not.toBeInTheDocument();
   });

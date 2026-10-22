@@ -86,6 +86,7 @@ export default function Inspector({ template, page, el, actions, overflow }: Ins
             fields={fieldsFor(el, template, extrasFor(el))}
             values={el as unknown as Record<string, unknown>}
             palette={template.palette}
+            template={template}
             locked={el.locked}
             sectionOpen={sectionOpen}
             onSectionToggle={(id) => setSectionOpen((s) => ({ ...s, [id]: !s[id] }))}
@@ -107,6 +108,7 @@ export default function Inspector({ template, page, el, actions, overflow }: Ins
             fields={pageFields(bg)}
             values={bg as unknown as Record<string, unknown>}
             palette={template.palette}
+            template={template}
             onChange={(patch) => actions.patchBg(patch as Partial<PageBg>)}
           />
           <Layers els={els} selId={null} onSelect={actions.select} onToggleVisible={actions.toggleVisible} onToggleLock={actions.toggleLock} />

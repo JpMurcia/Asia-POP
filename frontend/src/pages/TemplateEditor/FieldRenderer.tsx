@@ -1,11 +1,6 @@
 import { useState } from 'react';
-import {
-  LIMITS,
-  PALETTE_KEYS,
-  PALETTE_LABELS,
-  isPaletteKey,
-  type Palette,
-} from '../../../../backend/src/catalog/template';
+import { LIMITS, type Palette, type Template } from '../../../../backend/src/catalog/template';
+import ColorPicker from './ColorPicker';
 import ImagePicker from './ImagePicker';
 import { clampBox } from './useTemplateEditor';
 import { TOKEN_CHIPS, type FieldAction, type FieldDesc } from './inspector-fields';
@@ -15,6 +10,8 @@ export interface FieldRendererProps {
   /** Valores actuales: el elemento seleccionado o el fondo de la página. */
   values: Record<string, unknown>;
   palette: Palette;
+  /** La plantilla: de ella salen «Colores de la plantilla» (paleta y colores libres de cualquier página). */
+  template?: Pick<Template, 'palette' | 'pages'>;
   /** `mergeKey` agrupa los cambios seguidos de un mismo campo (deslizar un rango) en un solo paso del historial. */
   onChange: (patch: Record<string, unknown>, mergeKey?: string) => void;
   /** Acción de un botón del inspector (por ejemplo, «Restaurar tamaños originales»). */
@@ -29,79 +26,11 @@ export interface FieldRendererProps {
 export const LOCKED_SECTION_HINT = 'Desbloquea el elemento para cambiar estos ajustes';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
-const HEX = /^#[0-9a-fA-F]{6}$/;
-
-/** Nombre accesible de cada muestra; el de la tinta no puede ser "Texto" porque chocaría con el campo de contenido. */
-const SWATCH_LABELS: Record<(typeof PALETTE_KEYS)[number], string> = { ...PALETTE_LABELS, ink: 'Texto de la paleta' };
-
-/** El color que muestra el selector nativo para un valor guardado (clave de paleta o `#RRGGBB`). */
-function hexOf(value: unknown, palette: Palette): string {
-  if (typeof value === 'string') {
-    if (isPaletteKey(value)) return palette[value];
-    if (HEX.test(value)) return value;
-  }
-  return '#000000';
-}
 
 /** Agrega un dato al final del texto, separado por un espacio si hace falta. */
 function appendToken(current: unknown, token: string): string {
   const text = typeof current === 'string' ? current : '';
   return text === '' || /\s$/.test(text) ? `${text}${token}` : `${text} ${token}`;
-}
-
-function ColorField({
-  desc,
-  value,
-  palette,
-  onChange,
-}: {
-  desc: Extract<FieldDesc, { kind: 'color' }>;
-  value: unknown;
-  palette: Palette;
-  onChange: FieldRendererProps['onChange'];
-}) {
-  const pick = (v: string) => onChange({ [desc.key]: v });
-  const custom = typeof value === 'string' && HEX.test(value) ? value.toUpperCase() : null;
-  return (
-    <div className="ed-field" role="group" aria-label={desc.label}>
-      <div className="ed-field-label">
-        <span>{desc.label}</span>
-      </div>
-      <div className="ed-swatches">
-        {PALETTE_KEYS.map((k) => (
-          <button
-            key={k}
-            type="button"
-            title={PALETTE_LABELS[k]}
-            aria-label={SWATCH_LABELS[k]}
-            aria-pressed={value === k}
-            className="ed-swatch"
-            style={{ background: palette[k] }}
-            onClick={() => pick(k)}
-          />
-        ))}
-        {desc.none && (
-          <button
-            type="button"
-            title={desc.none === 'none' ? 'Ninguno' : 'Transparente'}
-            aria-label={desc.none === 'none' ? 'Ninguno' : 'Transparente'}
-            aria-pressed={value === desc.none}
-            className="ed-swatch ed-swatch-none"
-            onClick={() => pick(desc.none!)}
-          />
-        )}
-        <input
-          type="color"
-          aria-label="Color personalizado"
-          title="Color personalizado"
-          className="ed-swatch ed-swatch-custom"
-          data-active={custom ? 'true' : undefined}
-          value={hexOf(value, palette)}
-          onChange={(e) => onChange({ [desc.key]: e.target.value.toUpperCase() }, desc.key)}
-        />
-      </div>
-    </div>
-  );
 }
 
 function RangeField({
@@ -209,7 +138,8 @@ function NumberField({
 }
 
 /** Dibuja la lista de descriptores de `inspector-fields.ts`: una línea por propiedad. */
-export default function FieldRenderer({ fields, values, palette, onChange, onAction, sectionOpen, onSectionToggle, locked }: FieldRendererProps) {
+export default function FieldRenderer({ fields, values, palette, template, onChange, onAction, sectionOpen, onSectionToggle, locked }: FieldRendererProps) {
+  const colorSource = template ?? { palette, pages: {} as Template['pages'] };
   return (
     <>
       {fields.map((f, i) => {
@@ -241,6 +171,7 @@ export default function FieldRenderer({ fields, values, palette, onChange, onAct
                       fields={f.fields}
                       values={values}
                       palette={palette}
+                      template={template}
                       onChange={onChange}
                       onAction={onAction}
                       sectionOpen={sectionOpen}
@@ -254,7 +185,18 @@ export default function FieldRenderer({ fields, values, palette, onChange, onAct
           }
 
           case 'color':
-            return <ColorField key={f.key} desc={f} value={values[f.key]} palette={palette} onChange={onChange} />;
+            return (
+              <ColorPicker
+                key={f.key}
+                label={f.label}
+                field={f.key}
+                value={values[f.key]}
+                template={colorSource}
+                none={f.none}
+                locked={locked}
+                onChange={onChange}
+              />
+            );
 
           case 'range':
             return <RangeField key={f.key} desc={f} value={values[f.key]} onChange={onChange} />;

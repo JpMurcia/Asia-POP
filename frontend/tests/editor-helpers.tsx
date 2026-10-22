@@ -93,3 +93,15 @@ export function setField(label: string | RegExp, value: string) {
 }
 
 export { fireEvent, screen, waitFor, within };
+
+/** Abre el selector de color de un campo (si no lo está) y devuelve consultas sobre su panel (feature 009). */
+export function colorPanel(field: string) {
+  const button = within(screen.getByRole('group', { name: field })).getByRole('button', { name: new RegExp(`^${field}: `) });
+  if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(button);
+  return within(screen.getByRole('dialog', { name: `Color: ${field}` }));
+}
+
+/** Elige una muestra por su nombre («Acento 2», «Ninguno», «Transparente»…) en el selector de color del campo. */
+export function pickColor(field: string, name: string) {
+  fireEvent.click(colorPanel(field).getByRole('button', { name }));
+}
