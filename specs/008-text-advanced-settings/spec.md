@@ -25,7 +25,7 @@ Las cifras de esta feature salen de mediciones reales del editor de Canva, hecha
 
 - **Altura de línea** (feature 007): de 0,8 a 2,5, paso 0,05, valor por defecto 1,05. Está dentro de la sección Tipografía del inspector.
 - **Espaciado entre letras**: ya existe como «Espaciado», en píxeles, de −2 a 12 con paso 0,5, valor por defecto 0. Las plantillas base lo usan (por ejemplo 0,4; 2 y 3).
-- **Anclaje vertical**: no existe; el texto siempre se coloca desde arriba de su caja.
+- **Anclaje vertical**: no existe como ajuste. Hoy el texto **siempre se centra verticalmente** dentro de su caja (la caja del texto es flexible con centrado vertical, `.tpl-text-box`); no se coloca desde arriba. *Corrección hecha en la planificación (2026-10-22), al leer el código: la primera versión de esta spec decía «desde arriba».*
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -64,7 +64,7 @@ La persona quiere un título con las letras muy separadas (estilo etiqueta o sel
 
 ### User Story 3 - Anclar el texto arriba, al medio o abajo de su caja (Priority: P2)
 
-Una caja de texto alta, por ejemplo la de un precio dentro de una etiqueta, hoy siempre deja el texto pegado arriba. La persona quiere elegir entre pegarlo arriba, centrarlo verticalmente o pegarlo abajo, con tres botones, como en la referencia.
+Una caja de texto alta, por ejemplo la de un título de varias líneas, hoy siempre deja el texto centrado verticalmente. La persona quiere elegir entre pegarlo arriba, dejarlo centrado o pegarlo abajo, con tres botones, como en la referencia.
 
 **Why this priority**: Resuelve un caso real de diseño (textos centrados en insignias y etiquetas) sin usar cálculos a mano, pero es una propiedad nueva y requiere guardarla.
 
@@ -72,8 +72,8 @@ Una caja de texto alta, por ejemplo la de un precio dentro de una etiqueta, hoy 
 
 **Acceptance Scenarios**:
 
-1. **Given** un texto en una caja más alta que su contenido, **When** la persona elige «Centro», **Then** el texto queda centrado verticalmente dentro de la caja, y con «Abajo» queda pegado al borde inferior.
-2. **Given** un texto nuevo o uno de una plantilla guardada antes de esta feature, **When** se abre el inspector, **Then** el anclaje activo es «Arriba», que es como siempre se dibujó.
+1. **Given** un texto en una caja más alta que su contenido, **When** la persona elige «Arriba», **Then** el texto queda pegado al borde superior de la caja, y con «Abajo» queda pegado al borde inferior.
+2. **Given** un texto nuevo o uno de una plantilla guardada antes de esta feature, **When** se abre el inspector, **Then** el anclaje activo es «Centro», que es como siempre se dibujó.
 3. **Given** un texto con anclaje distinto al de arriba, **When** se guarda, se recarga y se genera el PDF, **Then** el anclaje se conserva y el PDF coincide con el lienzo.
 
 ---
@@ -102,7 +102,7 @@ Para no recargar el inspector, los ajustes finos (altura de línea, espaciado en
 - Un ajuste continuo del deslizador (arrastrar sin soltar) cuenta como un solo paso de deshacer.
 - Una altura de línea muy baja con texto de varias líneas puede superponer líneas; es el efecto buscado y el editor no lo corrige.
 - Un espaciado muy amplio puede hacer que el texto no quepa en una línea; el ajuste automático de tamaño y los cortes de línea que ya usa el editor se mantienen y el PDF debe cortar igual que el lienzo.
-- Un texto con ajuste automático de tamaño y anclaje al medio o abajo debe seguir cabiendo dentro de su caja.
+- Un texto con ajuste automático de tamaño y cualquier anclaje debe seguir cabiendo dentro de su caja.
 - Una plantilla que trae un valor fuera de los nuevos rangos (por ejemplo, creada a mano) se rechaza al guardar con el mismo tipo de mensaje de validación que ya existe.
 
 ## Requirements *(mandatory)*
@@ -124,8 +124,8 @@ Para no recargar el inspector, los ajustes finos (altura de línea, espaciado en
 **Anclaje vertical**
 
 - **FR-007**: Todo elemento de texto MUST tener un **anclaje vertical** con tres opciones: **Arriba**, **Centro** y **Abajo**, elegibles con tres botones donde se ve cuál está activo.
-- **FR-008**: El anclaje por defecto, en textos nuevos y en textos de plantillas guardadas antes de esta feature, MUST ser **Arriba**, que es como el editor siempre dibujó el texto.
-- **FR-009**: Con anclaje Centro o Abajo, el texto MUST quedar centrado o pegado al borde inferior de su caja, con las mismas reglas de ajuste de tamaño y de corte de líneas que ya usa el editor; con anclaje Arriba nada cambia.
+- **FR-008**: El anclaje por defecto, en textos nuevos y en textos de plantillas guardadas antes de esta feature, MUST ser **Centro**, que es como el editor siempre dibujó el texto (así ninguna plantilla guardada cambia). La referencia de Canva usa «comienzo» como valor inicial; adoptarlo queda fuera de esta feature.
+- **FR-009**: Con anclaje Centro o Abajo, el texto MUST quedar centrado o pegado al borde inferior de su caja, con las mismas reglas de ajuste de tamaño y de corte de líneas que ya usa el editor; con anclaje Centro nada cambia.
 
 **Panel «Configuración avanzada»**
 
@@ -145,7 +145,7 @@ Para no recargar el inspector, los ajustes finos (altura de línea, espaciado en
 ### Key Entities *(include if feature involves data)*
 
 - **Elemento de texto**: pieza de texto de una plantilla. Se amplía con un **anclaje vertical** (arriba, centro, abajo) y con rangos nuevos para altura de línea y espaciado entre letras. Mantiene todas sus demás propiedades.
-- **Plantilla**: conjunto de páginas y elementos que se guarda para generar el catálogo. Las plantillas anteriores a esta feature no traen el anclaje y se leen con el valor por defecto.
+- **Plantilla**: conjunto de páginas y elementos que se guarda para generar el catálogo. Las plantillas anteriores a esta feature no traen el anclaje y se leen como «Centro».
 - **Panel «Configuración avanzada»**: agrupación de controles dentro del inspector de texto; no guarda datos propios salvo si está abierto o cerrado durante la edición.
 
 ## Success Criteria *(mandatory)*
@@ -155,7 +155,7 @@ Para no recargar el inspector, los ajustes finos (altura de línea, espaciado en
 - **SC-001**: Las **4 plantillas base** y cualquier plantilla guardada antes de esta feature producen un PDF **idéntico byte a byte** al de antes en todas sus páginas.
 - **SC-002**: La altura de línea puede fijarse en cualquier valor de 0,5 a 2,5 con dos decimales, y un valor como 1,37 se guarda y se muestra exactamente así tras recargar.
 - **SC-003**: Un texto con altura de línea, espaciado o anclaje modificados muestra **los mismos cortes de línea** y la misma posición en el lienzo y en el PDF, en las cuatro plantillas base.
-- **SC-004**: Centrar un texto verticalmente dentro de su caja toma **un clic** (hoy requiere calcular la posición a mano), y el centro del texto queda a menos de **0,5 %** de la altura de la caja de su posición ideal.
+- **SC-004**: Pegar un texto arriba o abajo de su caja toma **un clic** (hoy requiere calcular la posición a mano), y su borde queda a menos de **0,5 %** de la altura de la caja del borde de ésta.
 - **SC-005**: Un cambio en cualquiera de los tres ajustes se ve en el lienzo en **menos de 0,2 segundos**, la misma meta que el resto de controles del editor.
 - **SC-006**: La persona encuentra los tres ajustes en un solo lugar, sin repetirlos en otra sección del inspector, y los abre con **un clic**.
 - **SC-007**: Ningún texto de las plantillas existentes cambia al ampliar el rango del espaciado, comprobado comparando cada plantilla antes y después.
@@ -165,7 +165,7 @@ Para no recargar el inspector, los ajustes finos (altura de línea, espaciado en
 - Quien usa el editor es el administrador del catálogo, en un computador con navegador de escritorio; no se considera uso en móvil.
 - La altura de línea ya es una propiedad opcional y guardada (feature 007), por eso ampliar su rango no cambia el formato de las plantillas.
 - El espaciado entre letras ya es una propiedad guardada de todos los textos, en píxeles; ampliar su rango no cambia el formato de guardado ni cómo se ven los textos existentes. El rango −10…60 px con paso 0,1 es una elección razonable por defecto y se puede afinar en la planificación.
-- El anclaje vertical es una propiedad nueva y opcional: si falta, se entiende como «Arriba».
+- El anclaje vertical es una propiedad nueva y opcional: si falta, se entiende como «Centro», que es como el editor dibuja hoy todos los textos.
 - La línea base de PDFs de la feature 007 (`specs/007-editor-align-text-tools/visual/baseline/`) sigue vigente como comparación de referencia.
 - La referencia de Canva se usó solo para medir rangos, pasos y organización; no se busca igualar su aspecto visual ni su marca.
 - Quedan fuera: cambiar el valor por defecto de la altura de línea, nuevos tipos de elemento, sangrías, listas, efectos de texto y cualquier cambio en la tipografía disponible.
