@@ -10,7 +10,7 @@ import {
 import { baseTemplate, draftText } from '../../backend/src/catalog/template-presets';
 import type { CatalogItem } from '../../backend/src/catalog/types';
 import TemplatePage from '../src/print/TemplatePage';
-import { FONT_STACKS, IMAGES, fontFamily, weightFor } from '../src/print/assets';
+import { FONT_STACKS, IMAGES, fontFamily, imageSrc, weightFor } from '../src/print/assets';
 
 const business = {
   storeName: 'ASIANPOP MARKET+',
@@ -221,6 +221,59 @@ describe('TemplatePage', () => {
       const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
       expect(find(container, 'ins')!.querySelector('[data-fit="true"]')).toBeTruthy();
       expect(find(container, 'ins')).toHaveTextContent('RAMEN');
+    });
+  });
+
+  describe('altura de línea (feature 007)', () => {
+    const textOf = (container: HTMLElement, id: string) => find(container, id)!.querySelector<HTMLElement>('.tpl-text')!;
+
+    it('un texto sin lh se dibuja con 1.05, como antes de la feature', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push({ ...draftText({ text: 'Viejo' }), id: 'viejo' });
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      expect(textOf(container, 'viejo').style.lineHeight).toBe('1.05');
+    });
+
+    it('usa la altura de línea del texto, también en uno con datos insertables', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push(
+        { ...draftText({ text: 'Libre', lh: 1.6 }), id: 'libre' },
+        { ...draftText({ text: 'Tel {telefonos}', lh: 2 }), id: 'con-dato' },
+      );
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      expect(textOf(container, 'libre').style.lineHeight).toBe('1.6');
+      expect(textOf(container, 'con-dato').style.lineHeight).toBe('2');
+    });
+  });
+
+  describe('tachado (feature 007)', () => {
+    const textOf = (container: HTMLElement, id: string) => find(container, id)!.querySelector<HTMLElement>('.tpl-text')!;
+
+    it('un texto sin strike no se tacha y uno con strike sí', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push(
+        { ...draftText({ text: 'Normal' }), id: 'normal' },
+        { ...draftText({ text: '$25.000', strike: true }), id: 'antes' },
+        { ...draftText({ text: 'Apagado', strike: false }), id: 'apagado' },
+      );
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      expect(textOf(container, 'normal').style.textDecorationLine).toBe('');
+      expect(textOf(container, 'antes').style.textDecorationLine).toBe('line-through');
+      expect(textOf(container, 'apagado').style.textDecorationLine).toBe('');
+    });
+
+    it('convive con contorno, resplandor y mayúsculas', () => {
+      const t = baseTemplate('neon');
+      t.pages.portada.els.push({
+        ...draftText({ text: 'Oferta', strike: true, stroke: '#000000', strokeW: 2, glow: 'a1', upper: true }),
+        id: 'todo',
+      });
+      const { container } = render(<TemplatePage template={t} page="portada" tokens={tokens} />);
+      const style = textOf(container, 'todo').style;
+      expect(style.textDecorationLine).toBe('line-through');
+      expect(style.getPropertyValue('-webkit-text-stroke')).not.toBe('');
+      expect(style.textShadow).not.toBe('');
+      expect(style.textTransform).toBe('uppercase');
     });
   });
 
@@ -570,9 +623,14 @@ describe('TemplatePage', () => {
 });
 
 describe('assets', () => {
-  it('registra las cinco imágenes', () => {
-    expect(Object.keys(IMAGES).sort()).toEqual(['collage', 'coverbg', 'frame', 'logo', 'marble']);
+  it('registra las siete imágenes fijas (las cinco de siempre, la estrella y el ícono de contacto de la feature 010)', () => {
+    expect(Object.keys(IMAGES).sort()).toEqual(['chat', 'collage', 'coverbg', 'frame', 'logo', 'marble', 'sparkle']);
     for (const url of Object.values(IMAGES)) expect(typeof url).toBe('string');
+  });
+
+  it('imageSrc resuelve una imagen fija a su archivo y una subida a /media/uploads', () => {
+    expect(imageSrc('logo')).toBe(IMAGES.logo);
+    expect(imageSrc('upload:tpl-ab12.png')).toBe('/media/uploads/tpl-ab12.png');
   });
 
   it('tiene una pila tipográfica por cada una de las seis familias', () => {

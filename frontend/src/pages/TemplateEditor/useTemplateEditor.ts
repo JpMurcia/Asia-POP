@@ -101,6 +101,8 @@ export type EditorAction =
   | { type: 'reorder'; id: string; dir: 1 | -1 }
   | { type: 'toggleLock'; id: string }
   | { type: 'toggleVisible'; id: string }
+  /** Alinea el elemento a un borde o al centro de la hoja (feature 007). */
+  | { type: 'align'; id: string; edge: AlignEdge; now: number }
   | { type: 'undo' }
   | { type: 'redo' }
   /** `sent` es lo que se envió al servidor: si el usuario siguió editando mientras tanto, esas ediciones se conservan. */
@@ -395,6 +397,15 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
       return editorReducer(s, { type: 'patch', id: action.id, patch: { locked: !el.locked }, now: 0 });
     }
 
+    case 'align': {
+      const el = currentPage(s).els.find((e) => e.id === action.id);
+      // Un bloqueado no se mueve (como al arrastrar o con las flechas); sin cambio no hay paso que deshacer
+      if (!el || el.locked) return s;
+      const patch = alignBox(el, action.edge);
+      if (Object.entries(patch).every(([k, v]) => el[k as keyof typeof patch] === v)) return s;
+      return editorReducer(s, { type: 'patch', id: action.id, patch, now: action.now });
+    }
+
     case 'toggleVisible': {
       const el = currentPage(s).els.find((e) => e.id === action.id);
       if (!el) return s;
@@ -586,6 +597,29 @@ export const clampBox = {
   photoH: (v: number) => Math.min(RANGES.photoScale[1], Math.max(RANGES.photoScale[0], v)),
 };
 
+export type AlignEdge = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom';
+
+/**
+ * Posición que pega la caja (sin rotar, en % de la hoja) a un borde o al centro de la hoja. Solo devuelve el eje que
+ * cambia; no toca el tamaño. Acotada y redondeada como el resto de posiciones del editor.
+ */
+export function alignBox(box: { x: number; y: number; w: number; h: number }, edge: AlignEdge): { x: number } | { y: number } {
+  switch (edge) {
+    case 'left':
+      return { x: clampBox.x(0) };
+    case 'hcenter':
+      return { x: clampBox.x(round1((100 - box.w) / 2)) };
+    case 'right':
+      return { x: clampBox.x(round1(100 - box.w)) };
+    case 'top':
+      return { y: clampBox.y(0) };
+    case 'vcenter':
+      return { y: clampBox.y(round1((100 - box.h) / 2)) };
+    case 'bottom':
+      return { y: clampBox.y(round1(100 - box.h)) };
+  }
+}
+
 /** El estado del editor y sus acciones (cada una agrega la hora, para que el reductor siga siendo puro). */
 export function useTemplateEditor(initial: { workspace: EditorWorkspace; revision: number }) {
   const [state, dispatch] = useReducer(editorReducer, initial, (i) => createEditorState(i.workspace, i.revision));
@@ -613,6 +647,7 @@ export function useTemplateEditor(initial: { workspace: EditorWorkspace; revisio
       reorder: (id: string, dir: 1 | -1) => dispatch({ type: 'reorder', id, dir }),
       toggleLock: (id: string) => dispatch({ type: 'toggleLock', id }),
       toggleVisible: (id: string) => dispatch({ type: 'toggleVisible', id }),
+      align: (id: string, edge: AlignEdge) => dispatch({ type: 'align', id, edge, now: Date.now() }),
       undo: () => dispatch({ type: 'undo' }),
       redo: () => dispatch({ type: 'redo' }),
       saved: (workspace: EditorWorkspace, revision: number, sent?: EditorWorkspace) =>

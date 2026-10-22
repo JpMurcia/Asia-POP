@@ -2,6 +2,7 @@ import {
   FONT_KEYS,
   FONT_LABELS,
   RANGES,
+  TEXT_DEFAULTS,
   WEIGHTS,
   isAutoBlock,
   type PageBg,
@@ -28,12 +29,16 @@ export type FieldDesc =
       scale?: number;
       /** Desde este valor la esquina es un círculo (imágenes). */
       circleAt?: number;
+      /** Valor que se muestra cuando la propiedad falta (opcionales de 007, como la altura de línea). */
+      fallback?: number;
     }
   | { kind: 'segmented'; key: string; label: string; options: readonly (readonly [string | number, string])[] }
   | { kind: 'select'; key: string; label: string; options: readonly (readonly [string, string])[] }
   | { kind: 'textarea'; key: string; label: string; rows?: number }
   | { kind: 'tokens'; key: string; label: string }
   | { kind: 'toggle'; key: string; label: string }
+  /** Imágenes subidas por la persona (feature 010): elegir, subir y borrar. Escribe `key` con `upload:<archivo>`. */
+  | { kind: 'imagePicker'; key: string; label: string }
   | {
       kind: 'numbers';
       items: readonly (readonly [string, string])[];
@@ -92,6 +97,8 @@ export const IMAGE_OPTIONS = [
   ['marble', 'Mármol'],
   ['coverbg', 'Atardecer'],
   ['frame', 'Marco de portada'],
+  ['sparkle', 'Estrella'],
+  ['chat', 'Contacto'],
 ] as const;
 
 const WEIGHT_LABELS: Record<(typeof WEIGHTS)[number], string> = { 400: 'Normal', 600: 'Semi', 700: 'Negrita', 900: 'Black' };
@@ -110,7 +117,9 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
         seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
         range('ls', 'Espaciado', RANGES.ls, 0.5),
+        { ...(range('lh', 'Altura de línea', RANGES.lh, 0.05, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },
+        { kind: 'toggle', key: 'strike', label: 'Tachado' },
         heading('Color y efectos'),
         color('color', 'Relleno'),
         color('stroke', 'Contorno', 'none'),
@@ -141,6 +150,7 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
     case 'image':
       return [
         seg('src', 'Imagen', IMAGE_OPTIONS),
+        { kind: 'imagePicker', key: 'src', label: 'Mis imágenes' },
         seg('fit', 'Ajuste', [['contain', 'Contener'], ['cover', 'Cubrir'], ['fill', 'Estirar']]),
         { ...(range('radius', 'Esquinas', RANGES.imageRadius, 2) as Extract<FieldDesc, { kind: 'range' }>), circleAt: RANGES.imageRadius[1] },
       ];
@@ -160,14 +170,15 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         { kind: 'note', id: 'products-photo-note', text: extras.photoNote ?? '' },
         { kind: 'button', label: 'Restaurar tamaños originales', action: 'restoreProductSizes' },
         { kind: 'note', id: 'products-unlock-note', text: 'Para arrastrar la zona en la página, pulsa Desbloquear.' },
-        seg('layout', 'Distribución', [['alternado', 'Alternado'], ['tarjetas', 'Tarjetas'], ['lista', 'Lista']]),
+        seg('layout', 'Distribución', [['alternado', 'Alternado'], ['tarjetas', 'Tarjetas'], ['lista', 'Lista'], ['base', 'Base']]),
         heading('Nombre del producto'),
-        seg('nameStyle', 'Estilo del nombre', [['separado', 'Separado'], ['burbuja', 'Dentro de la burbuja']]),
+        seg('nameStyle', 'Estilo del nombre', [['separado', 'Separado'], ['burbuja', 'En la burbuja'], ['tarjeta', 'En la tarjeta']]),
         color('nameColor', 'Color del nombre'),
         ...(p.nameStyle === 'separado'
           ? [color('nameFill', 'Fondo del rótulo', 'transparent'), { kind: 'toggle', key: 'nameGlow', label: 'Resplandor neón' } as FieldDesc]
           : []),
         heading('Foto del producto'),
+        seg('cardStyle', 'Foto', [['plana', 'Original'], ['tarjeta', 'Tarjeta']]),
         color('cardFill', 'Fondo de la foto', 'transparent'),
         color('ring', 'Anillo'),
         range('ringW', 'Grosor del anillo', RANGES.ringW, 1),
@@ -176,14 +187,17 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         color('bubbleFill', 'Burbuja', 'transparent'),
         color('textColor', 'Texto'),
         range('bubbleRadius', 'Esquinas de la burbuja', RANGES.bubbleRadius, 1),
+        { kind: 'toggle', key: 'bubbleShadow', label: 'Sombra de la burbuja' },
         heading('Precio'),
         color('priceFill', 'Fondo', 'transparent'),
         color('priceBorder', 'Borde', 'none'),
         color('priceText', 'Texto del precio'),
         seg('priceShape', 'Forma', [['pill', 'Píldora'], ['round', 'Suave'], ['square', 'Recta']]),
+        { kind: 'toggle', key: 'priceGlow', label: 'Resplandor neón del precio' },
         heading('Agotados'),
-        seg('sold', 'Estilo', [['sello', 'Sello'], ['cinta', 'Cinta'], ['gris', 'Gris']]),
-        ...(p.sold === 'cinta' ? [color('soldFill', 'Color de la cinta')] : []),
+        seg('sold', 'Estilo', [['sello', 'Sello'], ['cinta', 'Cinta'], ['gris', 'Gris'], ['diagonal', 'Diagonal']]),
+        ...(p.sold === 'cinta' || p.sold === 'diagonal' ? [color('soldFill', 'Color de la cinta')] : []),
+        ...(p.sold === 'diagonal' ? [{ kind: 'toggle', key: 'soldGlow', label: 'Resplandor neón de la cinta' } as FieldDesc] : []),
       ];
     }
     case 'terms':

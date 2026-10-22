@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }));
-const BASES = ['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal'];
+const BASES = ['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal', 'Base AsianPop'];
 
 async function start() {
   const api = mockEditorApi();
@@ -95,7 +95,7 @@ describe('crear una plantilla (FR-020)', () => {
     expect(nameInput().value).toBe(`Nueva · ${base}`);
     expect(status()).toHaveTextContent('Cambios sin guardar');
     openGallery();
-    expect(cards()).toHaveLength(5);
+    expect(cards()).toHaveLength(BASES.length + 1);
     expect(cardNames().at(-1)).toBe(`Nueva · ${base}`);
   });
 
@@ -184,7 +184,7 @@ describe('duplicar, usar al generar y eliminar', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     openGallery();
     fireEvent.click(within(card('Kraft minimal')).getByRole('button', { name: 'Eliminar' }));
-    expect(cardNames()).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel']);
+    expect(cardNames()).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Base AsianPop']);
     expect(status()).toHaveTextContent('Cambios sin guardar');
   });
 
@@ -246,7 +246,7 @@ describe('nombre de la plantilla (FR-018)', () => {
     await start();
     setField('Nombre de la plantilla', 'Navidad');
     openGallery();
-    expect(cardNames()).toEqual(['Navidad', 'Pop crema', 'Kawaii pastel', 'Kraft minimal']);
+    expect(cardNames()).toEqual(['Navidad', ...BASES.slice(1)]);
   });
 
   it('un nombre vacío no se puede guardar y se avisa; al escribir uno válido se puede', async () => {
@@ -298,9 +298,9 @@ describe('panel Plantillas', () => {
   it('es el panel que se abre por defecto: lista las plantillas con su marca', async () => {
     await start();
     const panel = screen.getByTestId('templates-panel');
-    expect(within(panel).getAllByTestId('panel-template')).toHaveLength(4);
+    expect(within(panel).getAllByTestId('panel-template')).toHaveLength(BASES.length);
     expect(within(panel).getByText('Predeterminada')).toBeInTheDocument();
-    expect(within(panel).getAllByTestId('palette-dot')).toHaveLength(20);
+    expect(within(panel).getAllByTestId('palette-dot')).toHaveLength(BASES.length * 5);
   });
 
   it('elegir una plantilla de la lista la abre en el editor', async () => {
@@ -334,11 +334,11 @@ describe('guardar con varias plantillas', () => {
     await waitFor(() => expect(api.puts()).toHaveLength(1));
     const body = api.puts()[0]!.body as { defaultId: string; templates: { id: string; name: string; base: string }[] };
     expect(body.defaultId).toBe('pop');
-    expect(body.templates.map((t) => t.name)).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Nueva · Kawaii pastel', 'Neón Noche (copia)']);
+    expect(body.templates.map((t) => t.name)).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Base AsianPop', 'Nueva · Kawaii pastel', 'Neón Noche (copia)']);
     const created = body.templates.find((t) => t.name === 'Nueva · Kawaii pastel')!;
     expect(created.base).toBe('kawaii');
     expect(created.id).toMatch(/^t[0-9a-z]+$/);
-    expect(new Set(body.templates.map((t) => t.id)).size).toBe(5);
+    expect(new Set(body.templates.map((t) => t.id)).size).toBe(6);
     await waitFor(() => expect(status()).toHaveTextContent('Todo guardado'));
   });
 });

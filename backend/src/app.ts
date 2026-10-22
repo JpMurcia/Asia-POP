@@ -12,6 +12,7 @@ import { customRoutes } from './api/custom.routes';
 import { errorHandler, notFound } from './api/errors';
 import { panelRoutes } from './api/panel.routes';
 import { sectionsRoutes } from './api/sections.routes';
+import { templateImagesRoutes } from './api/template-images.routes';
 import { templatesRoutes } from './api/templates.routes';
 import { uncategorizedRoutes } from './api/uncategorized.routes';
 import { requireAuth } from './auth/middleware';
@@ -48,6 +49,7 @@ export function createApp(ctx: AppContext): Express {
   api.use(bundlesRoutes(ctx));
   api.use(businessRoutes(ctx));
   api.use(templatesRoutes(ctx));
+  api.use(templateImagesRoutes(ctx));
 
   app.use('/api', api);
   app.use('/api', notFound);

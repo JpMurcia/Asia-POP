@@ -1,7 +1,7 @@
 import { HttpError } from '../api/errors';
 import type { Db } from '../db/database';
 import { BusinessSettingsRepo } from './settings.repo';
-import type { Template, TemplateDoc, TemplateSummary, WorkspaceState } from './template';
+import { usesPhotoCards, type Template, type TemplateDoc, type TemplateSummary, type WorkspaceState } from './template';
 import { BASE_TEMPLATES, normalizeProductsBlocks } from './template-presets';
 import type { BusinessSettings } from './types';
 
@@ -185,7 +185,14 @@ export class TemplateRepo {
       defaultId: default_template_id,
       items: this.rows().map((row) => {
         const t = toTemplate(row);
-        return { id: t.id, name: t.name, isDefault: t.id === default_template_id, palette: t.palette, fonts: t.fonts };
+        return {
+          id: t.id,
+          name: t.name,
+          isDefault: t.id === default_template_id,
+          palette: t.palette,
+          fonts: t.fonts,
+          ...(usesPhotoCards(t) ? { photoCards: true as const } : {}),
+        };
       }),
     };
   }

@@ -1,13 +1,20 @@
-import type { FontKey, FontRef, ImageKey, Template } from '../../../backend/src/catalog/template';
+import type { FontKey, FontRef, ImageKey, ImageSrc, Template } from '../../../backend/src/catalog/template';
+import chat from '../assets/print/chat.svg';
 import collage from '../assets/print/collage.png';
 import coverbg from '../assets/print/cover-bg.jpg';
 import frame from '../assets/print/frame.png';
 import logo from '../assets/print/logo.png';
 import marble from '../assets/print/marble.jpg';
 import soldOut from '../assets/print/sold-out.png';
+import sparkle from '../assets/print/sparkle.svg';
 
-/** Las cinco imágenes que ofrece el editor (subir imágenes propias queda fuera de esta versión). */
-export const IMAGES: Record<ImageKey, string> = { logo, collage, marble, coverbg, frame };
+/** Las imágenes fijas que ofrece el editor; las que sube la persona van aparte (`imageSrc`, feature 010). */
+export const IMAGES: Record<ImageKey, string> = { logo, collage, marble, coverbg, frame, sparkle, chat };
+
+/** La dirección de una imagen de elemento: la fija de la galería o la subida (`upload:<archivo>` → `/media/uploads/…`). */
+export function imageSrc(src: ImageSrc): string {
+  return src.startsWith('upload:') ? `/media/uploads/${src.slice('upload:'.length)}` : IMAGES[src as ImageKey];
+}
 
 /** Sello AGOTADO de Cat.pdf. */
 export const SOLD_OUT_SEAL = soldOut;

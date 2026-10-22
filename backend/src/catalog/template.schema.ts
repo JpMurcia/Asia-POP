@@ -7,6 +7,7 @@ import { z } from 'zod';
 import {
   AUTO_BLOCK_TYPES,
   BASE_IDS,
+  CARD_STYLES,
   FONT_KEYS,
   IMAGE_KEYS,
   LIMITS,
@@ -15,6 +16,7 @@ import {
   PRODUCTS_ZONE_MIN,
   RANGES,
   REQUIRED_BLOCKS,
+  UPLOAD_IMAGE_RE,
   WEIGHTS,
   isColorRef,
   type AutoBlockType,
@@ -105,6 +107,9 @@ const textEl = z.object({
   align: oneOf(['left', 'center', 'right'], 'La alineación'),
   upper: z.boolean({ error: 'Debe ser verdadero o falso.' }),
   ls: num(RANGES.ls, 'El espaciado'),
+  // Opcionales: si faltan, se dibujan con TEXT_DEFAULTS. Hay que declararlos: z.object descarta las claves que no conoce
+  lh: num(RANGES.lh, 'La altura de línea').optional(),
+  strike: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
 });
 
 const badgeEl = z.object({
@@ -128,10 +133,18 @@ const shapeEl = z.object({
   glow: colorRef,
 });
 
+/** Una imagen de la galería o una subida (`upload:<archivo>`, sin separadores ni `..`). */
+const imageSrc = z
+  .string({ error: 'La imagen: valor no válido.' })
+  .refine(
+    (v) => (IMAGE_KEYS as readonly string[]).includes(v) || (UPLOAD_IMAGE_RE.test(v) && !v.includes('..')),
+    'La imagen: valor no válido.',
+  ) as z.ZodType<(typeof IMAGE_KEYS)[number] | `upload:${string}`>;
+
 const imageEl = z.object({
   ...free,
   type: z.literal('image'),
-  src: oneOf(IMAGE_KEYS, 'La imagen'),
+  src: imageSrc,
   fit: oneOf(['contain', 'cover', 'fill'], 'El ajuste'),
   radius: num(RANGES.imageRadius, 'Las esquinas'),
 });
@@ -149,7 +162,7 @@ const ZONE_MIN_MESSAGE = `La zona de productos debe medir al menos ${PRODUCTS_ZO
 const productsEl = z.object({
   ...auto,
   type: z.literal('products'),
-  layout: oneOf(['alternado', 'tarjetas', 'lista'], 'La distribución'),
+  layout: oneOf(['alternado', 'tarjetas', 'lista', 'base'], 'La distribución'),
   cardFill: colorRef,
   ring: colorRef,
   ringW: num(RANGES.ringW, 'El grosor del anillo'),
@@ -161,7 +174,7 @@ const productsEl = z.object({
   priceBorder: colorRef,
   priceText: colorRef,
   priceShape: oneOf(['pill', 'round', 'square'], 'La forma del precio'),
-  sold: oneOf(['sello', 'cinta', 'gris'], 'El estilo de agotado'),
+  sold: oneOf(['sello', 'cinta', 'gris', 'diagonal'], 'El estilo de agotado'),
   soldFill: colorRef,
   photoW: num(RANGES.photoScale, 'El ancho de la foto'),
   photoH: num(RANGES.photoScale, 'El alto de la foto'),
@@ -169,6 +182,12 @@ const productsEl = z.object({
   nameColor: colorRef,
   nameFill: colorRef,
   nameGlow: z.boolean({ error: 'Debe ser verdadero o falso.' }),
+  // Feature 010, opcionales: hay que declararlos porque z.object descarta las claves que no conoce
+  cardStyle: oneOf(CARD_STYLES, 'El estilo de la foto').optional(),
+  priceGlow: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  soldGlow: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  bubbleShadow: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  descLh: num(RANGES.lh, 'La altura de línea de la descripción').optional(),
 })
   // La zona de productos tiene un mínimo propio (el rango genérico dejaría una zona de 3 %); solo aplica a este bloque
   .refine((el) => el.w >= PRODUCTS_ZONE_MIN.w, { path: ['w'], error: ZONE_MIN_MESSAGE })

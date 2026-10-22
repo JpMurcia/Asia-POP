@@ -8,6 +8,12 @@ import {
   PDF_QUALITY_OPTIONS,
   type PdfQuality,
 } from '../../../backend/src/catalog/pdf-quality';
+import {
+  DEFAULT_PHOTO_BACKDROP,
+  PHOTO_BACKDROPS,
+  PHOTO_BACKDROP_OPTIONS,
+  type PhotoBackdrop,
+} from '../../../backend/src/catalog/photo-backdrop';
 import { PHOTO_REASON_LABEL } from '../../../backend/src/catalog/photo-reasons';
 import type { TemplateSummary } from '../../../backend/src/catalog/template';
 import type {
@@ -34,6 +40,8 @@ interface Job {
   quality?: PdfQuality;
   /** Solo al terminar y solo si hay alguno: los productos cuyo texto no cupo completo en el PDF. */
   textOverflow?: TextOverflow[];
+  /** Solo al terminar y solo si hay alguno: los productos cuya foto-tarjeta se dejó con su fondo original. */
+  backdropFallbacks?: { item: string }[];
 }
 
 /** Cuántos nombres de producto se listan en el aviso de textos que no caben; el resto se cuenta. */
@@ -72,6 +80,8 @@ export default function Generate() {
   const [templateId, setTemplateId] = useState<string | null>(null);
   /** Calidad del PDF de ESTA generación: parte siempre de Optimizada, solo se envía al generar y no se recuerda. */
   const [quality, setQuality] = useState<PdfQuality>(DEFAULT_PDF_QUALITY);
+  /** Fondo de las foto-tarjetas de ESTA generación; solo se envía si la plantilla elegida las usa. */
+  const [photoBackdrop, setPhotoBackdrop] = useState<PhotoBackdrop>(DEFAULT_PHOTO_BACKDROP);
   const [fallbackNotice, setFallbackNotice] = useState('');
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [decisions, setDecisions] = useState<Record<string, BundleDecision>>({});
@@ -129,6 +139,9 @@ export default function Generate() {
     return () => clearInterval(timer.current);
   }, [poll, startPolling]);
 
+  const usesCards = templates.find((t) => t.id === templateId)?.photoCards === true;
+  const backdrop = usesCards ? photoBackdrop : undefined;
+
   const optionsBody = useMemo(
     () => ({
       sectionKeys: selected ? [...selected].sort() : undefined,
@@ -136,8 +149,9 @@ export default function Generate() {
       bannerText: banner.trim() || undefined,
       bundleDecisions: decisions,
       templateId: templateId ?? undefined,
+      photoBackdrop: backdrop,
     }),
-    [selected, hideSoldOut, banner, decisions, templateId],
+    [selected, hideSoldOut, banner, decisions, templateId, backdrop],
   );
 
   // Cambiar opciones recalcula informe y estructura en el servidor, sin volver a consultar Alegra
@@ -175,6 +189,7 @@ export default function Generate() {
         hideSoldOut,
         bannerText: banner.trim() || undefined,
         templateId: templateId ?? undefined,
+        photoBackdrop: backdrop,
       });
       lastSent.current = JSON.stringify({
         sectionKeys: undefined,
@@ -182,6 +197,7 @@ export default function Generate() {
         bannerText: banner.trim() || undefined,
         bundleDecisions: {},
         templateId: templateId ?? undefined,
+        photoBackdrop: backdrop,
       });
       setPrepared(res);
     } catch (e) {
@@ -201,6 +217,7 @@ export default function Generate() {
         prepareId: prepared.prepareId,
         bundleDecisions: decisions,
         quality,
+        photoBackdrop: backdrop,
       });
       // La plantilla elegida se pudo eliminar (p. ej. desde otra pestaña): se usó la predeterminada
       if (res.template?.fallback) {
@@ -295,6 +312,45 @@ export default function Generate() {
             <p className="text-xs text-pop-muted">
               Solo cambia esta generación; la predeterminada se elige en Apariencia.
             </p>
+          </fieldset>
+        )}
+
+        {usesCards && (
+          <fieldset className="flex flex-col gap-2" disabled={working} data-testid="photo-backdrop">
+            <legend className="text-[13px] font-semibold mb-1">Fondo de la foto</legend>
+            <div className="flex gap-4 flex-wrap items-start">
+              <div className="grid gap-2 flex-1 min-w-[260px] [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+                {PHOTO_BACKDROPS.map((b) => {
+                  const option = PHOTO_BACKDROP_OPTIONS[b];
+                  return (
+                    <label
+                      key={b}
+                      className={`flex items-start gap-2 text-sm px-3 py-2 rounded-pop border cursor-pointer ${
+                        photoBackdrop === b ? 'border-pop-accent bg-pop-stripe' : 'border-pop-line bg-pop-surface2'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="photo-backdrop"
+                        className="mt-1"
+                        checked={photoBackdrop === b}
+                        onChange={() => setPhotoBackdrop(b)}
+                      />
+                      <span className="flex-1 min-w-0">
+                        <span className="font-bold block">{option.label}</span>
+                        <span className="block text-xs text-pop-muted">{option.hint}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {prepared ? (
+                <CardPreview prepareId={prepared.prepareId} backdrop={photoBackdrop} templateId={templateId} syncing={syncing} />
+              ) : (
+                <p className="text-xs text-pop-muted max-w-[160px]">Prepara el catálogo para ver una tarjeta de ejemplo.</p>
+              )}
+            </div>
+            <p className="text-xs text-pop-muted">Solo cambia esta generación.</p>
           </fieldset>
         )}
 
@@ -504,6 +560,7 @@ export default function Generate() {
             </a>
           </Alert>
           {job.textOverflow && job.textOverflow.length > 0 && <TextOverflowNotice entries={job.textOverflow} />}
+          {job.backdropFallbacks && job.backdropFallbacks.length > 0 && <BackdropFallbackNotice entries={job.backdropFallbacks} />}
           {/* Solo con Optimizada: con Original la persona eligió conservar las fotos y no se le avisa del peso */}
           {job.quality === 'optimized' && job.sizeBytes !== undefined && exceedsTarget(job.sizeBytes) && (
             <Alert
@@ -537,5 +594,89 @@ function TextOverflowNotice({ entries }: { entries: TextOverflow[] }) {
         Ir a Apariencia
       </Link>
     </Alert>
+  );
+}
+
+/** Aviso al terminar: fotos que se pidieron sin fondo pero no se pudieron separar con seguridad (feature 010, FR-008a). */
+function BackdropFallbackNotice({ entries }: { entries: { item: string }[] }) {
+  const names = [...new Set(entries.map((e) => e.item))];
+  const listed = names.slice(0, TEXT_OVERFLOW_LISTED);
+  const more = names.length - listed.length;
+  return (
+    <Alert
+      tone="warning"
+      title={`${names.length} foto${names.length === 1 ? ' se dejó' : 's se dejaron'} con su fondo original`}
+      data-testid="backdrop-fallback-notice"
+    >
+      <p>
+        No se pudo separar el producto del fondo con seguridad, así que esas tarjetas usan la foto completa con su marco:{' '}
+        {listed.join(', ')}
+        {more > 0 ? ` y ${more} más` : ''}.
+      </p>
+    </Alert>
+  );
+}
+
+interface CardPreviewResult {
+  url: string;
+  used: PhotoBackdrop;
+  fellBack: boolean;
+  itemName: string;
+}
+
+/** Tarjeta de ejemplo del primer producto con foto, en el modo elegido (feature 010, FR-008c). */
+function CardPreview({
+  prepareId,
+  backdrop,
+  templateId,
+  syncing,
+}: {
+  prepareId: string;
+  backdrop: PhotoBackdrop;
+  templateId: string | null;
+  syncing: boolean;
+}) {
+  const [card, setCard] = useState<CardPreviewResult | null>(null);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+
+  useEffect(() => {
+    // Mientras las opciones se aplican en el servidor, la tarjeta de ejemplo usaría la plantilla anterior
+    if (syncing) return undefined;
+    let cancelled = false;
+    setState('loading');
+    api
+      .post<CardPreviewResult>('/api/catalog/card-preview', { prepareId, backdrop })
+      .then((res) => {
+        if (cancelled) return;
+        setCard(res);
+        setState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [prepareId, backdrop, templateId, syncing]);
+
+  return (
+    <figure className="flex flex-col gap-1 items-center m-0 w-[150px]" data-testid="card-preview">
+      <div className="w-[150px] aspect-[6.1/8.03] rounded-pop overflow-hidden bg-pop-surface2 border border-pop-line flex items-center justify-center">
+        {card && state !== 'error' ? (
+          <img
+            src={card.url}
+            alt={`Tarjeta de ejemplo de ${card.itemName}`}
+            className={`w-full h-full object-cover ${state === 'loading' ? 'opacity-40' : ''}`}
+          />
+        ) : (
+          <span className="text-xs text-pop-muted px-2 text-center">
+            {state === 'error' ? 'No hay una tarjeta de ejemplo para mostrar.' : 'Preparando ejemplo…'}
+          </span>
+        )}
+      </div>
+      <figcaption className="text-[11px] text-pop-muted text-center">
+        {state === 'ready' && card?.fellBack ? 'Esta foto no se pudo separar: se dejó como está.' : 'Tarjeta de ejemplo'}
+      </figcaption>
+    </figure>
   );
 }

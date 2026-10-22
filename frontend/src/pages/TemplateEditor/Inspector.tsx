@@ -6,6 +6,7 @@ import {
   type PageKey,
   type Template,
 } from '../../../../backend/src/catalog/template';
+import AlignActions from './AlignActions';
 import FieldRenderer from './FieldRenderer';
 import Layers, { layerName } from './Layers';
 import { fieldsFor, pageFields } from './inspector-fields';
@@ -70,6 +71,7 @@ export default function Inspector({ template, page, el, actions, overflow }: Ins
               Eliminar
             </button>
           </div>
+          <AlignActions el={el} onAlign={(edge) => actions.align(el.id, edge)} />
           {overflow && (
             <p className="ed-overflow" data-testid="overflow-warning">
               Este bloque llegó al tamaño mínimo legible (6 pt) y aun así no cabe. Agrándalo o reduce su contenido; el

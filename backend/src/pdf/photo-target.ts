@@ -2,7 +2,7 @@
  * Resolución objetivo de las fotos del PDF (feature 005, FR-004). Módulo PURO: se calcula desde la plantilla de la
  * generación y no desde un tamaño fijo, porque el editor permite agrandar el bloque de productos.
  */
-import { PAGE_H, PAGE_W, type Template } from '../catalog/template';
+import { PAGE_H, PAGE_W, resolveColor, usesPhotoCards, type Template } from '../catalog/template';
 import { layoutRows } from '../catalog/template-layout';
 
 /** Puntos por pulgada mínimos al tamaño impreso de la foto. */
@@ -34,4 +34,24 @@ export function photoTarget(template: Template): PhotoTarget | null {
     }
   }
   return found ? { w: pixels(w), h: pixels(h) } : null;
+}
+
+/** Tamaño y color de las foto-tarjetas de una plantilla (feature 010): ver `cardPlan`. */
+export interface CardPlan {
+  w: number;
+  h: number;
+  /** Color de relleno de la tarjeta, `#RRGGBB`. */
+  fill: string;
+}
+
+/**
+ * El plan de las foto-tarjetas, o `null` si la plantilla no usa tarjetas (ningún bloque de productos visible con
+ * `cardStyle: 'tarjeta'`). Cada tarjeta mide lo que el recuadro de su foto a `PDF_PPP`, y se rellena con `cardFill`.
+ */
+export function cardPlan(template: Template): CardPlan | null {
+  const block = template.pages.productos.els.find((el) => el.type === 'products' && el.visible && el.cardStyle === 'tarjeta');
+  const target = photoTarget(template);
+  if (!usesPhotoCards(template) || !block || block.type !== 'products' || !target) return null;
+  const color = resolveColor(template.palette, block.cardFill);
+  return { w: target.w, h: target.h, fill: /^#[0-9a-fA-F]{6}$/.test(color) ? color.toUpperCase() : template.palette.bg.toUpperCase() };
 }

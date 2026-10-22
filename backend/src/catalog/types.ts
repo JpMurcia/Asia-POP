@@ -2,6 +2,7 @@
  * Tipos del catálogo. Este archivo NO debe importar nada de Node: el frontend lo importa solo como tipos.
  */
 
+import type { PhotoBackdrop } from './photo-backdrop';
 import type { Template } from './template';
 
 /** Datos del negocio que se guardan y editan en `/settings/business`. */
@@ -145,6 +146,8 @@ export interface GenerationOptions {
   bannerText?: string;
   /** Plantilla de esta generación; ausente = la predeterminada. Si ya no existe se usa la predeterminada. */
   templateId?: string;
+  /** Fondo de las foto-tarjetas (feature 010); ausente = `marco`. Se ignora si la plantilla no usa tarjetas. */
+  photoBackdrop?: PhotoBackdrop;
 }
 
 /** Sección con contenido elegible, calculada antes de aplicar `sectionKeys`. */

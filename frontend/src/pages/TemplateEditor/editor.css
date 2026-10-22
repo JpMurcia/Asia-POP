@@ -679,6 +679,29 @@
 .ed-actions button.ed-danger {
   color: #b3123f;
 }
+/* Alinear a la página (feature 007): seis botones de ícono bajo las acciones del elemento */
+.ed-align {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.ed-align button {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--ed-line);
+  background: #fffcf7;
+  color: var(--ed-ink);
+}
+.ed-align button:hover:not(:disabled) {
+  border-color: var(--ed-pink);
+  color: var(--ed-pink-dark);
+}
+.ed-align button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .ed-overflow {
   margin: 0;
   padding: 10px 12px;
@@ -1364,4 +1387,61 @@
   border: 2px solid var(--ed-line);
   background: #fff;
   font-weight: 700;
+}
+
+/* Mis imágenes (feature 010): las que subió la persona, para elegirlas, subir otra o borrarlas */
+.ed-uploads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 6px;
+}
+.ed-upload {
+  position: relative;
+  border: 1px solid var(--ed-line, #d9d0e6);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ed-upload[data-selected='true'] {
+  outline: 2px solid var(--ed-accent, #6b3fd1);
+}
+.ed-upload-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+}
+.ed-upload-pick img {
+  width: 100%;
+  height: 56px;
+  object-fit: contain;
+}
+.ed-upload-pick span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ed-upload-del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  line-height: 1;
+  cursor: pointer;
+}
+.ed-upload-input {
+  max-width: 100%;
+  font-size: 12px;
 }

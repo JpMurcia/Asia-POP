@@ -411,8 +411,8 @@ describe('editor de plantillas en un navegador real', () => {
       );
 
     await press(page, 'Vista Plantillas');
-    expect(await cards()).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal']);
-    expect(await count(page, '[data-testid="gallery-card"] [data-testid="palette-dot"]')).toBe(20);
+    expect(await cards()).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal', 'Base AsianPop']);
+    expect(await count(page, '[data-testid="gallery-card"] [data-testid="palette-dot"]')).toBe(25);
 
     // Crear desde un estilo base: se abre en el editor
     await press(page, 'Nueva plantilla desde Kawaii pastel');

@@ -20,13 +20,20 @@ export const MIN_FONT_PX = 6;
 export const PAGE_KEYS = ['portada', 'seccion', 'productos', 'politicas'] as const;
 export const PALETTE_KEYS = ['bg', 'a1', 'a2', 'a3', 'ink', 'paper'] as const;
 export const FONT_KEYS = ['fredoka', 'poppins', 'bungee', 'zen', 'grotesk', 'serif'] as const;
-export const IMAGE_KEYS = ['logo', 'collage', 'marble', 'coverbg', 'frame'] as const;
-export const BASE_IDS = ['neon', 'pop', 'kawaii', 'kraft'] as const;
+export const IMAGE_KEYS = ['logo', 'collage', 'marble', 'coverbg', 'frame', 'sparkle', 'chat'] as const;
+export const BASE_IDS = ['neon', 'pop', 'kawaii', 'kraft', 'base'] as const;
 export const AUTO_BLOCK_TYPES = ['intro', 'products', 'terms', 'footer'] as const;
 export const TOKEN_NAMES = ['banner', 'seccion', 'telefonos', 'direccion', 'tienda'] as const;
 export const WEIGHTS = [400, 600, 700, 900] as const;
-/** Dónde va el nombre de un producto: en un rótulo aparte de la burbuja o dentro de ella (feature 007). */
-export const NAME_STYLES = ['separado', 'burbuja'] as const;
+/**
+ * Dónde va el nombre de un producto: en un rótulo aparte de la burbuja o dentro de ella (feature 007) o dentro de la
+ * foto-tarjeta generada (feature 010).
+ */
+export const NAME_STYLES = ['separado', 'burbuja', 'tarjeta'] as const;
+/** Cómo se dibuja la foto de un producto: la foto tal cual (`plana`) o la foto-tarjeta generada por el servidor (feature 010). */
+export const CARD_STYLES = ['plana', 'tarjeta'] as const;
+/** Una imagen subida por la persona responsable se guarda como `upload:<archivo>` (feature 010). */
+export const UPLOAD_IMAGE_RE = /^upload:[A-Za-z0-9._-]+$/;
 
 export type PageKey = (typeof PAGE_KEYS)[number];
 export type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -37,6 +44,9 @@ export type AutoBlockType = (typeof AUTO_BLOCK_TYPES)[number];
 export type TokenName = (typeof TOKEN_NAMES)[number];
 export type Weight = (typeof WEIGHTS)[number];
 export type NameStyle = (typeof NAME_STYLES)[number];
+export type CardStyle = (typeof CARD_STYLES)[number];
+/** Una imagen de la galería fija o una subida por la persona responsable (`upload:<archivo>`). */
+export type ImageSrc = ImageKey | `upload:${string}`;
 
 /** Fuente de un texto: la de título, la de cuerpo de la plantilla o una de las seis familias. */
 export type FontRef = 'title' | 'body' | FontKey;
@@ -97,6 +107,8 @@ export const RANGES = {
   textSize: [8, 140],
   strokeW: [0, 8],
   ls: [-2, 12],
+  /** Altura de línea del texto, como múltiplo del tamaño de la letra (feature 007). */
+  lh: [0.8, 2.5],
   badgeSize: [8, 48],
   shapeBw: [0, 12],
   shapeRadius: [0, 80],
@@ -115,6 +127,11 @@ export const RANGES = {
  * dejaría una zona de 3 %, donde ninguna fila cabe; el esquema lo exige solo al bloque de productos (feature 007).
  */
 export const PRODUCTS_ZONE_MIN = { w: 40, h: 30 } as const;
+
+/** `true` si la plantilla dibuja la foto-tarjeta generada: un bloque de productos visible con `cardStyle: 'tarjeta'` (feature 010). */
+export function usesPhotoCards(template: Pick<Template, 'pages'>): boolean {
+  return template.pages.productos.els.some((el) => el.type === 'products' && el.visible && el.cardStyle === 'tarjeta');
+}
 
 /** Un `radius` de imagen en este valor o más es un círculo. */
 export const CIRCLE_RADIUS = 300;
@@ -161,7 +178,17 @@ export interface TextEl extends ElementBase {
   align: 'left' | 'center' | 'right';
   upper: boolean;
   ls: number;
+  /** Altura de línea (múltiplo del tamaño). Opcional: las plantillas anteriores a 007 no la tienen; ver `TEXT_DEFAULTS`. */
+  lh?: number;
+  /** Tachado de todo el texto, del color del relleno. Opcional, como `lh`. */
+  strike?: boolean;
 }
+
+/**
+ * Valores de `lh` y `strike` cuando un texto no los trae: los del render anterior a la feature 007, para que las
+ * plantillas ya guardadas se vean idénticas sin migrarlas. Es el único lugar donde viven.
+ */
+export const TEXT_DEFAULTS = { lh: 1.05, strike: false } as const;
 
 export interface BadgeEl extends ElementBase {
   type: 'badge';
@@ -184,7 +211,7 @@ export interface ShapeEl extends ElementBase {
 
 export interface ImageEl extends ElementBase {
   type: 'image';
-  src: ImageKey;
+  src: ImageSrc;
   /** `fill` estira la imagen a la caja (como el marco de portada de 002); el editor ofrece los tres. */
   fit: 'contain' | 'cover' | 'fill';
   radius: number;
@@ -198,8 +225,8 @@ export interface IntroEl extends ElementBase {
   radius: number;
 }
 
-export type ProductsLayout = 'alternado' | 'tarjetas' | 'lista';
-export type SoldOutStyle = 'sello' | 'cinta' | 'gris';
+export type ProductsLayout = 'alternado' | 'tarjetas' | 'lista' | 'base';
+export type SoldOutStyle = 'sello' | 'cinta' | 'gris' | 'diagonal';
 export type PriceShape = 'pill' | 'round' | 'square';
 
 export interface ProductsEl extends ElementBase {
@@ -230,6 +257,19 @@ export interface ProductsEl extends ElementBase {
   nameFill: ColorRef;
   /** Resplandor del color del nombre. Solo con `nameStyle: 'separado'`. */
   nameGlow: boolean;
+  /**
+   * Feature 010, todos opcionales: su ausencia equivale al comportamiento anterior (ver `CARD_PRODUCT_DEFAULTS` en
+   * `template-presets.ts`). `tarjeta`: la foto es la foto-tarjeta generada y el nombre se dibuja dentro de ella.
+   */
+  cardStyle?: CardStyle;
+  /** Resplandor neón del precio. */
+  priceGlow?: boolean;
+  /** Resplandor neón de la cinta AGOTADO. Solo con `sold: 'diagonal'`. */
+  soldGlow?: boolean;
+  /** Sombra suave bajo la burbuja. */
+  bubbleShadow?: boolean;
+  /** Altura de línea de la descripción; ausente = la de la burbuja de siempre. */
+  descLh?: number;
 }
 
 export interface TermsEl extends ElementBase {
@@ -281,6 +321,8 @@ export interface TemplateSummary {
   isDefault: boolean;
   palette: Palette;
   fonts: TemplateDoc['fonts'];
+  /** Solo si es `true`: la plantilla dibuja la foto-tarjeta generada (feature 010) y Generar ofrece «Fondo de la foto». */
+  photoCards?: true;
 }
 
 export type PaletteWarningCode = 'low_text_contrast' | 'low_accent_contrast';

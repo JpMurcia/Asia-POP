@@ -140,6 +140,10 @@ const draftProducts = (o: Partial<Omit<ProductsEl, 'id'>> = {}): Omit<ProductsEl
   nameColor: 'a1',
   nameFill: 'transparent',
   nameGlow: false,
+  cardStyle: 'plana',
+  priceGlow: false,
+  soldGlow: false,
+  bubbleShadow: false,
   x: 4,
   y: 12,
   w: 92,
@@ -198,6 +202,7 @@ const PAL = {
   pop: { bg: '#2A1258', a1: '#E5368C', a2: '#FFB800', a3: '#E5368C', ink: '#2A1258', paper: '#FFF7EC' },
   kawaii: { bg: '#FFD6E5', a1: '#FF5C93', a2: '#7ED8C3', a3: '#FFB84D', ink: '#5A2E4A', paper: '#FFF3F7' },
   kraft: { bg: '#1C1A17', a1: '#D9502F', a2: '#1C1A17', a3: '#D9502F', ink: '#1C1A17', paper: '#EFE6D6' },
+  base: { bg: '#11052C', a1: '#C04B0F', a2: '#FF3131', a3: '#E7DECF', ink: '#000000', paper: '#FAFAFA' },
   matcha: { bg: '#1F3B2D', a1: '#8FCB5E', a2: '#F4E8C1', a3: '#E86F51', ink: '#1F3B2D', paper: '#F6F1E3' },
 } as const satisfies Record<string, Palette>;
 
@@ -434,10 +439,112 @@ function kraft(): Template {
   };
 }
 
-const FACTORIES: Record<BaseId, () => Template> = { neon, pop, kawaii, kraft };
+/**
+ * Base AsianPop (feature 010): reproduce la página de productos medida en la base de Canva «PRUEBA CATALOGO» (A4,
+ * Poppins, tarjetas oscuras con el nombre en neón, burbuja beige, precio con neón y cinta AGOTADO diagonal). Medidas
+ * de la página 3: título X 5,05 · Y 0,76 cm; logo de 4,06 cm a 0,3 cm del borde superior y derecho; la distribución
+ * `base` coloca las tres filas. El tamaño de letra (32, 21, 14, 58) se toma 1:1 en px lógicos, suponiendo que la escala
+ * de Canva son puntos de la hoja (595 pt); por confirmar con una prueba de impresión. Todos los textos llevan la altura
+ * de línea 1,4 de la base. Las portadas no se midieron: llevan un diseño razonable (título grande en mayúsculas, logo
+ * y contacto) y ninguna ilustración, que sube la persona responsable.
+ */
+function baseAsianPop(): Template {
+  const lh = 1.4;
+  const contact = [
+    draftImage({ name: 'Ícono de contacto', src: 'chat', x: 8.5, y: 83.6, w: 4.6, h: 3.3 }),
+    draftText({ name: 'Domicilios', text: 'Domicilios', font: 'body', size: 16, color: 'ink', align: 'left', lh, x: 14, y: 83.4, w: 40, h: 3.4 }),
+    draftText({ name: 'Teléfonos', text: '{telefonos}', font: 'body', size: 20, color: 'ink', align: 'left', lh, x: 8.5, y: 87.4, w: 83, h: 4.6 }),
+  ];
+  const logoCover = draftImage({ name: 'Logo', src: 'logo', x: 33, y: 5, w: 34, h: 24 });
+  const logo = draftImage({ name: 'Logo', src: 'logo', x: 79.2, y: 1, w: 19.3, h: 13.7 });
+  const footer = draftFooter({ x: 0, y: 96.8, w: 100, h: 3.2, bw: 1.5 });
+  const sparkle = (name: string, x: number, y: number, w: number, opacity: number) =>
+    draftImage({ name, src: 'sparkle', x, y, w, h: Math.round(((w * PAGE_W) / PAGE_H) * 10) / 10, opacity, locked: true });
+  const blob = (name: string, x: number, y: number, w: number) =>
+    draftShape({ name, kind: 'circle', fill: 'a3', opacity: 0.45, x, y, w, h: circleHeight(w), locked: true });
+  return {
+    id: 'base',
+    name: 'Base AsianPop',
+    base: 'base',
+    version: 1,
+    palette: { ...PAL.base },
+    fonts: { title: 'poppins', body: 'poppins' },
+    pages: {
+      portada: {
+        bg: { ...SUNSET },
+        els: els('base-p', [
+          logoCover,
+          draftText({ name: 'Banner', text: '{banner}', size: 54, color: 'ink', upper: true, lh, x: 6, y: 34, w: 88, h: 24 }),
+          draftText({ name: 'Tienda', text: '{tienda}', font: 'body', size: 18, weight: 600, color: 'ink', upper: true, ls: 2, lh, x: 6, y: 62, w: 88, h: 4 }),
+          ...contact,
+        ]),
+      },
+      seccion: {
+        bg: { ...SUNSET },
+        els: els('base-s', [
+          logoCover,
+          draftText({ name: 'Nombre de sección', text: '{seccion}', size: 80, color: 'ink', upper: true, lh, x: 4, y: 32, w: 92, h: 18 }),
+          draftIntro({ x: 14, y: 56, w: 72, h: 22 }),
+          ...contact,
+        ]),
+      },
+      productos: {
+        bg: { ...MARBLE },
+        els: els('base-c', [
+          blob('Mancha 1', -6, 60, 28),
+          blob('Mancha 2', 82, 30, 26),
+          sparkle('Estrella 1', 4, 10, 7, 0.7),
+          sparkle('Estrella 2', 88, 54, 6, 0.7),
+          draftText({ name: 'Título de sección', text: 'CATÁLOGO {seccion}', size: 32, weight: 700, color: 'ink', upper: true, lh, x: 24.05, y: 2.56, w: 51.95, h: 8.2 }),
+          logo,
+          draftProducts({
+            layout: 'base',
+            cardStyle: 'tarjeta',
+            nameStyle: 'tarjeta',
+            nameColor: 'a1',
+            nameGlow: true,
+            cardFill: 'bg',
+            ring: 'transparent',
+            ringW: 0,
+            cardRadius: 18,
+            bubbleFill: 'a3',
+            bubbleRadius: 40,
+            bubbleShadow: true,
+            textColor: 'ink',
+            priceFill: '#1F021D',
+            priceBorder: 'transparent',
+            priceText: 'a1',
+            priceGlow: true,
+            priceShape: 'pill',
+            sold: 'diagonal',
+            soldFill: 'a2',
+            soldGlow: true,
+            descLh: lh,
+            x: 0,
+            y: 11,
+            w: 100,
+            h: 85.4,
+          }),
+          footer,
+        ]),
+      },
+      politicas: {
+        bg: { ...MARBLE },
+        els: els('base-t', [
+          draftText({ name: 'Título', text: 'Políticas de compra', size: 28, weight: 700, color: 'ink', align: 'left', lh, x: 6, y: 3.6, w: 70, h: 6 }),
+          logo,
+          draftTerms({ x: 7, y: 15, w: 86, h: 79.6 }),
+          footer,
+        ]),
+      },
+    },
+  };
+}
 
-/** Las cuatro plantillas base, en el orden de la galería. */
-export const BASE_TEMPLATES: Template[] = [neon(), pop(), kawaii(), kraft()];
+const FACTORIES: Record<BaseId, () => Template> = { neon, pop, kawaii, kraft, base: baseAsianPop };
+
+/** Las plantillas base, en el orden de la galería (Base AsianPop, de la feature 010, al final). */
+export const BASE_TEMPLATES: Template[] = [neon(), pop(), kawaii(), kraft(), baseAsianPop()];
 
 /** Una copia independiente de la plantilla base: se puede modificar sin afectar a las demás llamadas. */
 export function baseTemplate(id: BaseId): Template {
@@ -462,10 +569,19 @@ const OTHER_PRODUCT_DEFAULTS = {
   nameGlow: false,
 } as const satisfies Partial<ProductsEl>;
 
+/** Los campos que la feature 010 agregó al bloque de productos: su valor de fábrica es el comportamiento anterior. */
+const CARD_PRODUCT_DEFAULTS = {
+  cardStyle: 'plana',
+  priceGlow: false,
+  soldGlow: false,
+  bubbleShadow: false,
+} as const satisfies Partial<ProductsEl>;
+
 /**
  * Completa los campos del bloque de productos que falten en una plantilla guardada antes de la feature 007: la de
  * id `neon` recibe el nombre separado en neón de Neón Noche y cualquier otra el nombre dentro de la burbuja, de modo
- * que solo Neón Noche cambia de aspecto. Pura e idempotente: devuelve una copia, no toca los campos presentes y no
+ * que solo Neón Noche cambia de aspecto. Los campos de la feature 010 (`cardStyle`, `priceGlow`, `soldGlow`,
+ * `bubbleShadow`) se completan con su valor anterior; `descLh` queda ausente a propósito. Pura e idempotente: devuelve una copia, no toca los campos presentes y no
  * escribe en ninguna parte (lo guardado cambia cuando la persona pulsa Guardar en Apariencia).
  */
 export function normalizeProductsBlocks(template: Template): Template {
@@ -475,7 +591,7 @@ export function normalizeProductsBlocks(template: Template): Template {
     page.els = page.els.map((el) => {
       if (el.type !== 'products') return el;
       const present = Object.fromEntries(Object.entries(el).filter(([, v]) => v !== undefined));
-      return { ...defaults, ...present } as ProductsEl;
+      return { ...CARD_PRODUCT_DEFAULTS, ...defaults, ...present } as ProductsEl;
     });
   }
   return out;

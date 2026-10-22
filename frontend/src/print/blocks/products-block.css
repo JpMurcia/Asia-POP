@@ -70,6 +70,38 @@
   z-index: 3;
 }
 
+.pb-diag {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  z-index: 5;
+  font-weight: 700;
+  font-size: 58px; /* la cinta de la base: 58 en la escala de Canva, tomada 1:1 en px lógicos */
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+}
+
+/*
+ * Distribución `base` (feature 010): la burbuja va detrás de la foto, la descripción es Poppins 14 y el precio Poppins 21
+ * en negrita, como en la base de Canva. Las otras distribuciones no se tocan.
+ */
+.pb[data-layout='base'] .pb-photo {
+  z-index: 2;
+}
+.pb[data-layout='base'] .pb-bubble {
+  z-index: 1;
+  font-size: calc(14px * var(--fit, 1));
+}
+.pb[data-layout='base'] .pb-price {
+  z-index: 3;
+  font-size: 21px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
 .pb-bubble {
   position: absolute;
   box-sizing: border-box;
@@ -128,6 +160,25 @@
 .pb-name-tag .pb-name {
   max-width: 100%;
   font-size: calc(17px * var(--fit, 1)); /* el nombre es el título del producto: más grande que el texto de la burbuja */
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: var(--name-lines, none);
+}
+.pb-card-name {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  align-items: safe center;
+  justify-content: center;
+  padding: calc(2px * var(--fit, 1)) 0;
+  text-align: center;
+  overflow: hidden;
+}
+.pb-card-name .pb-name {
+  max-width: 100%;
+  font-size: calc(17px * var(--fit, 1));
   line-height: 1.1;
   overflow-wrap: anywhere;
   -webkit-line-clamp: var(--name-lines, none);

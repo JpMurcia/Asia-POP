@@ -1,5 +1,5 @@
 import type { FontRef, Template } from '../../../backend/src/catalog/template';
-import { FONT_FAMILIES, IMAGES, fontKeyOf, weightFor } from './assets';
+import { FONT_FAMILIES, IMAGES, fontKeyOf, imageSrc, weightFor } from './assets';
 
 /** Texto de muestra: pide también el subconjunto con tildes y signos del español. */
 export const FONT_SAMPLE = 'AaÁáÉéÍíÓóÚúÑñ¿¡·×$0123456789';
@@ -21,7 +21,7 @@ export function templateAssetRequests(template: Template): { fonts: string[]; im
     for (const el of page.els) {
       if (el.type === 'text') addFont(el.font, el.weight);
       else if (el.type === 'badge') addFont(el.font, 700);
-      else if (el.type === 'image') images.add(IMAGES[el.src]);
+      else if (el.type === 'image') images.add(imageSrc(el.src));
       else if (el.type !== 'shape') for (const w of [500, 600, 700]) addFont('body', w); // bloques automáticos
     }
   }

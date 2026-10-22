@@ -7,7 +7,7 @@
  * Variables opcionales:
  *   MOCK_IMG=ruta.png   imagen de producto (por defecto un píxel)
  *   LONG=1              textos en el máximo permitido (nombres, descripciones, políticas, dirección, banner)
- *   TEMPLATE=neon|pop|kawaii|kraft   plantilla con la que se dibuja (por defecto, la predeterminada: Neón Noche)
+ *   TEMPLATE=neon|pop|kawaii|kraft|base   plantilla con la que se dibuja (por defecto, la predeterminada: Neón Noche)
  *   PDF=ruta.pdf        además guarda el PDF generado
  */
 import fs from 'node:fs';
@@ -39,7 +39,7 @@ const mock = await startAlegraMock({
     { id: 'c3', name: 'BEBIDAS' },
   ],
 });
-const img = `${mock.url}/img/ok.png`;
+const img = `${mock.url}/img/${process.env.MOCK_PHOTO ?? 'ok.png'}`;
 const base = { status: 'active', images: [img] };
 const desc = 'Fideos instantáneos coreanos con caldo intenso y picante. Ideal para preparar rápido.';
 mock.setItems([
@@ -100,8 +100,8 @@ if (long) {
   });
 }
 const templateId = process.env.TEMPLATE || undefined;
-if (templateId && !['neon', 'pop', 'kawaii', 'kraft'].includes(templateId)) {
-  throw new Error(`TEMPLATE debe ser neon, pop, kawaii o kraft (recibido: ${templateId})`);
+if (templateId && !['neon', 'pop', 'kawaii', 'kraft', 'base'].includes(templateId)) {
+  throw new Error(`TEMPLATE debe ser neon, pop, kawaii, kraft o base (recibido: ${templateId})`);
 }
 
 const section = await api('POST', '/api/sections/custom', {

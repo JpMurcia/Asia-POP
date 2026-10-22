@@ -43,9 +43,20 @@ const NAME_LAST_RESORT: Record<string, string>[] = [
   { '--name-lines': '2' },
   { '--name-lines': '1' },
 ];
+/**
+ * El nombre dentro de la foto-tarjeta (`nameStyle: 'tarjeta'`, feature 010): la franja superior del 18 % del alto de la
+ * foto, con un margen lateral del 5 % de su ancho. La imagen de la tarjeta reserva esa franja (ver `photo-card.ts`).
+ */
+const CARD_NAME_STRIP = 0.18;
+const CARD_NAME_MARGIN = 0.05;
 const px = (n: number) => `${n}px`;
 /** Resplandor neón del nombre (más recogido que el de los títulos: el texto es pequeño). */
 const glowName = (color: string) => `0 0 4px ${color}, 0 0 10px ${color}`;
+/** Neón del precio (intensidad 100 de la base de Canva) y de la cinta AGOTADO (intensidad 50), feature 010. */
+const glowPrice = (color: string) => `0 0 2px ${color}, 0 0 7px ${color}`;
+const glowSold = (color: string) => `0 0 2px ${color}, 0 0 6px ${color}, 0 0 11px ${color}`;
+/** Sombra suave bajo la burbuja (la «Circular Blur Shadow» de la base). */
+const BUBBLE_SHADOW = '0 7px 16px rgba(0, 0, 0, 0.28)';
 
 /** Un producto agotado según las reglas de 001: Alegra y combos, nunca un producto propio (principio II). */
 const isSoldOut = (item: CatalogItem): boolean => item.kind !== 'custom' && item.soldOut;
@@ -62,6 +73,7 @@ export default function ProductsBlock({ el, palette, fonts, items, photoPosition
     photoW: el.photoW,
     photoH: el.photoH,
     nameStyle: el.nameStyle,
+    count: Math.min(items.length, 3),
   });
   return (
     <div
@@ -111,6 +123,7 @@ function ProductRow({
   const soldOut = isSoldOut(item);
   const bubble = useRef<HTMLDivElement>(null);
   const nameTag = useRef<HTMLDivElement>(null);
+  const cardName = useRef<HTMLDivElement>(null);
   // Textos largos: la burbuja reduce su letra hasta caber (la descripción además se corta a 5 líneas)
   useFit(bubble, [item, el.layout, el.nameStyle, row.bubble.h, row.bubble.w], {
     lastResort: BUBBLE_LAST_RESORT,
@@ -120,6 +133,9 @@ function ProductRow({
     axis: 'both',
     lastResort: NAME_LAST_RESORT,
   });
+
+  // El nombre dentro de la foto-tarjeta se ajusta por su cuenta, como el rótulo separado
+  useFit(cardName, [item, el.nameStyle, row.photo.w, row.photo.h], { axis: 'both', lastResort: NAME_LAST_RESORT });
 
   const hasPrice = !!item.priceLabel;
   const ring =
@@ -133,8 +149,8 @@ function ProductRow({
     background: c(el.cardFill),
     border: ring,
     borderRadius: px(el.cardRadius),
-    // El sello de Cat.pdf se extiende más allá de la tarjeta; la cinta y el gris quedan recortados en ella
-    overflow: el.sold === 'sello' ? 'visible' : 'hidden',
+    // El sello de Cat.pdf y la cinta diagonal de la base se extienden más allá de la tarjeta; la cinta y el gris quedan recortados en ella
+    overflow: el.sold === 'sello' || el.sold === 'diagonal' ? 'visible' : 'hidden',
   };
   const imgStyle: CSSProperties = {
     borderRadius: px(innerRadius),
@@ -147,9 +163,20 @@ function ProductRow({
     item.kind === 'bundle';
   const left = row.align === 'left';
   /** Con el nombre separado, la burbuja solo existe si trae algo más que el nombre (descripción o datos extra). */
-  const separate = row.name !== undefined;
+  const nameInCard = el.nameStyle === 'tarjeta';
+  const separate = row.name !== undefined || nameInCard;
   const hasBubble = !separate || !!item.description || extras;
   const nameColor = c(el.nameColor);
+  // En la distribución `base` la foto tapa un borde de la burbuja: el texto se corre al lado que queda a la vista
+  const bubbleInset: CSSProperties = {};
+  if (el.layout === 'base') {
+    const photoLeft = row.photo.x < row.bubble.x + row.bubble.w / 2;
+    const covered = photoLeft ? row.photo.x + row.photo.w - row.bubble.x : row.bubble.x + row.bubble.w - row.photo.x;
+    if (covered > 0) {
+      if (photoLeft) bubbleInset.paddingLeft = `calc(${px(covered)} + 10px * var(--fit, 1))`;
+      else bubbleInset.paddingRight = `calc(${px(covered)} + 10px * var(--fit, 1))`;
+    }
+  }
 
   return (
     <div
@@ -191,6 +218,34 @@ function ProductRow({
             AGOTADO
           </div>
         )}
+        {soldOut && el.sold === 'diagonal' && (
+          <div
+            className="pb-diag"
+            style={{
+              color: c(el.soldFill),
+              textShadow: el.soldGlow && c(el.soldFill) !== 'transparent' ? glowSold(c(el.soldFill)) : undefined,
+            }}
+          >
+            AGOTADO
+          </div>
+        )}
+        {nameInCard && (
+          <div
+            className="pb-card-name"
+            data-part="card-name"
+            ref={cardName}
+            style={{
+              left: px(row.photo.w * CARD_NAME_MARGIN),
+              top: px(0),
+              width: px(row.photo.w * (1 - 2 * CARD_NAME_MARGIN)),
+              height: px(row.photo.h * CARD_NAME_STRIP),
+              color: nameColor,
+              textShadow: el.nameGlow && nameColor !== 'transparent' ? glowName(nameColor) : undefined,
+            }}
+          >
+            <div className="pb-name">{item.name}</div>
+          </div>
+        )}
       </div>
 
       {row.name && (
@@ -229,12 +284,18 @@ function ProductRow({
             color: c(el.textColor),
             alignItems: left ? 'flex-start' : 'center',
             textAlign: left ? 'left' : 'center',
+            boxShadow: el.bubbleShadow ? BUBBLE_SHADOW : undefined,
+            ...bubbleInset,
           }}
         >
           {/* Todo producto muestra su nombre y, si la tiene, su descripción (FR-010 de 001). Con el nombre separado
             va en su propio rótulo y la burbuja solo trae la descripción y los datos extra. */}
           {!separate && <div className="pb-name">{item.name}</div>}
-          {item.description && <div className="pb-desc">{item.description}</div>}
+          {item.description && (
+            <div className="pb-desc" style={el.descLh !== undefined ? { lineHeight: el.descLh } : undefined}>
+              {item.description}
+            </div>
+          )}
 
           {item.kind === 'custom' && item.flavors && item.flavors.length > 0 && (
             <div className="pb-extra">Sabores: {item.flavors.join(', ')}</div>
@@ -275,6 +336,7 @@ function ProductRow({
               c(el.priceBorder) === 'transparent' ? 'none' : `1.5px solid ${c(el.priceBorder)}`,
             borderRadius: PRICE_RADIUS[el.priceShape],
             color: c(el.priceText),
+            textShadow: el.priceGlow && c(el.priceText) !== 'transparent' ? glowPrice(c(el.priceText)) : undefined,
           }}
         >
           {item.priceLabel}

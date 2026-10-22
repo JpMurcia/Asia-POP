@@ -21,8 +21,8 @@ describe('resolución objetivo de las fotos (FR-004)', () => {
     expect(photoTarget(baseTemplate(id))).toEqual(expected);
   });
 
-  it('cubre las cuatro plantillas base', () => {
-    expect(BASE_TEMPLATES.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft']);
+  it('cubre las plantillas base', () => {
+    expect(BASE_TEMPLATES.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft', 'base']);
   });
 
   it('con el bloque de productos agrandado a toda la página pide más píxeles (no usa un tamaño fijo)', () => {

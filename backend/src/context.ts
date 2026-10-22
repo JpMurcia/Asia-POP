@@ -7,6 +7,7 @@ import { PanelSummaryService } from './catalog/panel-summary';
 import { PrepareStore } from './catalog/prepare-store';
 import type { AppConfig } from './config/env';
 import type { Db } from './db/database';
+import { CardMaker } from './pdf/card-cache';
 import { ImageCache } from './pdf/image-cache';
 import { PhotoOptimizer } from './pdf/image-optimizer';
 import { JobManager } from './pdf/job';
@@ -26,6 +27,8 @@ export interface AppContext {
   imageCache: ImageCache;
   /** Copias reducidas de las fotos para el PDF en calidad Optimizada (carpeta temporal por generación). */
   photoOptimizer: PhotoOptimizer;
+  /** Foto-tarjetas generadas de los productos (feature 010), en una carpeta temporal. */
+  cardMaker: CardMaker;
   history: HistoryRepo;
   panelSummary: PanelSummaryService;
   /** Copia local de los datos de Alegra (feature 007): las pantallas la leen en lugar de consultar a Alegra cada vez. */
@@ -49,6 +52,10 @@ export function createContext(
     prepares: new PrepareStore(),
     imageCache: new ImageCache(path.join(config.dataDir, 'image-cache')),
     photoOptimizer: new PhotoOptimizer(path.join(config.dataDir, 'pdf-photos'), {
+      cacheDir: path.join(config.dataDir, 'image-cache'),
+      uploadsDir: path.join(config.dataDir, 'uploads'),
+    }),
+    cardMaker: new CardMaker(path.join(config.dataDir, 'card-cache'), {
       cacheDir: path.join(config.dataDir, 'image-cache'),
       uploadsDir: path.join(config.dataDir, 'uploads'),
     }),

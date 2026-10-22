@@ -5,10 +5,12 @@ import { HttpError } from '../api/errors';
 import type { AppContext } from '../context';
 import { OmittedItemRepo, omittedSignature } from '../custom/omitted-item.repo';
 import type { RenderReport } from '../pdf/pdf.service';
-import { photoTarget } from '../pdf/photo-target';
+import { withCards } from '../pdf/card-cache';
+import { cardPlan, photoTarget } from '../pdf/photo-target';
 import { collectPhotoUrls } from '../pdf/photo-variants';
 import { buildCatalog } from './catalog-builder';
 import { loadLocalInputs } from './catalog-inputs';
+import type { PhotoBackdrop } from './photo-backdrop';
 import { DEFAULT_PDF_QUALITY, type PdfQuality } from './pdf-quality';
 import { computeStructure } from './structure';
 import type { Template } from './template';
@@ -38,6 +40,8 @@ export interface PrepareParams {
   bannerText?: string;
   /** Plantilla de esta generación; ausente = la predeterminada. */
   templateId?: string;
+  /** Fondo de las foto-tarjetas (feature 010); ausente = `marco`. */
+  photoBackdrop?: PhotoBackdrop;
 }
 
 /** La plantilla con la que se generó; `fallback` indica que la elegida ya no existe y se usó la predeterminada. */
@@ -116,6 +120,7 @@ export class CatalogService {
         hideSoldOut: params.hideSoldOut ?? false,
         bannerText: params.bannerText,
         templateId: params.templateId,
+        photoBackdrop: params.photoBackdrop,
       };
       const first = build({}, options);
       const prepareId = this.ctx.prepares.add({
@@ -150,6 +155,7 @@ export class CatalogService {
     prepareId: string,
     decisions: Record<string, BundleDecision>,
     quality: PdfQuality = DEFAULT_PDF_QUALITY,
+    photoBackdrop?: PhotoBackdrop,
   ): { jobId: string; template: UsedTemplate } {
     const entry = this.ctx.prepares.get(prepareId);
     if (!entry) {
@@ -165,8 +171,13 @@ export class CatalogService {
         'Cambiaste los artículos omitidos después de preparar. Vuelve a preparar el catálogo para aplicar el cambio.',
       );
     }
-    const resolved = this.templates().resolve(entry.options.templateId);
-    const built = entry.build(decisions, entry.options, resolved.template);
+    // El fondo de la foto es una opción de la generación (feature 010): si llega aquí, reemplaza al de la preparación
+    if (photoBackdrop && photoBackdrop !== entry.options.photoBackdrop) {
+      this.ctx.prepares.setOptions(prepareId, { ...entry.options, photoBackdrop });
+    }
+    const options = this.ctx.prepares.get(prepareId)?.options ?? entry.options;
+    const resolved = this.templates().resolve(options.templateId);
+    const built = entry.build(decisions, options, resolved.template);
     if (built.report.emptyCatalog) {
       throw new HttpError(422, 'empty_catalog', 'No hay productos para generar el catálogo.');
     }
@@ -183,8 +194,8 @@ export class CatalogService {
     const jobId = this.ctx.jobs.acquire('rendering', 'Generando PDF'); // 409 si hay otro activo
     this.ctx.prepares.setPayload(prepareId, built.payload);
     // `pages` se guarda con el historial para mostrarlo en Inicio sin abrir el PDF; `quality`, para quien lo consulte
-    const params = { options: entry.options, decisions, pages: computeStructure(built.payload).totalPages, quality };
-    void this.render(jobId, prepareId, built.report, params, quality, built.payload, resolved.template);
+    const params = { options, decisions, pages: computeStructure(built.payload).totalPages, quality };
+    void this.render(jobId, prepareId, built.report, params, quality, built.payload, resolved.template, options.photoBackdrop);
     return {
       jobId,
       template: { id: resolved.template.id, name: resolved.template.name, fallback: resolved.fallback },
@@ -228,18 +239,30 @@ export class CatalogService {
     quality: PdfQuality,
     payload: CatalogPayload,
     template: Template,
+    backdrop: PhotoBackdrop = 'marco',
   ): Promise<void> {
-    const { sessions, renderer, jobs, history, runtime, prepares, photoOptimizer } = this.ctx;
+    const { sessions, renderer, jobs, history, runtime, prepares, photoOptimizer, cardMaker } = this.ctx;
     const sid = sessions.create(); // sesión temporal para el navegador headless
     try {
       let printUrl = `${runtime.baseUrl}/print/${prepareId}`;
+      // Plantilla con foto-tarjeta: se componen antes de abrir el navegador (la caché las entrega después sin costo) y
+      // las fotos que ya van dentro de una tarjeta no se vuelven a reducir. Una tarjeta que no se pudo hacer usa la foto
+      let toOptimize = payload;
+      let backdropFallbacks: { item: string }[] = [];
+      const plan = cardPlan(template);
+      if (plan) {
+        jobs.update(jobId, { step: 'Preparando tarjetas', progress: 3 });
+        const made = await cardMaker.forPayload(payload, { ...plan, backdrop });
+        toOptimize = withCards(payload, made.cards);
+        backdropFallbacks = made.fallbacks.map((item) => ({ item }));
+      }
       // Solo en Optimizada: copias reducidas de las fotos, a 150 ppp al tamaño de su recuadro en esta plantilla. En
       // Original no se toca nada. Las fotos que no se pueden reducir se quedan con su dirección original (FR-008)
       if (quality === 'optimized') {
         const target = photoTarget(template);
         if (target) {
           jobs.update(jobId, { step: 'Optimizando fotos', progress: 5 });
-          const variants = await photoOptimizer.run(jobId, collectPhotoUrls(payload), target, (done, total) =>
+          const variants = await photoOptimizer.run(jobId, collectPhotoUrls(toOptimize), target, (done, total) =>
             jobs.update(jobId, { progress: 5 + Math.round((done / Math.max(total, 1)) * 25) }),
           );
           if (variants.size > 0) {
@@ -254,7 +277,7 @@ export class CatalogService {
       jobs.update(jobId, { step: 'Guardando archivo', progress: 90 });
       const entry = history.add(pdf, report.counts.included, report.counts.omitted, params);
       // Pasar el tamaño objetivo no aborta nada: solo se informa el tamaño y la pantalla decide si avisa (FR-012)
-      jobs.complete(jobId, entry.id, { sizeBytes: pdf.length, quality, textOverflow: rendered.textOverflow });
+      jobs.complete(jobId, entry.id, { sizeBytes: pdf.length, quality, textOverflow: rendered.textOverflow, backdropFallbacks });
     } catch (e) {
       // Nunca se entrega un PDF parcial (principio II).
       jobs.fail(jobId, (e as Error).message || 'No se pudo generar el PDF.');

@@ -42,4 +42,5 @@ export const api = {
   put: <T>(url: string, body?: unknown) => request<T>('PUT', url, body ?? {}),
   del: <T>(url: string) => request<T>('DELETE', url),
   upload: <T>(url: string, form: FormData) => request<T>('PUT', url, form),
+  postForm: <T>(url: string, form: FormData) => request<T>('POST', url, form),
 };

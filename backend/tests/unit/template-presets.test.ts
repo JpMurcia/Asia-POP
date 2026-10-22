@@ -16,6 +16,7 @@ import {
   isAutoBlock,
   paletteWarnings,
   type PageElement,
+  type ProductsEl,
 } from '../../src/catalog/template';
 
 /**
@@ -29,19 +30,21 @@ const MOCKUP = {
   pop: { bg: '#2A1258', a1: '#E5368C', a2: '#FFB800', a3: '#E5368C', ink: '#2A1258', paper: '#FFF7EC' },
   kawaii: { bg: '#FFD6E5', a1: '#FF5C93', a2: '#7ED8C3', a3: '#FFB84D', ink: '#5A2E4A', paper: '#FFF3F7' },
   kraft: { bg: '#1C1A17', a1: '#D9502F', a2: '#1C1A17', a3: '#D9502F', ink: '#1C1A17', paper: '#EFE6D6' },
+  // Base AsianPop (feature 010): colores medidos en la base de Canva
+  base: { bg: '#11052C', a1: '#C04B0F', a2: '#FF3131', a3: '#E7DECF', ink: '#000000', paper: '#FAFAFA' },
 } as const;
 
 const allEls = (id: (typeof BASE_IDS)[number]): { page: string; el: PageElement }[] =>
   PAGE_KEYS.flatMap((page) => baseTemplate(id).pages[page].els.map((el) => ({ page, el })));
 
 describe('plantillas base', () => {
-  it('son cuatro, en este orden, con los nombres del mockup', () => {
-    expect(BASE_TEMPLATES.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft']);
-    expect(BASE_TEMPLATES.map((t) => t.base)).toEqual(['neon', 'pop', 'kawaii', 'kraft']);
-    expect(BASE_TEMPLATES.map((t) => t.name)).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal']);
+  it('son cinco, en este orden: las cuatro del mockup y Base AsianPop (feature 010) al final', () => {
+    expect(BASE_TEMPLATES.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft', 'base']);
+    expect(BASE_TEMPLATES.map((t) => t.base)).toEqual(['neon', 'pop', 'kawaii', 'kraft', 'base']);
+    expect(BASE_TEMPLATES.map((t) => t.name)).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal', 'Base AsianPop']);
   });
 
-  it('las cuatro validan contra el esquema de plantillas', () => {
+  it('todas validan contra el esquema de plantillas', () => {
     const r = workspaceSchema.safeParse({ templates: BASE_TEMPLATES, defaultId: 'neon' });
     expect(r.success, r.success ? '' : JSON.stringify(r.error.issues, null, 2)).toBe(true);
   });
@@ -330,5 +333,70 @@ describe('pares tipográficos', () => {
       { title: 'serif', body: 'grotesk' },
       { title: 'grotesk', body: 'grotesk' },
     ]);
+  });
+});
+
+/** Base AsianPop (feature 010): lo medido en la página 3 de la base de Canva. */
+describe('plantilla Base AsianPop', () => {
+  const t = baseTemplate('base');
+  const products = (): ProductsEl => t.pages.productos.els.find((e) => e.type === 'products') as ProductsEl;
+
+  it('usa Poppins en todo y la paleta de la base, sin advertencias de contraste', () => {
+    expect(t.fonts).toEqual({ title: 'poppins', body: 'poppins' });
+    expect(paletteWarnings(t.palette)).toEqual([]);
+  });
+
+  it('el bloque de productos lleva las medidas y estilos de la base', () => {
+    expect(products()).toMatchObject({
+      layout: 'base',
+      cardStyle: 'tarjeta',
+      nameStyle: 'tarjeta',
+      nameGlow: true,
+      sold: 'diagonal',
+      soldFill: 'a2',
+      soldGlow: true,
+      priceFill: '#1F021D',
+      priceText: 'a1',
+      priceGlow: true,
+      bubbleFill: 'a3',
+      bubbleShadow: true,
+      descLh: 1.4,
+    });
+  });
+
+  it('el título es «CATÁLOGO {seccion}» en Poppins 32 negrita, mayúsculas y centrado (FR-010, FR-013a)', () => {
+    const title = t.pages.productos.els.find((e) => e.type === 'text' && e.text === 'CATÁLOGO {seccion}');
+    expect(title).toMatchObject({ size: 32, weight: 700, upper: true, align: 'center', x: 24.05, y: 2.56, w: 51.95 });
+  });
+
+  it('el logo es cuadrado de 4,06 cm a 0,3 cm del borde superior y derecho', () => {
+    const logo = t.pages.productos.els.find((e) => e.type === 'image' && e.src === 'logo')!;
+    const cmW = (logo.w / 100) * 21;
+    const cmH = (logo.h / 100) * 29.7;
+    expect(cmW).toBeCloseTo(4.06, 1);
+    expect(cmH).toBeCloseTo(4.06, 1);
+    expect(logo.y / 100 * 29.7).toBeCloseTo(0.3, 0);
+    expect(21 - ((logo.x + logo.w) / 100) * 21).toBeLessThan(0.4);
+  });
+
+  it('todos los textos usan el interlineado 1,4 de la base', () => {
+    for (const page of PAGE_KEYS) {
+      for (const el of t.pages[page].els) if (el.type === 'text') expect(el.lh, `${page}/${el.id}`).toBe(1.4);
+    }
+  });
+
+  it('el interlineado por defecto de las demás plantillas no cambió (1,05)', () => {
+    for (const id of ['neon', 'pop', 'kawaii', 'kraft'] as const) {
+      for (const page of PAGE_KEYS) {
+        for (const el of baseTemplate(id).pages[page].els) if (el.type === 'text') expect(el.lh).toBeUndefined();
+      }
+    }
+  });
+
+  it('las portadas no traen ilustraciones ni arte del negocio: solo el logo y el ícono propio', () => {
+    for (const page of ['portada', 'seccion'] as const) {
+      const sources = t.pages[page].els.flatMap((e) => (e.type === 'image' ? [e.src] : []));
+      expect(sources.every((s) => s === 'logo' || s === 'chat')).toBe(true);
+    }
   });
 });

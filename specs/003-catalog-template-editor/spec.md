@@ -268,7 +268,7 @@ El mockup actualizado muestra cuatro detalles que las pantallas actuales no tien
 - Esta feature extiende `002-admin-panel-theming` y reemplaza su pantalla Apariencia. La suposición de 002 de que un editor libre de maquetación quedaba fuera de alcance queda superada por esta feature. Las reglas de las features 001 y 002 que esta spec no menciona siguen vigentes.
 - Los mockups de referencia son los tres archivos de `docs/Diseño de catálogo y administración`. El panel conserva la dirección visual 1b "Pop" y no incluye selector de direcciones.
 - El editor está pensado para pantallas de escritorio o portátil: debe ser legible y operable en 1366×768 y a 1024 px de ancho; por debajo de eso no se garantiza.
-- Las imágenes disponibles en el editor son las cinco incluidas con el catálogo (logo, collage, mármol, atardecer y el marco de portada que usa hoy el PDF); subir imágenes propias queda fuera de esta versión.
+- Las imágenes disponibles en el editor son las cinco incluidas con el catálogo (logo, collage, mármol, atardecer y el marco de portada que usa hoy el PDF); subir imágenes propias queda fuera de esta versión. _(Levantado por la feature 010: «Mis imágenes» permite subir logo e ilustraciones.)_
 - Una plantilla se aplica a todo el catálogo; no hay plantillas distintas por sección. Los productos propios y los combos se dibujan en la página Productos de la plantilla.
 - La plantilla cambia cómo se ve el catálogo, no qué contiene: las reglas de inclusión, agotados, precios y paginación no dependen de la plantilla.
 - Los datos del catálogo (tienda, banner, teléfonos, dirección y políticas) son únicos y compartidos por todas las plantillas.

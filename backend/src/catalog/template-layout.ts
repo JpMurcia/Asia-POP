@@ -12,6 +12,7 @@
 
 import { RANGES, type NameStyle, type ProductsLayout } from './template';
 
+/** Las tres distribuciones generales, que comparten las mismas garantías (nombre separado, escala de la foto). `base` es la medida de la plantilla «Base AsianPop» y se prueba aparte. */
 export const PRODUCTS_LAYOUTS = ['alternado', 'tarjetas', 'lista'] as const satisfies readonly ProductsLayout[];
 
 export interface Rect {
@@ -44,6 +45,8 @@ export interface RowOptions {
   photoH?: number;
   /** `separado` pide un rectángulo `name` por fila. Por defecto `burbuja`. */
   nameStyle?: NameStyle;
+  /** Cuántos productos tiene la página (feature 010). Con `base` y 1 o 2, las filas se centran en la caja. */
+  count?: number;
 }
 
 const ROWS = 3;
@@ -56,6 +59,7 @@ interface Geo {
   sw: number;
   sh: number;
   named: boolean;
+  count?: number;
 }
 
 /** Sube o baja una caja de alto `h` para que no se salga de `[0, H]`. */
@@ -179,7 +183,69 @@ function lista(W: number, H: number, { sw, sh, named }: Geo): RowLayout[] {
   });
 }
 
+/**
+ * `base` (feature 010): la página de productos de la plantilla «Base AsianPop», medida en la base de Canva (hoja A4 de
+ * 21 × 29,7 cm). Las medidas son fracciones de la hoja y se pasan a fracciones de la caja del bloque suponiendo la caja
+ * de fábrica (ancho completo, desde el 11 % hasta el 96,4 % de la hoja): si la caja cambia, las filas se escalan con
+ * ella, como en las demás distribuciones.
+ *
+ * Tres filas en zigzag (foto a la izquierda, a la derecha, a la izquierda): la foto-tarjeta mide 6,10 × 8,03 cm, la
+ * burbuja beige (10,58 × 5,13 cm) va detrás de la foto y la etiqueta de precio cuelga justo bajo la burbuja. Medido:
+ * filas 1 y 3 de la izquierda (página 3 de la base). Estimado con las capturas y por confirmar con REA (quickstart §4):
+ * la fila de la derecha y la posición de la fila 1.
+ */
+const BASE_BOX = { y: 0.11, h: 0.854 } as const;
+const BASE_PHOTO = { w: 6.1 / 21, h: 8.03 / 29.7, rowY: 0.112, rowStep: 0.287, leftX: 3.14 / 21, rightX: 0.505 } as const;
+const BASE_BUBBLE = { w: 10.58 / 21, h: 5.13 / 29.7, dy: 1.55 / 29.7, leftX: 6.55 / 21, rightX: 0.129 } as const;
+const BASE_PRICE = { w: 3.45 / 21, h: 1.08 / 29.7, leftCx: (10.9 + 3.45 / 2) / 21, rightCx: 0.333 } as const;
+
+function base(W: number, H: number, { sw, sh, count }: Geo): RowLayout[] {
+  /** Fracción de la hoja a fracción de la caja (vertical). */
+  const fy = (page: number): number => ((page - BASE_BOX.y) / BASE_BOX.h) * H;
+  const fh = (page: number): number => (page / BASE_BOX.h) * H;
+  const photoW = BASE_PHOTO.w * W * sw;
+  const photoH = fh(BASE_PHOTO.h) * sh;
+  const rows = Array.from({ length: ROWS }, (_, i): RowLayout => {
+    const left = i % 2 === 0;
+    const top = fy(BASE_PHOTO.rowY + i * BASE_PHOTO.rowStep);
+    // La foto crece y se achica desde su centro, sin salirse de la caja
+    const cx = (left ? BASE_PHOTO.leftX : BASE_PHOTO.rightX) * W + (BASE_PHOTO.w * W) / 2;
+    const cy = top + fh(BASE_PHOTO.h) / 2;
+    const bubble: Rect = {
+      x: (left ? BASE_BUBBLE.leftX : BASE_BUBBLE.rightX) * W,
+      y: top + fh(BASE_BUBBLE.dy),
+      w: BASE_BUBBLE.w * W,
+      h: fh(BASE_BUBBLE.h),
+    };
+    const priceW = BASE_PRICE.w * W;
+    return {
+      photo: { x: fitX(cx - photoW / 2, photoW, W), y: fitY(cy - photoH / 2, photoH, H), w: photoW, h: photoH },
+      bubble,
+      price: {
+        x: (left ? BASE_PRICE.leftCx : BASE_PRICE.rightCx) * W - priceW / 2,
+        y: bubble.y + bubble.h,
+        w: priceW,
+        h: fh(BASE_PRICE.h),
+      },
+      align: 'center',
+    };
+  });
+  if (count === undefined || count >= ROWS || count < 1) return rows;
+  // Con 1 o 2 productos las filas se centran en la caja: sin huecos abajo (FR-015)
+  const used = rows.slice(0, count).flatMap((r) => [r.photo, r.bubble, r.price]);
+  const top = Math.min(...used.map((r) => r.y));
+  const bottom = Math.max(...used.map((r) => r.y + r.h));
+  const shift = (H - (bottom - top)) / 2 - top;
+  for (const r of rows) {
+    r.photo.y += shift;
+    r.bubble.y += shift;
+    r.price.y += shift;
+  }
+  return rows;
+}
+
 function build(layout: ProductsLayout, W: number, H: number, geo: Geo): RowLayout[] {
+  if (layout === 'base') return base(W, H, geo);
   if (layout === 'tarjetas') return tarjetas(W, H, geo);
   if (layout === 'lista') return lista(W, H, geo);
   return alternado(W, H, geo);
@@ -288,5 +354,5 @@ export function layoutRows(layout: ProductsLayout, W: number, H: number, opts: R
     sw = Math.min(sw, max.w / 100);
     sh = Math.min(sh, max.h / 100);
   }
-  return build(layout, W, H, { sw, sh, named });
+  return build(layout, W, H, { sw, sh, named, count: opts.count });
 }

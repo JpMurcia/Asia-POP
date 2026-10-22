@@ -267,7 +267,8 @@ function withSeparatedName(t: Template): Template {
   return copy;
 }
 
-describe.each(BASE_IDS)('nombre separado y texto completo con la plantilla %s, con los textos en el máximo (feature 007)', (id) => {
+// Base AsianPop no usa el rótulo separado: su nombre va dentro de la foto-tarjeta (feature 010) y se prueba aparte
+describe.each(BASE_IDS.filter((id) => id !== 'base'))('nombre separado y texto completo con la plantilla %s, con los textos en el máximo (feature 007)', (id) => {
   let r: Awaited<ReturnType<Harness['generate']>>;
   let m: NamesInspection;
 

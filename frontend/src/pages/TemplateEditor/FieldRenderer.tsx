@@ -6,6 +6,7 @@ import {
   isPaletteKey,
   type Palette,
 } from '../../../../backend/src/catalog/template';
+import ImagePicker from './ImagePicker';
 import { clampBox } from './useTemplateEditor';
 import { TOKEN_CHIPS, type FieldAction, type FieldDesc } from './inspector-fields';
 
@@ -106,7 +107,7 @@ function RangeField({
   onChange: FieldRendererProps['onChange'];
 }) {
   const scale = desc.scale ?? 1;
-  const stored = typeof value === 'number' ? value : desc.min / scale;
+  const stored = typeof value === 'number' ? value : (desc.fallback ?? desc.min / scale);
   const shown = Math.round(stored * scale * 100) / 100;
   const isCircle = desc.circleAt !== undefined && shown >= desc.circleAt;
   return (
@@ -265,6 +266,9 @@ export default function FieldRenderer({ fields, values, palette, onChange, onAct
                 <span className="ed-field-hint">Se reemplazan por el dato real al generar.</span>
               </div>
             );
+
+          case 'imagePicker':
+            return <ImagePicker key={`${f.key}-picker`} value={values[f.key]} label={f.label} onPick={(src) => onChange({ [f.key]: src })} />;
 
           case 'toggle': {
             const on = values[f.key] === true;

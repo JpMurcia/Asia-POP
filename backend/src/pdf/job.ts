@@ -18,6 +18,8 @@ export interface JobState {
   quality?: PdfQuality;
   /** Solo en `done` y solo si hay alguno: los productos cuyo texto no cupo completo en el PDF (feature 007). */
   textOverflow?: TextOverflow[];
+  /** Solo en `done` y solo si hay alguno: los productos cuya foto-tarjeta quedó con su fondo original aunque se pidió quitarlo (feature 010). */
+  backdropFallbacks?: { item: string }[];
 }
 
 /** Un único trabajo a la vez (FR-031). */
@@ -54,7 +56,7 @@ export class JobManager {
   complete(
     id: string,
     catalogId: string,
-    result: { sizeBytes?: number; quality?: PdfQuality; textOverflow?: TextOverflow[] } = {},
+    result: { sizeBytes?: number; quality?: PdfQuality; textOverflow?: TextOverflow[]; backdropFallbacks?: { item: string }[] } = {},
   ): void {
     if (this.state.id === id) {
       this.state = {
@@ -66,6 +68,7 @@ export class JobManager {
         ...(result.sizeBytes !== undefined ? { sizeBytes: result.sizeBytes } : {}),
         ...(result.quality !== undefined ? { quality: result.quality } : {}),
         ...(result.textOverflow && result.textOverflow.length > 0 ? { textOverflow: result.textOverflow } : {}),
+        ...(result.backdropFallbacks && result.backdropFallbacks.length > 0 ? { backdropFallbacks: result.backdropFallbacks } : {}),
       };
     }
   }

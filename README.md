@@ -57,7 +57,7 @@ El panel usa la barra lateral de la izquierda (estilo «Pop» del mockup de admi
 
 ### Plantillas y editor de Apariencia
 
-Una **plantilla** define cómo se ve el catálogo: cuatro páginas (portada, portada de sección, productos y políticas), una paleta de seis colores y un par tipográfico. La aplicación trae cuatro de fábrica —**Neón Noche** (la predeterminada, igual al catálogo de siempre), **Pop crema**, **Kawaii pastel** y **Kraft minimal**— y puedes crear hasta 30.
+Una **plantilla** define cómo se ve el catálogo: cuatro páginas (portada, portada de sección, productos y políticas), una paleta de seis colores y un par tipográfico. La aplicación trae cinco de fábrica —**Neón Noche** (la predeterminada, igual al catálogo de siempre), **Pop crema**, **Kawaii pastel**, **Kraft minimal** y **Base AsianPop**— y puedes crear hasta 30. En una instalación anterior la quinta no se agrega sola: se crea desde la galería con «Nueva plantilla desde Base AsianPop».
 
 - **Editor:** barra superior (← Menú, nombre de la plantilla, deshacer y rehacer, estado de guardado, Vista previa, «Usar» como predeterminada y Guardar), un riel con cuatro secciones, el lienzo con la página A4, la tira de las cuatro páginas con zoom (20 %–200 %) y el inspector.
   - **Plantillas:** la lista de plantillas y la galería (Editar, Duplicar, «Usar al generar», Eliminar; la predeterminada no se elimina).
@@ -66,6 +66,8 @@ Una **plantilla** define cómo se ve el catálogo: cuatro páginas (portada, por
   - **Datos:** nombre de la tienda, banner (80 caracteres), teléfonos, dirección y políticas (3500 caracteres en total). Son únicos para todo el catálogo, no por plantilla.
 - **Tamaño de los productos:** al seleccionar el bloque de productos, la primera sección del inspector es **Tamaño de los productos**: el ancho y el alto de la **zona** (mínimo 40 % × 30 % de la página) y el ancho y el alto de la **foto** (de 50 % a 150 % de su tamaño original, con el máximo que cabe según la distribución y la zona; si pides más, se recorta y una nota explica por qué). **Restaurar tamaños originales** vuelve a los de fábrica en un solo paso. El bloque nace «Fijo»: para arrastrarlo en la página pulsa **Desbloquear**.
 - **Nombre del producto:** con el estilo **Separado**, el nombre de cada producto (de Alegra, propio o combo) va en su propio **rótulo**, fuera de la burbuja y de la foto, con el color, el fondo y el resplandor neón que elijas; Neón Noche lo trae así, como `docs/Cat.pdf`, con un rótulo oscuro y el nombre en neón. Con **Dentro de la burbuja** se ve como siempre.
+- **Base AsianPop y foto-tarjeta:** esta plantilla reproduce la página de productos de la base hecha en Canva: título «CATÁLOGO <SECCIÓN>» en mayúsculas, tres productos en zigzag, burbuja beige con la descripción, precio con neón y cinta AGOTADO diagonal. Cada producto sale como una **foto-tarjeta** que la aplicación genera sola: tarjeta oscura con el nombre en neón y la foto de Alegra. En **Generar** aparece **Fondo de la foto** con una tarjeta de ejemplo: **Dejar como está** (marco claro sobre fondo oscuro desenfocado; el modo seguro y el predeterminado) o **Quitar el fondo automáticamente** (el producto flota sobre el fondo oscuro; si una foto no se puede separar con seguridad, esa foto se deja como está y el resumen final dice cuáles). Las tarjetas se guardan en una caché temporal (`data/card-cache/`), así que la segunda generación es más rápida.
+- **Mis imágenes:** en el inspector de una imagen puedes subir tu propio logo o ilustraciones (PNG, JPG o WEBP, hasta 5 MB), elegirlas y borrarlas; una imagen que usa alguna plantilla no se puede borrar. Se guardan junto a las fotos de productos con el prefijo `tpl-`.
 - **Consejos:** el botón **Consejos** de la barra superior abre una ayuda breve con lo anterior y los atajos; no cambia nada de la plantilla.
 - **Mover y cambiar elementos:** arrastra para mover, usa la esquina para cambiar el tamaño (se ajusta al centro con una guía), o escribe los valores en el inspector. Atajos: flechas (0,5 %; 2 % con Mayús), `Supr`, `Ctrl+D` duplicar, `Ctrl+Z` / `Ctrl+Mayús+Z` deshacer y rehacer, `Esc` quitar la selección; no actúan mientras escribes en un campo. Los elementos pueden ocultarse, bloquearse y reordenarse desde la lista de capas.
 - **Bloques automáticos:** productos, políticas, introducción de sección y pie se llenan solos con los datos de Alegra y de Contenido propio. No se eliminan, ocultan ni duplican, pero sí se mueven, se redimensionan y cambian de estilo (distribución, estilo de agotado…). Si uno llega al tamaño mínimo legible (6 pt) y aun así no cabe, el inspector lo avisa; al generar, Generar también lista los productos con texto que no cupo completo.
@@ -106,10 +108,15 @@ Con la suite de backend completa en paralelo, el cierre de Chrome en alguna prue
 Revisión visual (herramientas manuales, no forman parte de `npm test`):
 
 ```bash
-# Capturas PNG de cada página de un catálogo de muestra (LONG=1 usa textos en el máximo permitido, TEMPLATE=neon|pop|kawaii|kraft la plantilla)
+# Capturas PNG de cada página de un catálogo de muestra (LONG=1 usa textos en el máximo permitido, TEMPLATE=neon|pop|kawaii|kraft|base la plantilla)
 OUT=capturas npx tsx backend/tests/fixtures/visual-sample.ts
 # Páginas concretas de un PDF, por ejemplo de docs/Cat.pdf, para compararlas
 PDF=docs/Cat.pdf PAGES=1,4,38 OUT=capturas npx tsx backend/tests/fixtures/pdf-pages.ts
+# Comprobar que las plantillas anteriores no cambian (8 PDF byte a byte): capturar con el código de antes y comparar con el de ahora
+BASELINE_DIR=carpeta npx tsx backend/tests/fixtures/pdf-baseline.ts capture
+BASELINE_DIR=carpeta npx tsx backend/tests/fixtures/pdf-baseline.ts compare
+# Peso y tiempos de un catálogo sintético de ~180 productos con Base AsianPop (BACKDROP=marco|sin-fondo)
+PRODUCTS=180 npx tsx backend/tests/fixtures/card-perf.ts
 ```
 
 Para probar a mano el editor con datos de muestra, usa una carpeta de datos temporal y un Alegra simulado (con una sección propia con introducción, un producto agotado y un combo con un componente agotado):
@@ -150,6 +157,7 @@ Las fuentes del panel y del catálogo se instalan en local (`@fontsource`); la a
 
 - [`specs/001-catalog-pdf-generator/`](specs/001-catalog-pdf-generator/): el generador de catálogo (conexión con Alegra, productos propios, combos, PDF).
 - [`specs/002-admin-panel-theming/`](specs/002-admin-panel-theming/): el panel de administración con estilo Pop, las opciones de generación, la vista previa de estructura y el editor de tema (reemplazado por el editor de plantillas de la feature 003).
+- [`specs/010-base-template-product-card/`](specs/010-base-template-product-card/): la plantilla Base AsianPop y la foto-tarjeta generada (con quitar el fondo y respaldo seguro), las imágenes de plantilla subidas y su validación (peso, tiempos y comparación byte a byte con las plantillas anteriores).
 - [`specs/003-catalog-template-editor/`](specs/003-catalog-template-editor/): el editor visual de plantillas del catálogo, las cuatro plantillas base, la plantilla por generación y los ajustes de paridad con el mockup. Su revisión visual está en [`visual-review.md`](specs/003-catalog-template-editor/visual-review.md).
 - [`specs/004-fix-alegra-images/`](specs/004-fix-alegra-images/): las fotos reales de Alegra y el informe de las que no se pueden obtener.
 - [`specs/005-optimize-pdf-size/`](specs/005-optimize-pdf-size/): la calidad del PDF (Optimizada u Original) y el tamaño de cada catálogo.

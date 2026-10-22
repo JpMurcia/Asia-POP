@@ -23,10 +23,10 @@ function dbWithTheme() {
 }
 
 describe('siembra de plantillas', () => {
-  it('en una base nueva siembra las 4 plantillas base, Neón Noche predeterminada y revisión 1', () => {
+  it('en una base nueva siembra las 5 plantillas base, Neón Noche predeterminada y revisión 1', () => {
     const ws = new TemplateRepo(openDatabase(':memory:')).getWorkspace();
-    expect(ws.templates.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft']);
-    expect(ws.templates.map((t) => t.name)).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal']);
+    expect(ws.templates.map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft', 'base']);
+    expect(ws.templates.map((t) => t.name)).toEqual(['Neón Noche', 'Pop crema', 'Kawaii pastel', 'Kraft minimal', 'Base AsianPop']);
     expect(ws.defaultId).toBe('neon');
     expect(ws.revision).toBe(1);
     expect(ws.templates).toEqual(BASE_TEMPLATES);
@@ -67,7 +67,7 @@ describe('siembra de plantillas', () => {
     const second = new TemplateRepo(db).getWorkspace();
     expect(second).toEqual(first);
     expect(second.revision).toBe(1);
-    expect((db.prepare('SELECT COUNT(*) AS n FROM catalog_template').get() as { n: number }).n).toBe(4);
+    expect((db.prepare('SELECT COUNT(*) AS n FROM catalog_template').get() as { n: number }).n).toBe(5);
     expect((db.prepare('SELECT COUNT(*) AS n FROM template_workspace').get() as { n: number }).n).toBe(1);
   });
 
@@ -75,7 +75,7 @@ describe('siembra de plantillas', () => {
     const db = openDatabase(':memory:');
     new TemplateRepo(db).summary();
     new TemplateRepo(db).summary();
-    expect((db.prepare('SELECT COUNT(*) AS n FROM catalog_template').get() as { n: number }).n).toBe(4);
+    expect((db.prepare('SELECT COUNT(*) AS n FROM catalog_template').get() as { n: number }).n).toBe(5);
   });
 
   it('la tabla catalog_theme queda intacta', () => {
@@ -103,10 +103,10 @@ describe('una generación en una base recién migrada no encuentra el repositori
     expect(template.palette).toMatchObject({ bg: '#102030', a1: '#CC33DD', a2: '#33DDCC', a3: '#FFAA33' });
   });
 
-  it('summary() siembra y trae las cuatro plantillas con neon predeterminada', () => {
+  it('summary() siembra y trae las cinco plantillas con neon predeterminada', () => {
     const summary = new TemplateRepo(dbWithTheme()).summary();
     expect(summary.defaultId).toBe('neon');
-    expect(summary.items.map((i) => i.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft']);
+    expect(summary.items.map((i) => i.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft', 'base']);
     expect(summary.items[0]).toMatchObject({ id: 'neon', isDefault: true, palette: { bg: '#102030' } });
   });
 
@@ -119,7 +119,7 @@ describe('una generación en una base recién migrada no encuentra el repositori
     const repo = new TemplateRepo(db);
     repo.touch();
     const ws = repo.getWorkspace();
-    expect(ws.templates).toHaveLength(4);
+    expect(ws.templates).toHaveLength(5);
     expect(ws.revision).toBe(2);
   });
 });

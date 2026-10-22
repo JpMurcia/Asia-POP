@@ -3,6 +3,7 @@ import {
   CIRCLE_RADIUS,
   PAGE_H,
   PAGE_W,
+  TEXT_DEFAULTS,
   hasTokens,
   resolveColor,
   resolveTokens,
@@ -15,7 +16,7 @@ import {
   type TextEl,
 } from '../../../backend/src/catalog/template';
 import type { CatalogItem, Term } from '../../../backend/src/catalog/types';
-import { IMAGES, fontFamily, fontKeyOf, weightFor } from './assets';
+import { fontFamily, fontKeyOf, imageSrc, weightFor } from './assets';
 import FooterBlock from './blocks/FooterBlock';
 import IntroBlock from './blocks/IntroBlock';
 import ProductsBlock from './blocks/ProductsBlock';
@@ -72,7 +73,7 @@ function TemplateElementImpl({ el, palette, fonts, tokens, items, terms, introTe
         <img
           className="tpl-image"
           data-src={el.src}
-          src={IMAGES[el.src]}
+          src={imageSrc(el.src)}
           alt=""
           draggable={false}
           style={{
@@ -127,11 +128,13 @@ function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSP
     // `--fit` lo escribe useFit en los textos con datos insertables; los demás lo dejan en 1
     fontSize: `calc(${el.size}px * var(--fit, 1))`,
     fontWeight: weightFor(key, el.weight),
-    lineHeight: 1.05,
+    lineHeight: el.lh ?? TEXT_DEFAULTS.lh,
     color: c(el.color),
     textAlign: el.align,
     letterSpacing: `${el.ls}px`,
     textTransform: el.upper ? 'uppercase' : 'none',
+    // Del color del texto (currentColor); CSS tacha cada línea de un texto de varias
+    textDecorationLine: (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : undefined,
     WebkitTextStroke: el.strokeW > 0 && stroke !== 'transparent' ? `calc(${el.strokeW}px * var(--fit, 1)) ${stroke}` : undefined,
     paintOrder: 'stroke fill',
     textShadow: glow !== 'transparent' ? glowText(glow) : undefined,
@@ -171,7 +174,7 @@ function FitText({
   fonts: Template['fonts'];
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useFit(ref, [content, el.size, el.weight, el.ls, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h], {
+  useFit(ref, [content, el.size, el.weight, el.ls, el.lh, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h], {
     axis: 'both',
   });
   return (

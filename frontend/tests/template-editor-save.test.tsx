@@ -112,7 +112,7 @@ describe('Guardar (FR-025)', () => {
     const body = api.puts()[0]!.body!;
     expect(body.expectedRevision).toBe(1);
     expect(body.defaultId).toBe('neon');
-    expect((body.templates as { id: string }[]).map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft']);
+    expect((body.templates as { id: string }[]).map((t) => t.id)).toEqual(['neon', 'pop', 'kawaii', 'kraft', 'base']);
     expect(body.business).toMatchObject({ storeName: 'ASIANPOP MARKET+' });
     const neon = (body.templates as { pages: { portada: { els: { id: string; x: number }[] } } }[])[0]!;
     expect(neon.pages.portada.els.find((e) => e.id === 'neon-p2')!.x).toBe(20);
@@ -340,7 +340,7 @@ describe('lienzo y datos de muestra (FR-004)', () => {
     goToPage('Productos');
     expect(screen.getByRole('button', { name: 'Productos' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Portada' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getAllByTestId(/^thumb-/)).toHaveLength(4);
+    expect(screen.getAllByTestId(/^thumb-/)).toHaveLength(4); // las cuatro páginas de la plantilla abierta
   });
 
   it('el zoom va de 20 % a 200 % y Ajustar lo devuelve al espacio disponible', async () => {
