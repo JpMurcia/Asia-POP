@@ -13,6 +13,7 @@ export interface PopoverProps {
 const WIDTH = 300;
 const GAP = 8;
 const MARGIN = 8;
+const MIN_HEIGHT = 220;
 
 /**
  * Panel anclado junto a un control del inspector (feature 009). Va en un portal con posición fija porque el
@@ -29,8 +30,17 @@ function place(anchor: HTMLElement): CSSProperties {
   const fitsLeft = rect.left - GAP - WIDTH >= MARGIN;
   const left = fitsLeft ? rect.left - GAP - WIDTH : Math.max(MARGIN, Math.min(rect.left, window.innerWidth - WIDTH - MARGIN));
   const top = fitsLeft ? rect.top : rect.bottom + GAP;
-  const clamped = Math.max(MARGIN, Math.min(top, window.innerHeight - 220));
+  const clamped = Math.max(MARGIN, Math.min(top, window.innerHeight - MIN_HEIGHT));
   return { left, top: clamped, width: WIDTH, maxHeight: window.innerHeight - clamped - MARGIN };
+}
+
+/** Sube el panel lo justo para que su contenido completo quepa en la ventana (si cabe), en vez de cortarlo con scroll. */
+function fit(panel: HTMLElement, style: CSSProperties): CSSProperties {
+  const top = typeof style.top === 'number' ? style.top : MARGIN;
+  const full = panel.scrollHeight;
+  const room = window.innerHeight - 2 * MARGIN;
+  const wanted = Math.max(MARGIN, Math.min(top, window.innerHeight - MARGIN - Math.min(full, room)));
+  return wanted === top ? style : { ...style, top: wanted, maxHeight: window.innerHeight - wanted - MARGIN };
 }
 
 function PopoverPanel({ anchor, title, onClose, children }: PopoverProps & { anchor: HTMLElement }) {
@@ -41,6 +51,7 @@ function PopoverPanel({ anchor, title, onClose, children }: PopoverProps & { anc
   useLayoutEffect(() => {
     const panel = ref.current;
     if (!panel) return undefined;
+    setStyle((s) => fit(panel, s));
     (panel.querySelector<HTMLElement>('[data-autofocus]') ?? panel).focus({ preventScroll: true });
     return () => {
       // Al cerrar: si el foco estaba dentro del panel, vuelve al control que lo abrió
@@ -61,7 +72,7 @@ function PopoverPanel({ anchor, title, onClose, children }: PopoverProps & { anc
       const target = e.target as Node | null;
       if (target && !ref.current?.contains(target) && !anchor.contains(target)) onClose();
     };
-    const onResize = () => setStyle(place(anchor));
+    const onResize = () => setStyle(ref.current ? fit(ref.current, place(anchor)) : place(anchor));
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('mousedown', onDown, true);
     window.addEventListener('resize', onResize);

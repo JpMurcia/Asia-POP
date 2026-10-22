@@ -74,7 +74,8 @@ La feature está implementada (`specs/010-base-template-product-card/`). Lo que 
 
 - [ ] **T038** Medir con **Capas → Organizar** las tarjetas 1 y 2 de la página 3 de «PRUEBA CATALOGO». Verificado de forma aproximada con la captura 19: fila 2 con la foto en X 50,5 %, la burbuja en 12,6 % y el precio centrado en 33,6 %, todo a ~0,5 % de lo estimado (≈1,5 mm). Si la medida exacta difiere más de 2 mm, ajustar las constantes `BASE_*` de `backend/src/catalog/template-layout.ts` y su prueba.
 - [ ] **Sin medir**: portadas (posición, tipografía y tamaño del título, de «Domicilios» y de los íconos), páginas 28 a 42, sombra y burbuja (desenfoque, transparencia), estrellas y manchas, y la **unidad del tamaño de letra** (32, 21, 14 y 58 se tomaron 1:1 en px lógicos; falta una prueba de impresión).
-- [ ] **Calibrar** los umbrales de «Quitar el fondo automáticamente» con fotos reales de Alegra (hoy solo con fotos sintéticas) y el neón contra la base.
+- [x] **Calibrado** (2026-10-22) «Quitar el fondo automáticamente» con las 181 fotos reales de la caché local: 148 se recortan (casi todas bien) y 33 caen al marco con su motivo (17 borde no uniforme, 8 producto cortado, 5 casi llena, 3 varios sujetos); las que caen son fotos de ambiente, collages y combos, como se espera. No se cambiaron los umbrales. Límite conocido: unas 3 de las 148 son blanco sobre blanco (cajas de cartón, una lata clara) y quedan recortadas a medias; ninguna medida simple separó esas 3 sin dejar fuera productos buenos, así que se anota y se usa «Dejar como está» para esos casos.
+- [ ] **Neón** contra la base: sigue sin comparar con una foto real de la base.
 
 ### Paso 2 — Repriorizar con datos reales
 

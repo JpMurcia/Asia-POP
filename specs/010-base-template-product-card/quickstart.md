@@ -88,6 +88,7 @@ Con datos temporales y Alegra simulado; nunca con la cuenta real.
 | --- | --- |
 | §1 No regresión | 8 de 8 PDF idénticos a la línea base (`pdf-baseline.ts compare`) |
 | §2 Foto-tarjeta, «Dejar como está» | Proporción, nombre dentro de la franja, determinismo y productos sin foto fuera: cubiertos por `photo-card.test.ts`, `catalog-cards.test.ts` y `products-block-card.test.tsx`; revisado a simple vista en un PDF real |
+| §3 «Quitar el fondo» con fotos reales (2026-10-22) | 181 fotos de la caché local: 148 recortadas, 33 al marco (17 borde no uniforme, 8 cortado, 5 casi llena, 3 varios sujetos). Umbrales sin cambios. Límite: ~3 productos blancos sobre fondo blanco quedan recortados a medias; se recomienda «Dejar como está» para ellos |
 | §3 «Quitar el fondo» | Fondo liso aceptado; degradado, producto cortado, dos productos, casi llena y blanco sobre blanco caen al marco con su motivo (`photo-card-backdrop.test.ts`); aviso final con nombres cubierto en `catalog-cards.test.ts` y `generate-photo-backdrop.test.tsx`. **Falta** probarlo con fotos reales de Alegra |
 | §4 Plantilla contra la base | Fila 3 igual a lo medido (±0,1 cm, `template-layout-base.test.ts`); las tres filas y el lado derecho coinciden con lo medido con REA (T038, ±1 mm); 0, 1, 2, 3, 4 y 7 productos sin huecos |
 | §5 Descripción, contacto y portadas | Corta centrada, 400 caracteres sin desbordes en Chrome, sin descripción sin burbuja; contacto desde la configuración en todas las portadas; imágenes subidas |
