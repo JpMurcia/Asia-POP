@@ -77,3 +77,15 @@ Esperado: todo en verde; las pruebas que buscaban cuadritos y listas se actualiz
 2. Ver «Colores de la plantilla»; elegir uno; escribir `#E91E8C`; usar el cuentagotas sobre una foto.
 3. Abrir «Fuente»: comprobar que se ven las seis y elegir una.
 4. Guardar, recargar, generar el PDF y comparar con el lienzo.
+
+## Resultados de la validación (2026-10-22)
+
+| Verificación | Resultado |
+|--------------|-----------|
+| §1 Línea base byte a byte (T024) | 8 de 8 PDF **idénticos** a los capturados con el commit `77f5690` |
+| §2–§5 Cálculos, selectores, teclado y accesibilidad | Pruebas verdes: frontend 890 y backend 1108 (`tsc` limpio en ambos); los archivos de Chrome que fallaron por carga pasan solos |
+| SC-005 (ninguna capacidad se pierde) | Recorrido de cada descriptor de color y de fuente de cada tipo de elemento en las cinco plantillas base: paleta completa, selector gráfico y «Ninguno»/«Transparente» solo donde el campo las tiene |
+| SC-008 (abrir y guardar no cambia nada) | Elegir el valor ya activo en cada propiedad de color y fuente de las cinco plantillas no cambia el estado ni lo marca como modificado |
+| SC-006 (< 0,2 s) | Reunir los colores de una plantilla de 200 elementos tarda mucho menos de 100 ms (prueba con tope de 100 ms) |
+| §7 Revisión manual | **Pendiente** (T027): requiere mirar el editor con una persona |
+

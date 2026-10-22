@@ -138,3 +138,9 @@ Lee docs/specs/PENDIENTES-REA.md y ejecútalo en orden.
    (/speckit-specify → /speckit-plan → /speckit-tasks → /speckit-implement).
 Marca cada casilla de este archivo al terminarla y sube los cambios a la rama al final de cada paso.
 ```
+
+### Feature 009 — selectores de color y de fuente (2026-10-22)
+
+- [x] Implementada y probada (`specs/009-color-font-pickers/`): panel anclado, «Colores de la plantilla», buscador, cuentagotas y selector de fuente; PDF de las plantillas base idéntico byte a byte.
+- [ ] **Sin medir con REA**: las medidas en píxeles de los controles dentro de cada panel de Canva y la pestaña «Estilo» de la fuente (quedan fuera de la 009, ver su spec).
+- [ ] **Revisión manual** pendiente (T027, `specs/009-color-font-pickers/quickstart.md` §7).
