@@ -96,7 +96,7 @@
 - [X] T026 [P] Revisar la tolerancia de rendimiento: cambiar cada ajuste en el editor no vuelve a dibujar otros elementos (`TemplateElement` memorizado) y se ve en < 0,2 s (SC-005); anotar el resultado en `quickstart.md`
 - [X] T027 Ejecutar la línea base byte a byte (`npx tsx tests/fixtures/pdf-baseline.ts`) y `npx vite build`; las 4 plantillas base y `base` deben salir idénticas (SC-001, SC-007, FR-015)
 - [X] T028 Ejecutar los conjuntos completos `npx vitest run` en `backend/` y `frontend/` (los archivos de Chrome que fallen por carga se repiten solos con `--fileParallelism=false`) y `npx tsc --noEmit` en ambos
-- [ ] T029 [P] Revisión manual de `quickstart.md` §6 (≈ 3 min) y marcar los resultados en su sección de validación
+- [X] T029 [P] Revisión manual de `quickstart.md` §6 (≈ 3 min) y marcar los resultados en su sección de validación
 - [X] T030 [P] Actualizar el README (editor de plantillas: Configuración avanzada) y `specs/003-catalog-template-editor/spec.md` con una nota breve; marcar lo confirmado y lo no medido (unidad del interletrado de Canva) en `docs/specs/PENDIENTES-REA.md`
 
 ---

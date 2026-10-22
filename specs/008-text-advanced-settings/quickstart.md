@@ -68,5 +68,5 @@ Esperado: con altura de línea 0,5 / 1,37 / 2,5, espaciado −10 / 60 y anclaje 
 | §2–§4 Esquema, render, inspector y panel | Pruebas verdes: frontend 798 y backend 1108 (`tsc` limpio en ambos) |
 | §5 Fidelidad en Chrome | Altura de línea 0,5 / 1,37 / 2,5, espaciado −10 / 0 / 33,3 / 60 y anclaje arriba / centro / abajo coinciden con el documento; borde del texto a < 0,5 % de la caja |
 | SC-005 (< 0,2 s) | Sin medición cronometrada: cada parche vuelve a dibujar solo el elemento editado (`TemplateElement` memorizado) |
-| §6 Revisión manual | **Pendiente** (T029): requiere mirar el editor con una persona |
+| §6 Revisión manual (T029) | Hecha el 2026-10-22 en Chrome con datos temporales (servidor aparte, `DATA_DIR` nuevo, Alegra simulado): altura de línea `1,37` y `9` (⇒ 2,5), espaciado 60 y 4 px, anclaje Arriba/Abajo (texto pegado al borde a 0 px), guardar, recargar (valores y anclaje intactos) y vista previa con los mismos valores. Con altura 2,5 y espaciado 60 a la vez sobre un título largo la letra llega al mínimo del ajuste automático y el texto se sale de su caja: es la combinación extrema y se espera, no un fallo. Pendiente: generar el PDF con productos reales (cubierto por las pruebas de Chrome) y el cronometraje de SC-005 |
 

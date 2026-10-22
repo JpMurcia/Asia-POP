@@ -87,5 +87,5 @@ Esperado: todo en verde; las pruebas que buscaban cuadritos y listas se actualiz
 | SC-005 (ninguna capacidad se pierde) | Recorrido de cada descriptor de color y de fuente de cada tipo de elemento en las cinco plantillas base: paleta completa, selector gráfico y «Ninguno»/«Transparente» solo donde el campo las tiene |
 | SC-008 (abrir y guardar no cambia nada) | Elegir el valor ya activo en cada propiedad de color y fuente de las cinco plantillas no cambia el estado ni lo marca como modificado |
 | SC-006 (< 0,2 s) | Reunir los colores de una plantilla de 200 elementos tarda mucho menos de 100 ms (prueba con tope de 100 ms) |
-| §7 Revisión manual | **Pendiente** (T027): requiere mirar el editor con una persona |
+| §7 Revisión manual (T027) | Hecha el 2026-10-22 en Chrome con datos temporales: «Colores de la plantilla» con la paleta y los libres usados, `#e91` propuesto como `#EE9911` y aplicado con Enter, `zzz` con «El código de color no es válido» sin cambiar el color, Escape cierra y devuelve el foco, cuentagotas visible (Chrome tiene `EyeDropper`; no se tomó un color real de la pantalla), selector de fuente con cada familia en su tipografía y ✓ en la activa, Bungee aplicada al lienzo, y con el elemento bloqueado ambos botones deshabilitados con su indicación. Pendiente: probar el cuentagotas sobre una foto real |
 

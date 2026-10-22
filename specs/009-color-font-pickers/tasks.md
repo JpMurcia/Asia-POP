@@ -94,7 +94,7 @@
 - [X] T024 Ejecutar la línea base byte a byte: `BASELINE_DIR=<carpeta de T001> npx tsx tests/fixtures/pdf-baseline.ts compare` tras `npx vite build`; las 8 salidas deben ser **idénticas** (SC-001, FR-017); comprobar además que abrir y guardar de nuevo una plantilla no cambia ningún color ni fuente guardados (SC-008) con una prueba de ida y vuelta en `frontend/tests/template-editor-save.test.tsx`
 - [X] T025 Ejecutar los conjuntos completos `npx vitest run` en `frontend/` y `backend/` (los archivos de Chrome que fallen por carga se repiten solos con `--fileParallelism=false`) y `npx tsc --noEmit` en ambos
 - [X] T026 [P] Medir que abrir cada selector con una plantilla cargada tarda < 0,2 s (SC-006) con una prueba que mide el cálculo de `usedColors` sobre una plantilla de 200 elementos; anotar el resultado en `quickstart.md`
-- [ ] T027 [P] Revisión manual de `quickstart.md` §7 (≈ 5 min) si hay una persona disponible, y marcar los resultados en su sección de validación
+- [X] T027 [P] Revisión manual de `quickstart.md` §7 (≈ 5 min) si hay una persona disponible, y marcar los resultados en su sección de validación
 - [X] T028 [P] Actualizar el README (editor de plantillas: selectores de color y de fuente, cuentagotas, y que un elemento bloqueado deshabilita los selectores), la nota en `specs/003-catalog-template-editor/spec.md` y `docs/specs/PENDIENTES-REA.md` (lo cerrado por la 009 y lo no medido: medidas en píxeles de los controles y la pestaña «Estilo» de la fuente)
 
 ---
