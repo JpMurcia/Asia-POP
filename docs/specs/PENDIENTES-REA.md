@@ -1,6 +1,6 @@
 # Pendientes: mapeo de Canva con REA y mejoras del editor
 
-**Estado**: abierto · **Creado**: 2026-10-14 · **Rama**: `claude/stoic-mayer-vluycb`
+**Estado**: abierto · **Creado**: 2026-10-14 · **Rama**: `main` (todo el trabajo anterior ya está unificado ahí)
 
 > **Decisión del responsable**: REA es **indispensable**. Las mejoras del editor deben basarse en mediciones reales
 > de Canva hechas con REA, no en documentación pública ni en suposiciones. Todo lo hecho hasta ahora sin REA es
@@ -27,8 +27,8 @@ aparecieron en la sesión, pero **ninguna llegó a ejecutarse contra un objetivo
 La sesión **tiene que correr en local**, en el mismo computador donde está el navegador. Una sesión en la nube no
 puede alcanzar el puerto 9222 de ese computador.
 
-1. Claude Code **local** (CLI o app de escritorio), con este repositorio clonado y en la rama `claude/stoic-mayer-vluycb`
-   (o en `main`, si la rama ya se fusionó).
+1. Claude Code **local** (CLI o app de escritorio), con este repositorio clonado y actualizado en `main`
+   (`git checkout main && git pull`).
 2. Registrar REA en ese Claude Code y reiniciarlo:
    ```bash
    npx rea-agents setup            # elegir Claude Code y aprobar los cambios
@@ -104,7 +104,7 @@ sobre la pestaña del editor de Canva:
       comprobar que el indicador dice "Todo guardado" y que se ve igual.
 - [ ] **M2** SC-006: cronometrar a una persona componiendo "~~$25.000~~ $19.900": menos de 1 minuto.
 - [ ] **M3** Probar en Windows con el navegador habitual (la sesión anterior validó en Linux con Chromium).
-- [ ] **M4** Decidir si se abre un PR de `claude/stoic-mayer-vluycb` hacia `main`.
+- [x] **M4** Unificar en `main`: hecho el 2026-10-22 (la rama `claude/stoic-mayer-vluycb` se integró sin conflictos).
 
 ---
 
