@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/008-text-advanced-settings/plan.md
+at specs/009-color-font-pickers/plan.md
 <!-- SPECKIT END -->
 
 Trabajo pendiente para la próxima sesión: docs/specs/PENDIENTES-REA.md (REA es obligatorio
