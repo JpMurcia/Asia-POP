@@ -149,3 +149,16 @@ aplanar; incluir notas; seleccionar páginas), panel **Compartir**, panel **Redi
 páginas 1 a 12 completas. **No se descargó ningún archivo.** Límites del método: los clics sobre capas cubiertas
 (portadas, imágenes) se agotan por tiempo, y Canva solo dibuja las páginas cercanas a la vista (las páginas 28 a 42
 exigen desplazarse a mano).
+
+## Séptima ronda: posiciones de las tarjetas de la página 3 (T038, 2026-10-22)
+
+Medido con REA en «PRUEBA CATALOGO», página 3, por Posición → Capas → Organizar (X · Y en cm de la hoja; sin capturas nuevas).
+
+| Fila | Foto 6,10 × 8,03 | Burbuja 10,58 × 5,13 | Precio 3,45 × 1,08 |
+|------|------------------|----------------------|--------------------|
+| 1 (izquierda) | 3,09 · 3,05 | 6,55 · 4,66 | 10,90 · 9,79 |
+| 2 (derecha) | 10,63 · 11,56 | 2,64 · 13,17 | 5,36 · 18,29 |
+| 3 (izquierda) | 3,14 · 20,37 | 6,55 · 21,92 | 10,90 · 27,05 |
+
+La burbuja queda 1,61 cm bajo la foto en las filas 1 y 2 y 1,55 cm en la 3; el precio empieza donde acaba la burbuja. La
+separación entre filas no es pareja (8,51 y 8,81 cm). Con esto, `layout base` lleva la posición de cada fila.

@@ -3,13 +3,13 @@ import { PAGE_H, PAGE_W } from '../../src/catalog/template';
 import { layoutRows, photoScaleLimits, type Rect } from '../../src/catalog/template-layout';
 
 /** Feature 010: la distribución `base`, medida en la base de Canva (A4 de 21 × 29,7 cm). */
-// Caja de fábrica de la plantilla Base AsianPop: ancho completo, del 11 % al 96,4 % de la hoja
+// Caja de fábrica de la plantilla Base AsianPop: ancho completo, del 10 % al 96,4 % de la hoja
 const W = PAGE_W;
-const H = 0.854 * PAGE_H;
+const H = 0.864 * PAGE_H;
 const CM_X = PAGE_W / 21; // px lógicos por cm, en horizontal
 const CM_Y = PAGE_H / 29.7;
 /** Una caja en cm de la hoja, pasada a px de la caja del bloque. */
-const sheetY = (cm: number): number => cm * CM_Y - 0.11 * PAGE_H;
+const sheetY = (cm: number): number => cm * CM_Y - 0.1 * PAGE_H;
 
 const rows = (count?: number, over: Parameters<typeof layoutRows>[3] = {}) => layoutRows('base', W, H, { ...over, count });
 const inside = (r: Rect) => r.x >= -0.01 && r.y >= -0.01 && r.x + r.w <= W + 0.01 && r.y + r.h <= H + 0.01;
@@ -35,14 +35,17 @@ describe('layoutRows · base', () => {
     }
   });
 
-  it('la fila 3 coincide con las posiciones medidas de la página 3 (marco X 3,14 · Y 20,37; burbuja X 6,55 · Y 21,92; precio X 10,9 · Y 27,05)', () => {
-    const row = rows()[2]!;
-    expect(row.photo.x / CM_X).toBeCloseTo(3.14, 1);
-    expect(row.photo.y).toBeCloseTo(sheetY(20.37), 0);
-    expect(row.bubble.x / CM_X).toBeCloseTo(6.55, 1);
-    expect(row.bubble.y).toBeCloseTo(sheetY(21.92), 0);
-    expect(row.price.x / CM_X).toBeCloseTo(10.9, 1);
-    expect(row.price.y).toBeCloseTo(sheetY(27.05), 0);
+  // Posición → Organizar de cada capa en la página 3 de la base (T038), en cm de la hoja
+  it.each([
+    ['fila 1', 0, { photo: [3.09, 3.05], bubble: [6.55, 4.66], price: [10.9, 9.79] }],
+    ['fila 2', 1, { photo: [10.63, 11.56], bubble: [2.64, 13.17], price: [5.36, 18.29] }],
+    ['fila 3', 2, { photo: [3.14, 20.37], bubble: [6.55, 21.92], price: [10.9, 27.05] }],
+  ] as const)('la %s coincide con las posiciones medidas de la página 3 (±1 mm)', (_n, i, m) => {
+    const row = rows()[i]!;
+    for (const part of ['photo', 'bubble', 'price'] as const) {
+      expect(Math.abs(row[part].x / CM_X - m[part][0])).toBeLessThan(0.1);
+      expect(Math.abs((row[part].y + 0.1 * PAGE_H) / CM_Y - m[part][1])).toBeLessThan(0.1);
+    }
   });
 
   it('el precio cuelga justo bajo la burbuja y no pisa la foto', () => {

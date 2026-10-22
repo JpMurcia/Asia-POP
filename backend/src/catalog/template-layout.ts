@@ -186,18 +186,18 @@ function lista(W: number, H: number, { sw, sh, named }: Geo): RowLayout[] {
 /**
  * `base` (feature 010): la página de productos de la plantilla «Base AsianPop», medida en la base de Canva (hoja A4 de
  * 21 × 29,7 cm). Las medidas son fracciones de la hoja y se pasan a fracciones de la caja del bloque suponiendo la caja
- * de fábrica (ancho completo, desde el 11 % hasta el 96,4 % de la hoja): si la caja cambia, las filas se escalan con
+ * de fábrica (ancho completo, desde el 10 % hasta el 96,4 % de la hoja): si la caja cambia, las filas se escalan con
  * ella, como en las demás distribuciones.
  *
  * Tres filas en zigzag (foto a la izquierda, a la derecha, a la izquierda): la foto-tarjeta mide 6,10 × 8,03 cm, la
  * burbuja beige (10,58 × 5,13 cm) va detrás de la foto y la etiqueta de precio cuelga justo bajo la burbuja. Medido:
- * filas 1 y 3 de la izquierda (página 3 de la base). Estimado con las capturas y por confirmar con REA (quickstart §4):
- * la fila de la derecha y la posición de la fila 1.
+ * las tres filas de la página 3 de la base (Posición → Organizar de cada capa, T038). La separación entre filas no es
+ * pareja (8,51 y 8,81 cm), por eso cada fila lleva su propia posición.
  */
-const BASE_BOX = { y: 0.11, h: 0.854 } as const;
-const BASE_PHOTO = { w: 6.1 / 21, h: 8.03 / 29.7, rowY: 0.112, rowStep: 0.287, leftX: 3.14 / 21, rightX: 0.505 } as const;
-const BASE_BUBBLE = { w: 10.58 / 21, h: 5.13 / 29.7, dy: 1.55 / 29.7, leftX: 6.55 / 21, rightX: 0.129 } as const;
-const BASE_PRICE = { w: 3.45 / 21, h: 1.08 / 29.7, leftCx: (10.9 + 3.45 / 2) / 21, rightCx: 0.333 } as const;
+const BASE_BOX = { y: 0.1, h: 0.864 } as const;
+const BASE_PHOTO = { w: 6.1 / 21, h: 8.03 / 29.7, rowY: [3.05 / 29.7, 11.56 / 29.7, 20.37 / 29.7], leftX: 3.14 / 21, rightX: 10.63 / 21 } as const;
+const BASE_BUBBLE = { w: 10.58 / 21, h: 5.13 / 29.7, dy: [1.61 / 29.7, 1.61 / 29.7, 1.55 / 29.7], leftX: 6.55 / 21, rightX: 2.64 / 21 } as const;
+const BASE_PRICE = { w: 3.45 / 21, h: 1.08 / 29.7, leftCx: (10.9 + 3.45 / 2) / 21, rightCx: (5.36 + 3.45 / 2) / 21 } as const;
 
 function base(W: number, H: number, { sw, sh, count }: Geo): RowLayout[] {
   /** Fracción de la hoja a fracción de la caja (vertical). */
@@ -207,13 +207,13 @@ function base(W: number, H: number, { sw, sh, count }: Geo): RowLayout[] {
   const photoH = fh(BASE_PHOTO.h) * sh;
   const rows = Array.from({ length: ROWS }, (_, i): RowLayout => {
     const left = i % 2 === 0;
-    const top = fy(BASE_PHOTO.rowY + i * BASE_PHOTO.rowStep);
+    const top = fy(BASE_PHOTO.rowY[i]!);
     // La foto crece y se achica desde su centro, sin salirse de la caja
     const cx = (left ? BASE_PHOTO.leftX : BASE_PHOTO.rightX) * W + (BASE_PHOTO.w * W) / 2;
     const cy = top + fh(BASE_PHOTO.h) / 2;
     const bubble: Rect = {
       x: (left ? BASE_BUBBLE.leftX : BASE_BUBBLE.rightX) * W,
-      y: top + fh(BASE_BUBBLE.dy),
+      y: top + fh(BASE_BUBBLE.dy[i]!),
       w: BASE_BUBBLE.w * W,
       h: fh(BASE_BUBBLE.h),
     };
