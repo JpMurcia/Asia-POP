@@ -144,10 +144,14 @@ function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSP
 
 const JUSTIFY = { left: 'flex-start', center: 'center', right: 'flex-end' } as const;
 
+/** Anclaje vertical (feature 008). Sin el campo, o con `middle`, no se agrega nada: la caja ya centra, como siempre. */
+const ANCHOR = { top: 'flex-start', bottom: 'flex-end' } as const;
+
 function TextBody({ el, palette, fonts, tokens }: { el: TextEl; palette: Palette; fonts: Template['fonts']; tokens: DataTokens }) {
   const content = resolveTokens(el.text, tokens);
   const style = textStyle(el, palette, fonts);
-  const box = { justifyContent: JUSTIFY[el.align] };
+  const box: CSSProperties = { justifyContent: JUSTIFY[el.align] };
+  if (el.vAlign === 'top' || el.vAlign === 'bottom') box.alignItems = ANCHOR[el.vAlign];
   // El largo de un texto con datos insertables depende de los datos: se ajusta. Los textos libres se muestran tal cual.
   return hasTokens(el.text) ? (
     <FitText box={box} style={style} content={content} el={el} fonts={fonts} />

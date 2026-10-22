@@ -231,7 +231,7 @@ export default function FieldRenderer({ fields, values, palette, onChange, onAct
                     <button
                       key={String(v)}
                       type="button"
-                      aria-pressed={values[f.key] === v}
+                      aria-pressed={(values[f.key] ?? f.fallback) === v}
                       onClick={() => onChange({ [f.key]: v })}
                     >
                       {text}

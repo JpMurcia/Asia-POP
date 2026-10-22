@@ -36,7 +36,14 @@ export type FieldDesc =
       /** Decimales del campo numérico (por defecto 2). */
       decimals?: number;
     }
-  | { kind: 'segmented'; key: string; label: string; options: readonly (readonly [string | number, string])[] }
+  | {
+      kind: 'segmented';
+      key: string;
+      label: string;
+      options: readonly (readonly [string | number, string])[];
+      /** Opción activa cuando la propiedad falta (opcionales de 007 y 008, como el anclaje vertical). */
+      fallback?: string | number;
+    }
   | { kind: 'select'; key: string; label: string; options: readonly (readonly [string, string])[] }
   | { kind: 'textarea'; key: string; label: string; rows?: number }
   | { kind: 'tokens'; key: string; label: string }
@@ -120,6 +127,7 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         range('size', 'Tamaño', RANGES.textSize, 1),
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
         seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
+        { ...(seg('vAlign', 'Anclaje vertical', [['top', 'Arriba'], ['middle', 'Centro'], ['bottom', 'Abajo']]) as Extract<FieldDesc, { kind: 'segmented' }>), fallback: TEXT_DEFAULTS.vAlign },
         { ...(range('ls', 'Espaciado', RANGES.ls, 0.1) as Extract<FieldDesc, { kind: 'range' }>), numeric: true, decimals: 1 },
         { ...(range('lh', 'Altura de línea', RANGES.lh, 0.01, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: TEXT_DEFAULTS.lh, numeric: true, decimals: 2 },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },

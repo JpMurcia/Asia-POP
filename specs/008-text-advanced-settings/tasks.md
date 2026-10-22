@@ -51,10 +51,10 @@
 
 **Independent Test**: con un título grande, separar al máximo, juntar al mínimo, guardar, recargar y generar el PDF; las 4 plantillas base (y `base`) siguen idénticas.
 
-- [ ] T013 [US2] En `inspector-fields.ts`: «Espaciado» con `RANGES.ls`, paso 0,1, `numeric`, `decimals: 1`, unidad « px» (aún en «Tipografía»)
-- [ ] T014 [P] [US2] Pruebas en `frontend/tests/text-advanced-settings.test.tsx` (bloque US2): el control muestra el valor guardado sin convertirlo (una plantilla con `ls` 3 muestra 3); −10 y 60 se alcanzan con el deslizador y escribiendo; 99 ⇒ 60 y −99 ⇒ −10; el estilo del texto usa `letter-spacing` en px; un texto con ajuste automático de tamaño sigue cabiendo con `ls` 60
-- [ ] T015 [P] [US2] Prueba en `backend/tests/integration/pdf-template-fidelity.test.ts`: espaciado −10, 0 y 60 en un título; mismos cortes de línea en el lienzo y en el PDF
-- [ ] T016 [US2] Actualizar las pruebas existentes que fijan el rango −2…12 o el paso 0,5 del espaciado
+- [X] T013 [US2] En `inspector-fields.ts`: «Espaciado» con `RANGES.ls`, paso 0,1, `numeric`, `decimals: 1`, unidad « px» (aún en «Tipografía»)
+- [X] T014 [P] [US2] Pruebas en `frontend/tests/text-advanced-settings.test.tsx` (bloque US2): el control muestra el valor guardado sin convertirlo (una plantilla con `ls` 3 muestra 3); −10 y 60 se alcanzan con el deslizador y escribiendo; 99 ⇒ 60 y −99 ⇒ −10; el estilo del texto usa `letter-spacing` en px; un texto con ajuste automático de tamaño sigue cabiendo con `ls` 60
+- [X] T015 [P] [US2] Prueba en `backend/tests/integration/pdf-template-fidelity.test.ts`: espaciado −10, 0 y 60 en un título; mismos cortes de línea en el lienzo y en el PDF
+- [X] T016 [US2] Actualizar las pruebas existentes que fijan el rango −2…12 o el paso 0,5 del espaciado
 
 **Checkpoint**: US1 y US2 funcionan; ninguna plantilla guardada cambió.
 
@@ -66,11 +66,11 @@
 
 **Independent Test**: caja de texto alta de una línea: elegir cada anclaje, ver el cambio, guardar, recargar y generar el PDF.
 
-- [ ] T017 [US3] En `frontend/src/print/TemplateElement.tsx`: en `TextBody` y `FitText` aplicar `alignItems` (`flex-start` | `flex-end`) al `.tpl-text-box` **solo** cuando `el.vAlign` existe y no es `middle`; sin el campo, el marcado y los estilos quedan idénticos a los actuales (R3)
-- [ ] T018 [US3] En `inspector-fields.ts`: campo `segmented` «Anclaje vertical» (`vAlign`; Arriba/Centro/Abajo) en los campos de texto, activo «Centro» si falta (usar `TEXT_DEFAULTS.vAlign`); comprobar en `FieldRenderer.tsx` que `segmented` muestra el valor por defecto cuando la propiedad no existe y escribe el valor elegido
-- [ ] T019 [P] [US3] Pruebas en `frontend/tests/text-advanced-settings.test.tsx` (bloque US3): sin `vAlign` el `.tpl-text-box` no lleva `align-items` propio (marcado idéntico al anterior); `top` ⇒ `flex-start`, `bottom` ⇒ `flex-end`, `middle` ⇒ sin estilo extra; el inspector marca «Centro» en un texto antiguo; elegir «Arriba» cambia el lienzo y deshacer lo revierte; duplicar el texto conserva `vAlign`
-- [ ] T020 [P] [US3] Prueba en `backend/tests/integration/pdf-template-fidelity.test.ts`: caja alta de una línea con los tres anclajes; el borde del texto queda a < 0,5 % de la altura de la caja del borde correspondiente (SC-004) y el PDF coincide con el lienzo; un texto con ajuste automático sigue cabiendo con cualquier anclaje (`print-overflow`)
-- [ ] T021 [US3] Prueba de ida y vuelta en `backend/tests/unit/template-schema-008.test.ts` o la de guardado existente: guardar una plantilla con `vAlign: 'bottom'` por la API y recargarla conserva el valor (FR-014)
+- [X] T017 [US3] En `frontend/src/print/TemplateElement.tsx`: en `TextBody` y `FitText` aplicar `alignItems` (`flex-start` | `flex-end`) al `.tpl-text-box` **solo** cuando `el.vAlign` existe y no es `middle`; sin el campo, el marcado y los estilos quedan idénticos a los actuales (R3)
+- [X] T018 [US3] En `inspector-fields.ts`: campo `segmented` «Anclaje vertical» (`vAlign`; Arriba/Centro/Abajo) en los campos de texto, activo «Centro» si falta (usar `TEXT_DEFAULTS.vAlign`); comprobar en `FieldRenderer.tsx` que `segmented` muestra el valor por defecto cuando la propiedad no existe y escribe el valor elegido
+- [X] T019 [P] [US3] Pruebas en `frontend/tests/text-advanced-settings.test.tsx` (bloque US3): sin `vAlign` el `.tpl-text-box` no lleva `align-items` propio (marcado idéntico al anterior); `top` ⇒ `flex-start`, `bottom` ⇒ `flex-end`, `middle` ⇒ sin estilo extra; el inspector marca «Centro» en un texto antiguo; elegir «Arriba» cambia el lienzo y deshacer lo revierte; duplicar el texto conserva `vAlign`
+- [X] T020 [P] [US3] Prueba en `backend/tests/integration/pdf-template-fidelity.test.ts`: caja alta de una línea con los tres anclajes; el borde del texto queda a < 0,5 % de la altura de la caja del borde correspondiente (SC-004) y el PDF coincide con el lienzo; un texto con ajuste automático sigue cabiendo con cualquier anclaje (`print-overflow`)
+- [X] T021 [US3] Prueba de ida y vuelta en `backend/tests/unit/template-schema-008.test.ts` o la de guardado existente: guardar una plantilla con `vAlign: 'bottom'` por la API y recargarla conserva el valor (FR-014)
 
 **Checkpoint**: las tres propiedades existen y se editan por separado.
 

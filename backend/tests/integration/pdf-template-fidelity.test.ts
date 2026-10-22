@@ -37,6 +37,9 @@ interface Measured {
   lineHeight: number | null;
   decoration: string | null;
   bodyH: number | null;
+  /** Distancia del cuerpo del texto al borde superior de su caja, en px lógicos (feature 008). */
+  bodyTop: number | null;
+  letterSpacing: string | null;
 }
 interface PageMeasure {
   key: PageKey;
@@ -69,6 +72,8 @@ const MEASURE = `(() => {
         color: bcs ? bcs.color : null, bg: bcs ? bcs.backgroundColor : null, fontFamily: bcs ? bcs.fontFamily : null,
         fontSize: bcs ? parseFloat(bcs.fontSize) : null, lineHeight: bcs ? parseFloat(bcs.lineHeight) : null,
         decoration: bcs ? bcs.textDecorationLine : null, bodyH: body ? body.offsetHeight : null,
+        bodyTop: body ? ((body.getBoundingClientRect().top - el.getBoundingClientRect().top) / el.getBoundingClientRect().height) * el.offsetHeight : null,
+        letterSpacing: bcs ? bcs.letterSpacing : null,
       });
     });
     const footer = sheet.querySelector('[data-testid=page-footer]');
@@ -270,5 +275,65 @@ describe('altura de línea ampliada (feature 008, US1, SC-003)', () => {
     // tres líneas exactas, como en el lienzo
     expect(el.bodyH! / el.lineHeight!).toBeCloseTo(3, 1);
     expect(el.bodyH!).toBeLessThanOrEqual(el.h + 1);
+  }, 120_000);
+});
+
+describe('espaciado entre letras ampliado (feature 008, US2, SC-003)', () => {
+  it.each([-10, 0, 33.3, 60])('un título con espaciado %s px se dibuja con ese espaciado, con tres líneas exactas y dentro de su caja', async (ls) => {
+    const id = `tls008-${String(ls).replace('.', '_').replace('-', 'm')}`;
+    const t = copyOf(baseTemplate('neon'), id, `Neón ls ${ls}`);
+    t.pages.portada.els.push({
+      ...draftText({ text: 'Uno\nDos\nTres', size: 20, ls, x: 5, y: 55, w: 90, h: 30 }),
+      id: 'espaciado',
+    });
+    await h.save((ws) => ({ templates: [...ws.templates, t] }));
+    const r = await h.generate({ prepare: { templateId: id } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    const el = measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === 'espaciado')!;
+    // Chrome devuelve «normal» cuando el espaciado es 0
+    expect(el.letterSpacing === 'normal' ? 0 : parseFloat(el.letterSpacing!)).toBeCloseTo(ls, 1);
+    expect(el.bodyH! / el.lineHeight!).toBeCloseTo(3, 1);
+    expect(el.bodyH!).toBeLessThanOrEqual(el.h + 1);
+  }, 120_000);
+});
+
+describe('anclaje vertical (feature 008, US3, SC-004)', () => {
+  let seq = 0;
+  const anchored = async (vAlign: 'top' | 'middle' | 'bottom' | undefined) => {
+    const id = `tva008-${vAlign ?? 'none'}-${++seq}`;
+    const t = copyOf(baseTemplate('neon'), id, `Neón anclaje ${vAlign ?? 'sin campo'}`);
+    t.pages.portada.els.push({
+      ...draftText({ text: 'Una línea', size: 20, x: 10, y: 55, w: 80, h: 30, ...(vAlign ? { vAlign } : {}) }),
+      id: 'ancla',
+    });
+    await h.save((ws) => ({ templates: [...ws.templates, t] }));
+    const r = await h.generate({ prepare: { templateId: id } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    return { r, el: measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === 'ancla')! };
+  };
+
+  it('arriba pega el texto al borde superior de la caja (< 0,5 % de su alto)', async () => {
+    const { el } = await anchored('top');
+    expect(Math.abs(el.bodyTop!)).toBeLessThanOrEqual(0.005 * el.h + 0.5);
+  }, 120_000);
+
+  it('abajo pega el texto al borde inferior de la caja (< 0,5 % de su alto)', async () => {
+    const { el } = await anchored('bottom');
+    expect(Math.abs(el.h - (el.bodyTop! + el.bodyH!))).toBeLessThanOrEqual(0.005 * el.h + 0.5);
+  }, 120_000);
+
+  it('centro, y la ausencia del campo, lo dejan centrado como siempre', async () => {
+    for (const v of ['middle', undefined] as const) {
+      const { el } = await anchored(v);
+      expect(Math.abs(el.bodyTop! - (el.h - el.bodyH!) / 2), String(v)).toBeLessThanOrEqual(0.005 * el.h + 0.5);
+    }
+  }, 180_000);
+
+  it('el anclaje llega al PDF como parte del documento de la plantilla', async () => {
+    const { r } = await anchored('bottom');
+    const doc = r.payload.template.pages.portada.els.find((e) => e.id === 'ancla');
+    expect(doc && doc.type === 'text' && doc.vAlign).toBe('bottom');
   }, 120_000);
 });

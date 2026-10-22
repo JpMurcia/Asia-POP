@@ -375,3 +375,48 @@ describe('Altura de línea y tachado de los textos (feature 007)', () => {
     expect(await load(agent)).toEqual(ws);
   });
 });
+
+describe('Ajustes avanzados de texto (feature 008)', () => {
+  const firstText = (templates: Template[]) => {
+    const els = templates[0]!.pages.portada.els;
+    const idx = els.findIndex((e) => e.type === 'text');
+    return { el: els[idx] as unknown as Record<string, unknown>, idx };
+  };
+
+  it('guarda vAlign, lh y ls ampliados y los devuelve iguales al releer (FR-014)', async () => {
+    const { agent } = await loggedInAgent();
+    const ws = await load(agent);
+    const templates = structuredClone(ws.templates);
+    const { el, idx } = firstText(templates);
+    Object.assign(el, { vAlign: 'bottom', lh: 0.5, ls: 60 });
+    await agent.put('/api/settings/templates').send(body(ws, { templates })).expect(200);
+    expect((await load(agent)).templates[0]!.pages.portada.els[idx]!).toMatchObject({ vAlign: 'bottom', lh: 0.5, ls: 60 });
+  });
+
+  it('las plantillas guardadas sin vAlign no lo ganan al guardar (FR-015)', async () => {
+    const { agent } = await loggedInAgent();
+    const ws = await load(agent);
+    const texts = (t: Template[]) => t.flatMap((x) => Object.values(x.pages).flatMap((p) => p.els)).filter((e) => e.type === 'text');
+    expect(texts(ws.templates).every((e) => !('vAlign' in e))).toBe(true);
+    await agent.put('/api/settings/templates').send(body(ws)).expect(200);
+    expect(texts((await load(agent)).templates).every((e) => !('vAlign' in e))).toBe(true);
+  });
+
+  it.each([
+    ['vAlign', 'centro', 'La alineación vertical'],
+    ['ls', 61, 'El espaciado'],
+    ['lh', 0.4, 'La altura de línea'],
+  ])('rechaza %s = %j con 422 y la ruta del campo, sin escribir nada (FR-017)', async (key, value, label) => {
+    const { agent } = await loggedInAgent();
+    const ws = await load(agent);
+    const templates = structuredClone(ws.templates);
+    const { el, idx } = firstText(templates);
+    el[key] = value;
+    const res = await agent.put('/api/settings/templates').send(body(ws, { templates })).expect(422);
+    expect(res.body.error).toBe('invalid_templates');
+    expect(res.body.details).toContainEqual(
+      expect.objectContaining({ field: `templates[0].pages.portada.els[${idx}].${key}`, message: expect.stringContaining(label) }),
+    );
+    expect(await load(agent)).toEqual(ws);
+  });
+});
