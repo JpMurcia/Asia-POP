@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useReducer } from 'react';
+import { pickStyle, styleToPatch, type TextStyle } from './text-style';
 import {
   ELEMENT_LABELS,
   LIMITS,
@@ -74,6 +75,8 @@ export interface EditorState {
   mergeKey: string | null;
   mergeAt: number;
   message: EditorMessage | null;
+  /** «Copiar estilo» (feature 012): el formato copiado mientras la brocha está activa. No se guarda con la plantilla. */
+  styleBrush: TextStyle | null;
 }
 
 export type EditorAction =
@@ -104,6 +107,10 @@ export type EditorAction =
   | { type: 'reorder'; id: string; dir: 1 | -1 }
   | { type: 'toggleLock'; id: string }
   | { type: 'toggleVisible'; id: string }
+  /** Copiar estilo (feature 012): copia el formato de un texto, lo pega en otro con un clic y se cancela. */
+  | { type: 'copyStyle'; id: string }
+  | { type: 'pasteStyle'; id: string; now: number }
+  | { type: 'cancelBrush' }
   /** Alinea el elemento a un borde o al centro de la hoja (feature 007). */
   | { type: 'align'; id: string; edge: AlignEdge; now: number }
   | { type: 'undo' }
@@ -148,6 +155,7 @@ export function createEditorState(workspace: EditorWorkspace, revision: number):
     mergeKey: null,
     mergeAt: 0,
     message: null,
+    styleBrush: null,
   };
 }
 
@@ -256,7 +264,26 @@ function settleText(el: TextEl, patch: Partial<PageElement>): Partial<PageElemen
   if (typeof next.bgRadius === 'number') next.bgRadius = clampTo(RANGES.bgRadius, next.bgRadius, 0);
   if (typeof next.bgPad === 'number') next.bgPad = clampTo(RANGES.bgPad, next.bgPad, 0);
   if (typeof next.bgAlpha === 'number') next.bgAlpha = clampTo(RANGES.alpha, next.bgAlpha, 0);
-  const current = { ...TEXT_DEFAULTS, ...TEXT_EFFECT_DEFAULTS, shadow: false, bg: false, ...el } as unknown as Record<string, unknown>;
+  // Efectos estilo Canva (feature 012)
+  if (typeof next.fxDist === 'number') next.fxDist = clampTo(RANGES.fxDist, next.fxDist, 0);
+  if (typeof next.fxI === 'number') next.fxI = clampTo(RANGES.fxI, next.fxI, 0);
+  if (typeof next.curve === 'number') next.curve = clampTo(RANGES.curve, next.curve, 0);
+  const current = {
+    ...TEXT_DEFAULTS,
+    ...TEXT_EFFECT_DEFAULTS,
+    shadow: false,
+    bg: false,
+    italic: false,
+    underline: false,
+    bright: false,
+    echo: false,
+    misalign: false,
+    glitch: false,
+    hollow: false,
+    list: 'none',
+    curve: 0,
+    ...el,
+  } as unknown as Record<string, unknown>;
   const changed = Object.entries(next).some(([k, v]) => current[k] !== v);
   return changed ? (next as Partial<PageElement>) : null;
 }
@@ -312,6 +339,19 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
       return { ...s, page: action.page, selId: null, preview: false };
     case 'select':
       return { ...s, selId: action.id };
+    case 'copyStyle': {
+      const el = currentPage(s).els.find((e) => e.id === action.id);
+      return el && el.type === 'text' ? { ...s, styleBrush: pickStyle(el) } : s;
+    }
+    case 'cancelBrush':
+      return s.styleBrush ? { ...s, styleBrush: null } : s;
+    case 'pasteStyle': {
+      const el = currentPage(s).els.find((e) => e.id === action.id);
+      // Solo un texto desbloqueado recibe el estilo; cualquier otro clic no hace nada y la brocha sigue activa
+      if (!s.styleBrush || !el || el.type !== 'text' || el.locked) return s;
+      const next = editorReducer(s, { type: 'patch', id: action.id, patch: styleToPatch(s.styleBrush), now: action.now });
+      return { ...next, selId: action.id, styleBrush: null };
+    }
     case 'setTab':
       return { ...s, tab: action.tab };
     case 'setView':
@@ -326,7 +366,8 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
     case 'openTemplate':
       if (!s.workspace.templates.some((t) => t.id === action.id)) return s;
       // Cambiar de plantilla reinicia el historial; los cambios sin guardar de la anterior siguen en el conjunto
-      return { ...s, activeId: action.id, view: 'editor', selId: null, preview: false, past: [], future: [], mergeKey: null };
+      // El estilo copiado no se comparte entre plantillas (feature 012)
+      return { ...s, activeId: action.id, view: 'editor', selId: null, preview: false, past: [], future: [], mergeKey: null, styleBrush: null };
 
     case 'checkpoint':
       return { ...s, ...record(s, null, action.now) };
@@ -687,6 +728,9 @@ export function useTemplateEditor(initial: { workspace: EditorWorkspace; revisio
       reorder: (id: string, dir: 1 | -1) => dispatch({ type: 'reorder', id, dir }),
       toggleLock: (id: string) => dispatch({ type: 'toggleLock', id }),
       toggleVisible: (id: string) => dispatch({ type: 'toggleVisible', id }),
+      copyStyle: (id: string) => dispatch({ type: 'copyStyle', id }),
+      pasteStyle: (id: string) => dispatch({ type: 'pasteStyle', id, now: Date.now() }),
+      cancelBrush: () => dispatch({ type: 'cancelBrush' }),
       align: (id: string, edge: AlignEdge) => dispatch({ type: 'align', id, edge, now: Date.now() }),
       undo: () => dispatch({ type: 'undo' }),
       redo: () => dispatch({ type: 'redo' }),

@@ -1,4 +1,4 @@
-import { memo, useRef, type CSSProperties } from 'react';
+import { memo, useRef, type CSSProperties, type ReactNode } from 'react';
 import {
   CIRCLE_RADIUS,
   PAGE_H,
@@ -21,7 +21,9 @@ import FooterBlock from './blocks/FooterBlock';
 import IntroBlock from './blocks/IntroBlock';
 import ProductsBlock from './blocks/ProductsBlock';
 import TermsBlock from './blocks/TermsBlock';
-import { bgStyle, shadowCss } from './text-effects';
+import CurvedText from './CurvedText';
+import { bgStyle, hollowStyle, textShadowOf } from './text-effects';
+import { LIST_INDENT, decorationLine, listLines } from './text-format';
 import { useFit } from './useFit';
 
 export interface ElementContext {
@@ -40,9 +42,6 @@ interface Props extends ElementContext {
 
 const NO_ITEMS: CatalogItem[] = [];
 const NO_TERMS: Term[] = [];
-
-/** Resplandor neón: dos sombras del color, una cerrada y otra difusa. */
-const glowText = (color: string) => `0 0 10px ${color}, 0 0 24px ${color}`;
 
 function TemplateElementImpl({ el, palette, fonts, tokens, items, terms, introText, photoPositions }: Props) {
   // Un elemento oculto no se pinta; la introducción tampoco si la sección no tiene texto
@@ -119,10 +118,10 @@ export default TemplateElement;
 // Texto
 // ---------------------------------------------------------------------------------------------------------------
 
-function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSProperties {
+/** Estilo del texto; lo usan también las vistas previas «Ag» del panel de efectos, para que nunca diverjan. */
+export function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSProperties {
   const c = (ref: string) => resolveColor(palette, ref);
   const stroke = c(el.stroke);
-  const glow = c(el.glow);
   const key = fontKeyOf({ fonts }, el.font);
   return {
     fontFamily: fontFamily({ fonts }, el.font),
@@ -135,16 +134,33 @@ function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSP
     letterSpacing: `${el.ls}px`,
     textTransform: el.upper ? 'uppercase' : 'none',
     // Del color del texto (currentColor); CSS tacha cada línea de un texto de varias
-    textDecorationLine: (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : undefined,
+    fontStyle: el.italic ? 'italic' : undefined,
+    // Subrayado (feature 012) y tachado se combinan
+    textDecorationLine: decorationLine(el),
     WebkitTextStroke: el.strokeW > 0 && stroke !== 'transparent' ? `calc(${el.strokeW}px * var(--fit, 1)) ${stroke}` : undefined,
     paintOrder: 'stroke fill',
-    // Resplandor primero y sombra después: el neón no queda tapado por una sombra oscura (feature 011)
-    textShadow: [glow !== 'transparent' ? glowText(glow) : undefined, shadowCss(el, palette)].filter(Boolean).join(', ') || undefined,
+    // Capas de sombra en orden fijo: neón → brillo → eco → desalineado → distorsión → sombra (features 011 y 012)
+    textShadow: textShadowOf(el, palette),
     whiteSpace: 'pre-wrap',
+    // «Sin relleno»: relleno transparente y borde de las letras
+    ...hollowStyle(el, palette),
   };
 }
 
-const JUSTIFY = { left: 'flex-start', center: 'center', right: 'flex-end' } as const;
+const JUSTIFY = { left: 'flex-start', center: 'center', right: 'flex-end', justify: 'flex-start' } as const;
+
+/** El contenido del texto: tal cual, con fondo (feature 011) o como lista con sangría francesa (feature 012). */
+function textBody(content: string, el: TextEl, bg: CSSProperties | undefined): ReactNode {
+  if (el.list === 'bullet' || el.list === 'number') {
+    return listLines(content, el.list).map((l, i) => (
+      <div key={i} style={{ paddingLeft: LIST_INDENT, textIndent: `-${LIST_INDENT}` }}>
+        {l.marker ? `${l.marker}\u00a0` : null}
+        {l.text === '' ? '\u00a0' : bg && l.text.trim() !== '' ? <span style={bg}>{l.text}</span> : l.text}
+      </div>
+    ));
+  }
+  return bg ? <span style={bg}>{content}</span> : content;
+}
 
 /** Anclaje vertical (feature 008). Sin el campo, o con `middle`, no se agrega nada: la caja ya centra, como siempre. */
 const ANCHOR = { top: 'flex-start', bottom: 'flex-end' } as const;
@@ -152,17 +168,22 @@ const ANCHOR = { top: 'flex-start', bottom: 'flex-end' } as const;
 function TextBody({ el, palette, fonts, tokens }: { el: TextEl; palette: Palette; fonts: Template['fonts']; tokens: DataTokens }) {
   const content = resolveTokens(el.text, tokens);
   const style = textStyle(el, palette, fonts);
+  // Texto curvo (feature 012): un SVG del tamaño de la caja; con 0 o sin el campo, el texto de siempre
+  if (el.curve) return <CurvedText el={el} palette={palette} fonts={fonts} content={content} />;
   const box: CSSProperties = { justifyContent: JUSTIFY[el.align] };
+  // Justificado: el texto ocupa todo el ancho de la caja para poder repartirse de borde a borde
+  if (el.align === 'justify') style.width = '100%';
   // Fondo del texto (feature 011): un <span> solo si está activo y hay texto; sin él, el HTML es el de siempre
   const bg = content ? bgStyle(el, palette) : undefined;
+  const body = textBody(content, el, bg);
   if (el.vAlign === 'top' || el.vAlign === 'bottom') box.alignItems = ANCHOR[el.vAlign];
   // El largo de un texto con datos insertables depende de los datos: se ajusta. Los textos libres se muestran tal cual.
   return hasTokens(el.text) ? (
-    <FitText box={box} style={style} bg={bg} content={content} el={el} fonts={fonts} />
+    <FitText box={box} style={style} body={body} content={content} el={el} fonts={fonts} />
   ) : (
     <div className="tpl-text-box" style={box}>
       <div className="tpl-text" style={{ ...style, overflowWrap: 'anywhere' }}>
-        {bg ? <span style={bg}>{content}</span> : content}
+        {body}
       </div>
     </div>
   );
@@ -171,27 +192,28 @@ function TextBody({ el, palette, fonts, tokens }: { el: TextEl; palette: Palette
 function FitText({
   box,
   style,
-  bg,
+  body,
   content,
   el,
   fonts,
 }: {
   box: CSSProperties;
   style: CSSProperties;
-  bg?: CSSProperties;
+  /** El contenido ya armado (con fondo o como lista); `content` queda para las dependencias del ajuste. */
+  body: ReactNode;
   content: string;
   el: TextEl;
   fonts: Template['fonts'];
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useFit(ref, [content, el.size, el.weight, el.ls, el.lh, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h, el.bg, el.bgPad], {
+  useFit(ref, [content, el.size, el.weight, el.ls, el.lh, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h, el.bg, el.bgPad, el.list, el.italic, el.underline, el.align], {
     axis: 'both',
   });
   return (
     <div className="tpl-text-box" style={box}>
       {/* Las palabras no se parten: una palabra larguísima reduce la letra en vez de cortarse a media palabra */}
       <div className="tpl-text" data-fit="true" ref={ref} style={{ ...style, overflowWrap: 'normal' }}>
-        {bg ? <span style={bg}>{content}</span> : content}
+        {body}
       </div>
     </div>
   );

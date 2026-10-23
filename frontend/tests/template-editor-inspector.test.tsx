@@ -61,9 +61,10 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
       expect(bounds('Opacidad')).toEqual([0, 100]);
       expect(bounds('Rotación')).toEqual([-180, 180]);
       for (const w of ['Normal', 'Semi', 'Negrita', 'Black']) expect(inGroup('Peso', w)).toBeInTheDocument();
-      for (const a of ['Izq.', 'Centro', 'Der.']) expect(inGroup('Alineación', a)).toBeInTheDocument();
+      for (const a of ['Izq.', 'Centro', 'Der.', 'Justificado']) expect(inGroup('Alineación', a)).toBeInTheDocument();
       expect(screen.getByRole('switch', { name: 'Mayúsculas' })).toBeInTheDocument();
-      for (const g of ['Relleno', 'Contorno', 'Resplandor neón']) expect(group(g)).toBeInTheDocument();
+      // los efectos se eligen en la cuadrícula; sus parámetros aparecen al activarlos (feature 012)
+      for (const g of ['Relleno', 'Efectos']) expect(group(g)).toBeInTheDocument();
       for (const n of ['X %', 'Y %', 'Ancho %', 'Alto %']) expect(screen.getByLabelText(n)).toBeInTheDocument();
     });
 
@@ -91,7 +92,7 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
       await start();
       await add('Agregar título');
       expect(screen.queryByLabelText('Grosor del contorno')).not.toBeInTheDocument();
-      pickColor('Contorno', 'Acento 1');
+      fireEvent.click(screen.getByRole('button', { name: 'Contorno' }));
       expect(bounds('Grosor del contorno')).toEqual([0, 8]);
     });
 
@@ -117,6 +118,7 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
     it('"ninguno" en el contorno lo quita', async () => {
       await start();
       await add('Agregar título');
+      fireEvent.click(screen.getByRole('button', { name: 'Contorno' }));
       pickColor('Contorno', 'Acento 1');
       expect(screen.getByLabelText('Grosor del contorno')).toBeInTheDocument();
       pickColor('Contorno', 'Ninguno');

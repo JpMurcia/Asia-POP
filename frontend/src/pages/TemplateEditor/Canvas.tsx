@@ -17,6 +17,8 @@ export interface CanvasProps {
   scale: number;
   selId: string | null;
   onSelect: (id: string | null) => void;
+  /** «Copiar estilo» activo (feature 012): el clic pega el estilo en un texto y no arranca un arrastre. */
+  pasting?: boolean;
   /** Una vez por gesto, antes del primer movimiento. */
   onCheckpoint: () => void;
   onPatch: (id: string, patch: Partial<PageElement>) => void;
@@ -41,6 +43,7 @@ export default function Canvas({
   scale,
   selId,
   onSelect,
+  pasting,
   onCheckpoint,
   onPatch,
   testId,
@@ -60,6 +63,7 @@ export default function Canvas({
     }
     e.preventDefault();
     onSelect(el.id);
+    if (pasting) return;
     // Un elemento fijo se selecciona, pero no se mueve hasta desbloquearlo
     if (!el.locked) begin(e, el.id, 'move', el);
   }

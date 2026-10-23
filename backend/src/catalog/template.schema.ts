@@ -104,7 +104,7 @@ const textEl = z.object({
   stroke: colorRef,
   strokeW: num(RANGES.strokeW, 'El grosor del contorno'),
   glow: colorRef,
-  align: oneOf(['left', 'center', 'right'], 'La alineación'),
+  align: oneOf(['left', 'center', 'right', 'justify'], 'La alineación'),
   upper: z.boolean({ error: 'Debe ser verdadero o falso.' }),
   ls: num(RANGES.ls, 'El espaciado'),
   // Opcionales: si faltan, se dibujan con TEXT_DEFAULTS. Hay que declararlos: z.object descarta las claves que no conoce
@@ -123,6 +123,20 @@ const textEl = z.object({
   bgPad: num(RANGES.bgPad, 'La separación del fondo').optional(),
   bgAlpha: num(RANGES.alpha, 'La transparencia del fondo').optional(),
   bgColor: colorRef.optional(),
+  // Formato y efectos estilo Canva (feature 012): opcionales
+  italic: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  underline: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  list: oneOf(['none', 'bullet', 'number'], 'La lista').optional(),
+  bright: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  echo: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  misalign: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  glitch: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  hollow: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  fxColor: colorRef.optional(),
+  fxColor2: colorRef.optional(),
+  fxDist: num(RANGES.fxDist, 'La distancia del efecto').optional(),
+  fxI: num(RANGES.fxI, 'La intensidad del efecto').optional(),
+  curve: num(RANGES.curve, 'La curvatura').optional(),
 });
 
 const badgeEl = z.object({

@@ -176,7 +176,7 @@ Ordenado por **valor para el catálogo ÷ costo**. Todo es una línea más en `i
 | 1 | ✅ **Altura de línea** (texto) — feature 007 | Los textos de varias líneas hoy no se pueden ajustar | Bajo: un `range` y una propiedad en el modelo |
 | 2 | ✅ **Alinear a la página** (6 botones) — feature 007 | Centrar con precisión sin arrastrar | Bajo: acción en el reductor |
 | 3 | ✅ **Tachado** (texto) — feature 007 | Precio anterior en promociones | Bajo |
-| 4 | ✅ **Sombra y Fondo** como efectos de texto — feature 011 | Legibilidad sobre fotos | Medio (render en `TemplatePage` y PDF) |
+| 4 | ✅ **Sombra y Fondo** como efectos de texto — feature 011; ✅ cursiva, subrayado, justificado, listas, Brillo, Eco, Desalineado, Sin relleno, Distorsión, Curvar y Copiar estilo — feature 012 | Legibilidad sobre fotos | Medio (render en `TemplatePage` y PDF) |
 | 5 | **Subidos** (logo y fotos propias) | Hoy solo hay 5 imágenes fijas | Medio-alto: almacenamiento local, ya hay `multer`/`sharp` |
 | 6 | **PDF para imprimir**: sangrado y marcas de corte | Si el catálogo va a imprenta | Medio (Puppeteer + márgenes) |
 | 7 | **Enlaces** en elementos | WhatsApp y Maps clicables en el PDF | Bajo-medio |

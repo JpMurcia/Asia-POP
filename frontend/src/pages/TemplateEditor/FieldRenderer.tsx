@@ -1,3 +1,4 @@
+import EffectsGrid from './EffectsGrid';
 import { useState } from 'react';
 import { LIMITS, type Palette, type Template } from '../../../../backend/src/catalog/template';
 import ColorPicker from './ColorPicker';
@@ -277,6 +278,18 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
                 </div>
                 <span className="ed-field-hint">Se reemplazan por el dato real al generar.</span>
               </div>
+            );
+
+          case 'effects':
+            return (
+              <EffectsGrid
+                key={f.id}
+                values={values}
+                palette={palette}
+                fonts={colorSource.fonts}
+                locked={locked}
+                onChange={(patch) => onChange(patch as Record<string, unknown>)}
+              />
             );
 
           case 'imagePicker':

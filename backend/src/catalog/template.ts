@@ -130,6 +130,10 @@ export const RANGES = {
   /** Fondo del texto (feature 011): esquinas y separación, en px. */
   bgRadius: [0, 50],
   bgPad: [0, 40],
+  /** Efectos de texto estilo Canva (feature 012): distancia de las copias (px), intensidad del brillo y curvatura del arco. */
+  fxDist: [0, 40],
+  fxI: [0, 100],
+  curve: [-100, 100],
 } as const satisfies Record<string, readonly [number, number]>;
 
 /**
@@ -188,7 +192,7 @@ export interface TextEl extends ElementBase {
   stroke: ColorRef;
   strokeW: number;
   glow: ColorRef;
-  align: 'left' | 'center' | 'right';
+  align: 'left' | 'center' | 'right' | 'justify';
   upper: boolean;
   ls: number;
   /** Altura de línea (múltiplo del tamaño). Opcional: las plantillas anteriores a 007 no la tienen; ver `TEXT_DEFAULTS`. */
@@ -210,7 +214,27 @@ export interface TextEl extends ElementBase {
   bgPad?: number;
   bgAlpha?: number;
   bgColor?: ColorRef;
+  /** Formato (feature 012). Todo opcional: sin estos campos el texto se dibuja como siempre. */
+  italic?: boolean;
+  underline?: boolean;
+  list?: TextList;
+  /** Efectos nuevos: Brillo, Eco, Desalineado, Distorsión y Sin relleno; se combinan y se dibujan en un orden fijo. */
+  bright?: boolean;
+  echo?: boolean;
+  misalign?: boolean;
+  glitch?: boolean;
+  hollow?: boolean;
+  /** Parámetros compartidos entre los efectos que los usan (ver `TEXT_EFFECT_DEFAULTS`). */
+  fxColor?: ColorRef;
+  fxColor2?: ColorRef;
+  fxDist?: number;
+  fxI?: number;
+  /** Curvatura del texto: −100 a 100, 0 = recto. Solo la primera línea. */
+  curve?: number;
 }
+
+/** Lista de un texto: sin lista, con viñetas o numerada. */
+export type TextList = 'none' | 'bullet' | 'number';
 
 /** Valores de los parámetros de sombra y fondo cuando un texto no los trae (feature 011). Único lugar donde viven. */
 export const TEXT_EFFECT_DEFAULTS = {
@@ -223,7 +247,12 @@ export const TEXT_EFFECT_DEFAULTS = {
   bgPad: 8,
   bgAlpha: 100,
   bgColor: 'bg',
-} as const satisfies Pick<Required<TextEl>, 'shDist' | 'shAngle' | 'shBlur' | 'shAlpha' | 'shColor' | 'bgRadius' | 'bgPad' | 'bgAlpha' | 'bgColor'>;
+  /** Feature 012 */
+  fxColor: 'a1',
+  fxColor2: 'a2',
+  fxDist: 6,
+  fxI: 50,
+} as const satisfies Pick<Required<TextEl>, 'shDist' | 'shAngle' | 'shBlur' | 'shAlpha' | 'shColor' | 'bgRadius' | 'bgPad' | 'bgAlpha' | 'bgColor' | 'fxColor' | 'fxColor2' | 'fxDist' | 'fxI'>;
 
 /**
  * Valores de `lh` y `strike` cuando un texto no los trae: los del render anterior a la feature 007, para que las

@@ -45,6 +45,12 @@ interface Measured {
   spanBg: string | null;
   spanLines: number | null;
   spanBox: { left: number; right: number } | null;
+  /** Formato y curvar (feature 012). */
+  fontStyle: string | null;
+  textAlign: string | null;
+  rows: number | null;
+  isCurve: boolean;
+  curveBox: { left: number; right: number; top: number; bottom: number } | null;
 }
 interface PageMeasure {
   key: PageKey;
@@ -81,6 +87,11 @@ const MEASURE = `(() => {
         letterSpacing: bcs ? bcs.letterSpacing : null,
         textShadow: bcs ? bcs.textShadow : null,
         spanBg: body && body.querySelector('span') ? getComputedStyle(body.querySelector('span')).backgroundColor : null,
+        fontStyle: bcs ? bcs.fontStyle : null,
+        textAlign: bcs ? bcs.textAlign : null,
+        rows: body ? body.children.length : null,
+        isCurve: !!body && body.tagName.toLowerCase() === 'svg',
+        curveBox: body && body.tagName.toLowerCase() === 'svg' ? (() => { const b = body.querySelector('text').getBoundingClientRect(), t = el.getBoundingClientRect(), k = el.offsetWidth / t.width; return { left: (b.left - t.left) * k, right: (b.right - t.left) * k, top: (b.top - t.top) * k, bottom: (b.bottom - t.top) * k }; })() : null,
         spanLines: body && body.querySelector('span') ? body.querySelector('span').getClientRects().length : null,
         spanBox: body && body.querySelector('span') ? (() => { const b = body.querySelector('span').getBoundingClientRect(), t = el.getBoundingClientRect(); return { left: (b.left - t.left) / t.width * el.offsetWidth, right: (b.right - t.left) / t.width * el.offsetWidth }; })() : null,
       });
@@ -158,16 +169,20 @@ function expectMatchesDocument(t: Template, measure: Measure) {
       expect(Math.abs(m.h - (el.h / 100) * PAGE_H), `${at} alto`).toBeLessThanOrEqual(tolY);
       expect(Math.abs(m.rot - (el.rot || 0)), `${at} rotación`).toBeLessThanOrEqual(0.5);
       expect(Number(m.opacity), `${at} opacidad`).toBeCloseTo(el.opacity, 2);
-      if (el.type === 'text' || el.type === 'badge') {
+      // Un texto curvo es un SVG: su color y su tipografía son atributos del SVG y se comprueban aparte (feature 012)
+      const curved = el.type === 'text' && !!el.curve;
+      if ((el.type === 'text' || el.type === 'badge') && !curved) {
         const colorRef = el.color;
-        expect(m.color, `${at} color`).toBe(rgb(resolveColor(t.palette, colorRef)));
+        // «Sin relleno» deja el relleno transparente
+        expect(m.color, `${at} color`).toBe(el.type === 'text' && el.hollow ? 'rgba(0, 0, 0, 0)' : rgb(resolveColor(t.palette, colorRef)));
         const key: FontKey = el.font === 'title' ? t.fonts.title : el.font === 'body' ? t.fonts.body : el.font;
         expect(familyOf(m.fontFamily!), `${at} fuente`).toBe(FONT_LABELS[key]);
       }
-      if (el.type === 'text') {
+      if (el.type === 'text' && !curved) {
         // Altura de línea y tachado (feature 007): sin los campos, los valores de siempre
         expect(m.lineHeight! / m.fontSize!, `${at} altura de línea`).toBeCloseTo(el.lh ?? TEXT_DEFAULTS.lh, 2);
-        expect(m.decoration, `${at} tachado`).toBe((el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : 'none');
+        const lines = [el.underline ? 'underline' : '', (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : ''].filter(Boolean).join(' ');
+        expect(m.decoration, `${at} subrayado y tachado`).toBe(lines || 'none');
       }
       if (el.type === 'shape') {
         expect(m.bg, `${at} relleno`).toBe(rgb(resolveColor(t.palette, el.fill)));
@@ -388,5 +403,72 @@ describe('sombra y fondo del texto (feature 011, FR-009, SC-002)', () => {
     expect(el.spanBox!.left).toBeGreaterThanOrEqual(-1);
     expect(el.spanBox!.right).toBeLessThanOrEqual(el.w + 1);
     expect(measure.scrollWidth).toBe(measure.clientWidth);
+  }, 120_000);
+});
+
+describe('texto estilo Canva (feature 012, FR-014, SC-002)', () => {
+  let seq = 0;
+  const generated = async (over: Parameters<typeof draftText>[0], box = { x: 10, y: 55, w: 80, h: 30 }) => {
+    const id = `tfx012-${++seq}`;
+    const t = copyOf(baseTemplate('neon'), id, `Neón estilo ${seq}`);
+    t.pages.portada.els.push({ ...draftText({ size: 20, ...box, ...over }), id: 'st' });
+    // Una sola plantilla de esta serie a la vez: el conjunto tiene un máximo de plantillas
+    await h.save((ws) => ({ templates: [...ws.templates.filter((x) => !x.id.startsWith('tfx012-')), t] }));
+    const r = await h.generate({ prepare: { templateId: id } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    return { r, measure, el: measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === 'st')! };
+  };
+  const NL = String.fromCharCode(10);
+
+  it('cursiva, subrayado y justificado llegan al PDF', async () => {
+    const { el } = await generated({ text: 'Línea uno' + NL + 'Línea dos', italic: true, underline: true, align: 'justify' });
+    expect(el.fontStyle).toBe('italic');
+    expect(el.decoration).toBe('underline');
+    expect(el.textAlign).toBe('justify');
+    expect(el.bodyH! / el.lineHeight!).toBeCloseTo(2, 1);
+  }, 120_000);
+
+  it.each([
+    ['bullet', '•'],
+    ['number', '1.'],
+  ] as const)('una lista %s dibuja una fila por renglón y no cambia el número de líneas', async (list, _marca) => {
+    const { el } = await generated({ text: 'Uno' + NL + 'Dos' + NL + 'Tres', list });
+    expect(el.rows).toBe(3);
+    expect(el.bodyH! / el.lineHeight!).toBeCloseTo(3, 1);
+    expect(el.bodyH!).toBeLessThanOrEqual(el.h + 1);
+  }, 120_000);
+
+  it('una lista en un texto con datos insertables largo cabe en su caja', async () => {
+    const { el } = await generated({ text: '{tienda} {tienda} {tienda}', list: 'bullet' }, { x: 10, y: 55, w: 40, h: 10 });
+    expect(el.bodyH!).toBeLessThanOrEqual(el.h + 1);
+  }, 120_000);
+
+  it.each([
+    ['brillo', { bright: true }],
+    ['eco', { echo: true }],
+    ['desalineado', { misalign: true }],
+    ['distorsión', { glitch: true }],
+    ['sin relleno', { hollow: true }],
+    ['todos a la vez con neón y sombra', { bright: true, echo: true, misalign: true, glitch: true, hollow: true, glow: 'a1', shadow: true, bg: true }],
+  ] as const)('el efecto %s llega al PDF y no cambia el número de renglones', async (_n, fx) => {
+    const { el } = await generated({ text: 'Línea uno' + NL + 'Línea dos', ...fx });
+    expect(el.bodyH! / el.lineHeight!).toBeCloseTo(2, 1);
+    if (!('hollow' in fx && Object.keys(fx).length === 1)) expect(el.textShadow).not.toBe('none');
+  }, 180_000);
+
+  it.each([60, -60])('curvar %s se dibuja como un SVG dentro de su caja, con su texto y sin ensanchar la hoja', async (curve) => {
+    const { measure, el } = await generated({ text: 'Título curvo', curve, size: 24 });
+    expect(el.isCurve).toBe(true);
+    const box = el.curveBox!;
+    expect(box.right - box.left).toBeGreaterThan(20);
+    expect(box.left).toBeGreaterThanOrEqual(-1);
+    expect(box.right).toBeLessThanOrEqual(el.w + 1);
+    expect(measure.scrollWidth).toBe(measure.clientWidth);
+  }, 120_000);
+
+  it('curvatura 0 se dibuja como un texto recto normal', async () => {
+    const { el } = await generated({ text: 'Recto', curve: 0 });
+    expect(el.isCurve).toBe(false);
   }, 120_000);
 });

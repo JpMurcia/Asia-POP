@@ -1702,3 +1702,45 @@
   font-family: system-ui, sans-serif;
   font-weight: 800;
 }
+
+/* Panel «Efectos» del texto (feature 012): cuadrícula de estilos con vista previa «Ag» */
+.ed-fx-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ed-fx-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ed-muted);
+}
+.ed-fx-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.ed-fx-cell:hover .ed-fx-preview {
+  border-color: var(--ed-pink);
+}
+.ed-fx-cell[aria-pressed='true'] .ed-fx-preview {
+  border: 2px solid var(--ed-pink);
+}
+.ed-fx-cell[aria-pressed='true'] .ed-fx-name {
+  color: var(--ed-pink-dark);
+}
+.ed-fx-cell:disabled {
+  opacity: 0.55;
+}

@@ -254,7 +254,8 @@ function EditorScreen({
 
       const selected = selectedElement(s);
       if (key === 'escape') {
-        a.select(null);
+        if (s.styleBrush) a.cancelBrush();
+        else a.select(null);
       } else if (key === 'delete' || key === 'backspace') {
         if (!selected) return;
         e.preventDefault();
@@ -443,7 +444,13 @@ function EditorScreen({
                     photoPositions={data.photoPositions}
                     scale={scale}
                     selId={state.selId}
-                    onSelect={actions.select}
+                    pasting={state.styleBrush !== null}
+                    onSelect={(id) => {
+                      // Con la brocha activa, un clic en un texto le pega el estilo y uno en vacío la cancela (feature 012)
+                      if (state.styleBrush && id) actions.pasteStyle(id);
+                      else if (state.styleBrush) actions.cancelBrush();
+                      else actions.select(id);
+                    }}
                     onCheckpoint={actions.checkpoint}
                     onPatch={actions.patchLive}
                     testId="canvas-page"
@@ -476,6 +483,7 @@ function EditorScreen({
             el={el}
             actions={actions}
             overflow={overflow}
+            brushActive={state.styleBrush !== null}
           />
         </div>
       )}

@@ -28,6 +28,8 @@ export interface InspectorProps {
   actions: EditorActions;
   /** El bloque seleccionado llegó al tamaño mínimo legible y aun así no cabe (`data-overflow`). */
   overflow: boolean;
+  /** «Copiar estilo» está activo (feature 012). */
+  brushActive?: boolean;
 }
 
 /** Las notas de límite del bloque de productos (vacías para los demás elementos). */
@@ -41,7 +43,7 @@ function extrasFor(el: PageElement) {
  * Panel derecho. Con un elemento seleccionado: su tipo y nombre, las acciones y los campos que le corresponden.
  * Sin selección: el fondo de la página y la lista de capas (FR-013).
  */
-export default function Inspector({ template, page, el, actions, overflow }: InspectorProps) {
+export default function Inspector({ template, page, el, actions, overflow, brushActive = false }: InspectorProps) {
   const { bg, els } = template.pages[page];
   // Los paneles plegables recuerdan si estaban abiertos al cambiar de elemento; se pierden al salir del editor (FR-011)
   const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({});
@@ -58,6 +60,16 @@ export default function Inspector({ template, page, el, actions, overflow }: Ins
             <button type="button" onClick={() => actions.duplicate(el.id)}>
               Duplicar
             </button>
+            {el.type === 'text' && (
+              <button
+                type="button"
+                aria-pressed={brushActive}
+                title="Copia el formato de este texto y lo pega con un clic en otro"
+                onClick={() => (brushActive ? actions.cancelBrush() : actions.copyStyle(el.id))}
+              >
+                Copiar estilo
+              </button>
+            )}
             <button type="button" onClick={() => actions.reorder(el.id, 1)}>
               Al frente
             </button>

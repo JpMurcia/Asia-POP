@@ -53,6 +53,8 @@ export type FieldDesc =
   | { kind: 'toggle'; key: string; label: string; lockable?: boolean }
   /** Imágenes subidas por la persona (feature 010): elegir, subir y borrar. Escribe `key` con `upload:<archivo>`. */
   | { kind: 'imagePicker'; key: string; label: string }
+  /** Cuadrícula de efectos del texto con vista previa (feature 012). */
+  | { kind: 'effects'; id: string }
   | {
       kind: 'numbers';
       items: readonly (readonly [string, string])[];
@@ -99,7 +101,7 @@ const effectRange = (key: keyof typeof TEXT_EFFECT_DEFAULTS, label: string, r: r
   decimals: 0,
   lockable: true,
 });
-const effectColor = (key: 'shColor' | 'bgColor', label: string): FieldDesc => ({ ...(color(key, label) as Extract<FieldDesc, { kind: 'color' }>), fallback: TEXT_EFFECT_DEFAULTS[key], lockable: true });
+const effectColor = (key: 'shColor' | 'bgColor' | 'fxColor' | 'fxColor2', label: string): FieldDesc => ({ ...(color(key, label) as Extract<FieldDesc, { kind: 'color' }>), fallback: TEXT_EFFECT_DEFAULTS[key], lockable: true });
 const seg = (key: string, label: string, options: readonly (readonly [string | number, string])[]): FieldDesc => ({
   kind: 'segmented',
   key,
@@ -134,7 +136,10 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         { kind: 'font', key: 'font', label: 'Fuente' },
         range('size', 'Tamaño', RANGES.textSize, 1),
         seg('weight', 'Peso', WEIGHTS.map((w) => [w, WEIGHT_LABELS[w]] as const)),
-        seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.']]),
+        seg('align', 'Alineación', [['left', 'Izq.'], ['center', 'Centro'], ['right', 'Der.'], ['justify', 'Justificado']]),
+        { ...(seg('list', 'Lista', [['none', 'Sin lista'], ['bullet', 'Viñetas'], ['number', 'Numerada']]) as Extract<FieldDesc, { kind: 'segmented' }>), fallback: 'none' },
+        { kind: 'toggle', key: 'italic', label: 'Cursiva', lockable: true },
+        { kind: 'toggle', key: 'underline', label: 'Subrayado', lockable: true },
         { kind: 'toggle', key: 'upper', label: 'Mayúsculas' },
         { kind: 'toggle', key: 'strike', label: 'Tachado' },
         {
@@ -149,10 +154,12 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         },
         heading('Color y efectos'),
         color('color', 'Relleno'),
-        color('stroke', 'Contorno', 'none'),
-        ...(t.stroke !== 'none' ? [range('strokeW', 'Grosor del contorno', RANGES.strokeW, 0.5)] : []),
-        color('glow', 'Resplandor neón', 'none'),
-        { kind: 'toggle', key: 'shadow', label: 'Sombra', lockable: true },
+        { kind: 'effects', id: 'text-effects' },
+        // Parámetros de los efectos activos, debajo de la cuadrícula
+        ...(t.stroke !== 'none'
+          ? [color('stroke', 'Contorno', 'none'), range('strokeW', 'Grosor del contorno', RANGES.strokeW, 0.5)]
+          : []),
+        ...(t.glow !== 'none' ? [color('glow', 'Resplandor neón', 'none')] : []),
         ...(t.shadow
           ? [
               effectRange('shDist', 'Distancia de la sombra', RANGES.shDist, ' px'),
@@ -162,7 +169,6 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
               effectColor('shColor', 'Color de la sombra'),
             ]
           : []),
-        { kind: 'toggle', key: 'bg', label: 'Fondo', lockable: true },
         ...(t.bg
           ? [
               effectRange('bgRadius', 'Redondez del fondo', RANGES.bgRadius, ' px'),
@@ -171,6 +177,14 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
               effectColor('bgColor', 'Color del fondo'),
             ]
           : []),
+        // Brillo, eco, desalineado y distorsión comparten color y distancia: se muestran una sola vez
+        ...(t.bright || t.echo || t.misalign || t.glitch ? [effectColor('fxColor', 'Color de los efectos')] : []),
+        ...(t.glitch ? [effectColor('fxColor2', 'Segundo color de la distorsión')] : []),
+        ...(t.bright ? [effectRange('fxI', 'Intensidad del brillo', RANGES.fxI, ' %')] : []),
+        ...(t.echo || t.misalign || t.glitch ? [effectRange('fxDist', 'Distancia de los efectos', RANGES.fxDist, ' px')] : []),
+        heading('Forma'),
+        { ...(range('curve', 'Curvar', RANGES.curve, 1, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: 0, numeric: true, decimals: 0, lockable: true },
+        { kind: 'note', id: 'curve-note', text: t.curve && t.text.includes('\n') ? 'Curvar admite una línea: solo se curva la primera.' : '' },
       ];
     }
     case 'badge':

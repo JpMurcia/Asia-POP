@@ -81,7 +81,7 @@ describe('render: fondo (US2)', () => {
 const BANNER = 'neon-p2';
 const slider = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
 const field = (label: string) => screen.getByLabelText(`${label} (valor)`) as HTMLInputElement;
-const toggle = (label: string) => screen.getByRole('switch', { name: label });
+const toggle = (label: string) => screen.getByRole('button', { name: label });
 const textOf = (id: string) => canvasEl(id)!.querySelector<HTMLElement>('.tpl-text')!;
 async function start() {
   mockEditorApi();
@@ -98,7 +98,7 @@ const undo = () => fireEvent.click(screen.getByRole('button', { name: 'Deshacer'
 describe('inspector: sombra (US1)', () => {
   it('sin encender no muestra sus controles', async () => {
     await start();
-    expect(toggle('Sombra')).toHaveAttribute('aria-checked', 'false');
+    expect(toggle('Sombra')).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByLabelText('Distancia de la sombra')).toBeNull();
   });
 
@@ -182,8 +182,8 @@ describe('inspector: fondo (US2)', () => {
     fireEvent.click(toggle('Sombra'));
     fireEvent.click(toggle('Fondo'));
     fireEvent.click(screen.getByRole('button', { name: 'Duplicar' }));
-    expect(toggle('Sombra')).toHaveAttribute('aria-checked', 'true');
-    expect(toggle('Fondo')).toHaveAttribute('aria-checked', 'true');
+    expect(toggle('Sombra')).toHaveAttribute('aria-pressed', 'true');
+    expect(toggle('Fondo')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('se guarda con la plantilla y viaja con todos sus parámetros (ida y vuelta)', async () => {

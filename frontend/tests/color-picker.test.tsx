@@ -119,13 +119,14 @@ describe('selector de color: colores de la plantilla (US1)', () => {
 
   it('«Ninguno» y «Transparente» siguen disponibles donde existen y se marcan', async () => {
     await start();
-    // el contorno de un texto admite «Ninguno»
+    // el contorno de un texto admite «Ninguno»; al activarlo desde la cuadrícula de efectos aparece su selector
+    fireEvent.click(screen.getByRole('button', { name: 'Contorno' }));
     pickColor('Contorno', 'Acento 1');
-    colorPanel('Contorno');
-    expect(screen.getByRole('button', { name: 'Ninguno' })).toHaveAttribute('aria-pressed', 'false');
+    expect(colorPanel('Contorno').getByRole('button', { name: 'Ninguno' })).toHaveAttribute('aria-pressed', 'false');
     pickColor('Contorno', 'Ninguno');
-    expect(screen.getByRole('button', { name: 'Ninguno' })).toHaveAttribute('aria-pressed', 'true');
-    expect(trigger('Contorno')).toHaveAccessibleName('Contorno: Ninguno');
+    // sin contorno el selector desaparece y la celda de la cuadrícula se apaga
+    expect(screen.queryByRole('group', { name: 'Contorno' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Contorno' })).toHaveAttribute('aria-pressed', 'false');
     // el relleno de un texto no tiene opción especial
     colorPanel('Relleno');
     expect(screen.queryByRole('button', { name: 'Transparente' })).not.toBeInTheDocument();
@@ -191,6 +192,8 @@ describe('selector de color: sin pérdida de capacidades', () => {
     await renderEditor();
     openElements();
     fireEvent.click(screen.getByRole('button', { name: 'Agregar título' }));
+    // Contorno y neón se activan desde la cuadrícula de efectos
+    for (const effect of ['Contorno', 'Neón']) fireEvent.click(screen.getByRole('button', { name: effect }));
     for (const field of ['Relleno', 'Contorno', 'Resplandor neón']) {
       const panel = colorPanel(field);
       for (const name of ['Acento 1', 'Acento 2', 'Acento 3', 'Papel']) expect(panel.getAllByRole('button', { name }).length).toBeGreaterThan(0);
