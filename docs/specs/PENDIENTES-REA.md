@@ -79,7 +79,7 @@ La feature está implementada (`specs/010-base-template-product-card/`). Lo que 
 
 ### Paso 2 — Repriorizar con datos reales
 
-- [ ] **P2.1** Rehacer la sección 6 ("Qué vale la pena traer a Asia-POP") del inventario con lo medido. Mantener
+- [x] **P2.1** (hecho: sección «6 (revisada con REA)» de `canva-fields-inventory.md`) Rehacer la sección 6 ("Qué vale la pena traer a Asia-POP") del inventario con lo medido. Mantener
       fuera lo que no aporta a un catálogo en PDF (Animar, Dibujar, Apps, Presentar…).
 - [ ] **P2.2** Actualizar `canva-ui-mapping.md` §1.2 (archivo de tokens) con la decisión de qué se toma de la
       referencia. Recomendación previa: conservar la **marca** de Asia-POP (colores) y adoptar la **estructura**
@@ -100,11 +100,11 @@ La feature está implementada (`specs/010-base-template-product-card/`). Lo que 
 
 ### Paso 4 — Nuevas mejoras con el ciclo Spec Kit
 
-- [ ] **P4.1** Con la lista repriorizada (P2.1), especificar la siguiente feature con `/speckit-specify`,
+- [x] **P4.1** (2026-10-22: feature `specs/011-text-shadow-background/` con spec, plan y 24 tareas; REA confirmó el panel «Efectos» y que «Título» y «Texto» ya existían en Asia-POP) Con la lista repriorizada (P2.1), especificar la siguiente feature con `/speckit-specify`,
       citando la evidencia de REA en la spec. Candidatos de la sesión anterior, **a confirmar con REA**:
       sombra y fondo como efectos de texto, imágenes subidas (logo y fotos propias), PDF para imprenta con
       sangrado y marcas de corte, enlaces clicables, cajón colapsable, barra contextual flotante, íconos Lucide.
-- [ ] **P4.2** Implementar con pruebas primero, como en la 007: línea base de PDFs antes de tocar el render,
+- [x] **P4.2** (2026-10-22: feature 011 implementada y probada; ver `specs/011-text-shadow-background/tasks.md`) Implementar con pruebas primero, como en la 007: línea base de PDFs antes de tocar el render,
       comparación byte a byte después, y fidelidad en Chrome real.
 
 ### Pendientes manuales de la feature 007 (independientes de REA)

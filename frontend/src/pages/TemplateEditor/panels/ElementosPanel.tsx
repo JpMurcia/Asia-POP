@@ -15,6 +15,7 @@ export interface PanelProps {
 /** Elementos nuevos: cada fábrica deja el elemento visible y dentro de la hoja, listo para arrastrar. */
 const FACTORIES = {
   title: () => draftText({ name: 'Título', text: 'Nuevo título', color: 'a1', x: 15, y: 44, w: 70, h: 9 }),
+  subtitle: () => draftText({ name: 'Subtítulo', text: 'Nuevo subtítulo', font: 'body', size: 24, weight: 700, x: 15, y: 50, w: 70, h: 7 }),
   body: () => draftText({ name: 'Texto', text: 'Escribe aquí', font: 'body', size: 16, weight: 400, x: 15, y: 54, w: 70, h: 6 }),
   badge: () => draftBadge({ name: 'Insignia' }),
   // Datos del catálogo: un texto con el marcador, que se reemplaza por el dato real al dibujar y al generar
@@ -65,6 +66,9 @@ export default function ElementosPanel({ template, actions }: PanelProps) {
         <h3 className="ed-heading">Texto</h3>
         <button type="button" className="ed-add ed-add-title" title={titleFont} onClick={() => add('title')}>
           Agregar título
+        </button>
+        <button type="button" className="ed-add" title={bodyFont} onClick={() => add('subtitle')}>
+          Agregar subtítulo
         </button>
         <button type="button" className="ed-add" title={bodyFont} onClick={() => add('body')}>
           Agregar texto

@@ -38,10 +38,12 @@ function RangeField({
   desc,
   value,
   onChange,
+  disabled,
 }: {
   desc: Extract<FieldDesc, { kind: 'range' }>;
   value: unknown;
   onChange: FieldRendererProps['onChange'];
+  disabled?: boolean;
 }) {
   const scale = desc.scale ?? 1;
   const stored = typeof value === 'number' ? value : (desc.fallback ?? desc.min / scale);
@@ -58,6 +60,7 @@ function RangeField({
               compact
               deferred
               decimals={desc.decimals ?? 2}
+              disabled={disabled}
               value={shown}
               onCommit={(n) => onChange({ [desc.key]: Math.round((n / scale) * 1000) / 1000 })}
             />
@@ -74,6 +77,7 @@ function RangeField({
         max={desc.max}
         step={desc.step}
         value={shown}
+        disabled={disabled}
         onChange={(e) => onChange({ [desc.key]: Math.round((Number(e.target.value) / scale) * 1000) / 1000 }, desc.key)}
       />
       {isCircle && <span className="ed-field-hint">Con este valor la imagen es un círculo.</span>}
@@ -93,6 +97,7 @@ function NumberField({
   deferred = false,
   decimals = 1,
   compact = false,
+  disabled = false,
 }: {
   label: string;
   value: number;
@@ -102,6 +107,7 @@ function NumberField({
   decimals?: number;
   /** Sin el rótulo visible: el campo va junto a otro control que ya lo nombra. El nombre accesible se conserva. */
   compact?: boolean;
+  disabled?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const parse = (text: string): number | null => {
@@ -120,6 +126,7 @@ function NumberField({
       <input
         inputMode="decimal"
         aria-label={label}
+        disabled={disabled}
         value={draft ?? String(Math.round(value * 10 ** decimals) / 10 ** decimals)}
         onChange={(e) => {
           const text = e.target.value;
@@ -191,7 +198,7 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
                 key={f.key}
                 label={f.label}
                 field={f.key}
-                value={values[f.key]}
+                value={values[f.key] ?? f.fallback}
                 template={colorSource}
                 none={f.none}
                 locked={locked}
@@ -200,7 +207,7 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
             );
 
           case 'range':
-            return <RangeField key={f.key} desc={f} value={values[f.key]} onChange={onChange} />;
+            return <RangeField key={f.key} desc={f} value={values[f.key]} onChange={onChange} disabled={locked && f.lockable} />;
 
           case 'segmented':
             return (
@@ -284,6 +291,7 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
                 role="switch"
                 aria-checked={on}
                 aria-label={f.label}
+                disabled={locked && f.lockable}
                 className="ed-toggle"
                 onClick={() => onChange({ [f.key]: !on })}
               >

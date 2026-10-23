@@ -40,6 +40,11 @@ interface Measured {
   /** Distancia del cuerpo del texto al borde superior de su caja, en px lógicos (feature 008). */
   bodyTop: number | null;
   letterSpacing: string | null;
+  /** Sombra y fondo del texto (feature 011): `text-shadow` del cuerpo, color del <span> de fondo y cuántas líneas dibuja. */
+  textShadow: string | null;
+  spanBg: string | null;
+  spanLines: number | null;
+  spanBox: { left: number; right: number } | null;
 }
 interface PageMeasure {
   key: PageKey;
@@ -74,6 +79,10 @@ const MEASURE = `(() => {
         decoration: bcs ? bcs.textDecorationLine : null, bodyH: body ? body.offsetHeight : null,
         bodyTop: body ? ((body.getBoundingClientRect().top - el.getBoundingClientRect().top) / el.getBoundingClientRect().height) * el.offsetHeight : null,
         letterSpacing: bcs ? bcs.letterSpacing : null,
+        textShadow: bcs ? bcs.textShadow : null,
+        spanBg: body && body.querySelector('span') ? getComputedStyle(body.querySelector('span')).backgroundColor : null,
+        spanLines: body && body.querySelector('span') ? body.querySelector('span').getClientRects().length : null,
+        spanBox: body && body.querySelector('span') ? (() => { const b = body.querySelector('span').getBoundingClientRect(), t = el.getBoundingClientRect(); return { left: (b.left - t.left) / t.width * el.offsetWidth, right: (b.right - t.left) / t.width * el.offsetWidth }; })() : null,
       });
     });
     const footer = sheet.querySelector('[data-testid=page-footer]');
@@ -335,5 +344,49 @@ describe('anclaje vertical (feature 008, US3, SC-004)', () => {
     const { r } = await anchored('bottom');
     const doc = r.payload.template.pages.portada.els.find((e) => e.id === 'ancla');
     expect(doc && doc.type === 'text' && doc.vAlign).toBe('bottom');
+  }, 120_000);
+});
+
+describe('sombra y fondo del texto (feature 011, FR-009, SC-002)', () => {
+  let seq = 0;
+  const withEffects = async (over: Parameters<typeof draftText>[0], box = { x: 10, y: 55, w: 80, h: 30 }) => {
+    const id = `tfx011-${++seq}`;
+    const t = copyOf(baseTemplate('neon'), id, `Neón efectos ${seq}`);
+    t.pages.portada.els.push({ ...draftText({ size: 20, ...box, ...over }), id: 'fx' });
+    await h.save((ws) => ({ templates: [...ws.templates, t] }));
+    const r = await h.generate({ prepare: { templateId: id } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    return { r, measure, el: measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === 'fx')! };
+  };
+
+  it('la sombra de un texto llega al PDF con su color, su desplazamiento y su desenfoque', async () => {
+    const { el } = await withEffects({ text: 'Con sombra', shadow: true, shDist: 8, shAngle: 90, shBlur: 4, shAlpha: 100, shColor: '#112233' });
+    expect(el.textShadow).toContain('rgb(17, 34, 51)');
+    expect(el.textShadow).toMatch(/0px 8px 4px/);
+  }, 120_000);
+
+  it('el fondo de un texto de dos líneas dibuja una caja por línea, con su color, y el texto cabe', async () => {
+    const { el } = await withEffects({ text: 'Línea uno\nLínea dos', bg: true, bgColor: '#102030', bgAlpha: 50, bgPad: 6, bgRadius: 4 });
+    expect(el.spanBg).toBe('rgba(16, 32, 48, 0.5)');
+    expect(el.spanLines).toBe(2);
+    expect(el.bodyH! / el.lineHeight!).toBeCloseTo(2, 1);
+    expect(el.bodyH!).toBeLessThanOrEqual(el.h + 1);
+  }, 120_000);
+
+  it('sombra y fondo a la vez, y sin los efectos el texto no cambia de alto ni de renglones', async () => {
+    const plain = await withEffects({ text: 'Línea uno\nLínea dos' });
+    const both = await withEffects({ text: 'Línea uno\nLínea dos', shadow: true, bg: true });
+    expect(plain.el.spanBg).toBeNull();
+    expect(both.el.spanBg).not.toBeNull();
+    expect(both.el.bodyH).toBeCloseTo(plain.el.bodyH!, 1);
+    expect(both.el.textShadow).not.toBe('none');
+  }, 180_000);
+
+  it('un texto con datos insertables largo y con fondo no se sale de su caja ni ensancha la hoja', async () => {
+    const { measure, el } = await withEffects({ text: '{tienda} {tienda} {tienda}', bg: true, bgPad: 40 }, { x: 10, y: 55, w: 40, h: 10 });
+    expect(el.spanBox!.left).toBeGreaterThanOrEqual(-1);
+    expect(el.spanBox!.right).toBeLessThanOrEqual(el.w + 1);
+    expect(measure.scrollWidth).toBe(measure.clientWidth);
   }, 120_000);
 });

@@ -121,6 +121,15 @@ export const RANGES = {
   footerBw: [0, 6],
   /** Tamaño de la foto de un producto, en % de su tamaño original en la distribución elegida (feature 007). */
   photoScale: [50, 150],
+  /** Sombra del texto (feature 011): distancia y desenfoque en px, dirección en grados (0 = derecha, 90 = abajo). */
+  shDist: [0, 50],
+  shAngle: [-180, 180],
+  shBlur: [0, 50],
+  /** Transparencia de la sombra y del fondo del texto: 0 = invisible, 100 = opaco. */
+  alpha: [0, 100],
+  /** Fondo del texto (feature 011): esquinas y separación, en px. */
+  bgRadius: [0, 50],
+  bgPad: [0, 40],
 } as const satisfies Record<string, readonly [number, number]>;
 
 /**
@@ -188,7 +197,33 @@ export interface TextEl extends ElementBase {
   strike?: boolean;
   /** Anclaje vertical del texto en su caja (feature 008). Opcional: si falta se dibuja centrado, como siempre; ver `TEXT_DEFAULTS`. */
   vAlign?: VAlign;
+  /** Sombra del texto (feature 011). Opcional: sin `shadow` no se dibuja; los parámetros faltantes salen de `TEXT_EFFECT_DEFAULTS`. */
+  shadow?: boolean;
+  shDist?: number;
+  shAngle?: number;
+  shBlur?: number;
+  shAlpha?: number;
+  shColor?: ColorRef;
+  /** Fondo del texto (feature 011): igual que la sombra, sin `bg` no se dibuja. */
+  bg?: boolean;
+  bgRadius?: number;
+  bgPad?: number;
+  bgAlpha?: number;
+  bgColor?: ColorRef;
 }
+
+/** Valores de los parámetros de sombra y fondo cuando un texto no los trae (feature 011). Único lugar donde viven. */
+export const TEXT_EFFECT_DEFAULTS = {
+  shDist: 6,
+  shAngle: 45,
+  shBlur: 6,
+  shAlpha: 50,
+  shColor: '#000000',
+  bgRadius: 8,
+  bgPad: 8,
+  bgAlpha: 100,
+  bgColor: 'bg',
+} as const satisfies Pick<Required<TextEl>, 'shDist' | 'shAngle' | 'shBlur' | 'shAlpha' | 'shColor' | 'bgRadius' | 'bgPad' | 'bgAlpha' | 'bgColor'>;
 
 /**
  * Valores de `lh` y `strike` cuando un texto no los trae: los del render anterior a la feature 007, para que las

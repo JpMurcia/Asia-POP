@@ -111,6 +111,18 @@ const textEl = z.object({
   lh: num(RANGES.lh, 'La altura de línea').optional(),
   strike: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
   vAlign: oneOf(['top', 'middle', 'bottom'], 'La alineación vertical').optional(),
+  // Sombra y fondo (feature 011): opcionales; un parámetro guardado con el interruptor apagado se conserva
+  shadow: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  shDist: num(RANGES.shDist, 'La distancia de la sombra').optional(),
+  shAngle: num(RANGES.shAngle, 'La dirección de la sombra').optional(),
+  shBlur: num(RANGES.shBlur, 'El desenfoque de la sombra').optional(),
+  shAlpha: num(RANGES.alpha, 'La transparencia de la sombra').optional(),
+  shColor: colorRef.optional(),
+  bg: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional(),
+  bgRadius: num(RANGES.bgRadius, 'La redondez del fondo').optional(),
+  bgPad: num(RANGES.bgPad, 'La separación del fondo').optional(),
+  bgAlpha: num(RANGES.alpha, 'La transparencia del fondo').optional(),
+  bgColor: colorRef.optional(),
 });
 
 const badgeEl = z.object({

@@ -5,6 +5,7 @@ import {
   PRODUCTS_ZONE_MIN,
   RANGES,
   TEXT_DEFAULTS,
+  TEXT_EFFECT_DEFAULTS,
   isAutoBlock,
   type BaseId,
   type FontKey,
@@ -247,7 +248,15 @@ function settleText(el: TextEl, patch: Partial<PageElement>): Partial<PageElemen
   const next = { ...patch } as Partial<TextEl>;
   if (typeof next.lh === 'number') next.lh = clampTo(RANGES.lh, next.lh, 2);
   if (typeof next.ls === 'number') next.ls = clampTo(RANGES.ls, next.ls, 1);
-  const current = { ...TEXT_DEFAULTS, ...el } as unknown as Record<string, unknown>;
+  // Sombra y fondo (feature 011): enteros dentro de su rango
+  if (typeof next.shDist === 'number') next.shDist = clampTo(RANGES.shDist, next.shDist, 0);
+  if (typeof next.shAngle === 'number') next.shAngle = clampTo(RANGES.shAngle, next.shAngle, 0);
+  if (typeof next.shBlur === 'number') next.shBlur = clampTo(RANGES.shBlur, next.shBlur, 0);
+  if (typeof next.shAlpha === 'number') next.shAlpha = clampTo(RANGES.alpha, next.shAlpha, 0);
+  if (typeof next.bgRadius === 'number') next.bgRadius = clampTo(RANGES.bgRadius, next.bgRadius, 0);
+  if (typeof next.bgPad === 'number') next.bgPad = clampTo(RANGES.bgPad, next.bgPad, 0);
+  if (typeof next.bgAlpha === 'number') next.bgAlpha = clampTo(RANGES.alpha, next.bgAlpha, 0);
+  const current = { ...TEXT_DEFAULTS, ...TEXT_EFFECT_DEFAULTS, shadow: false, bg: false, ...el } as unknown as Record<string, unknown>;
   const changed = Object.entries(next).some(([k, v]) => current[k] !== v);
   return changed ? (next as Partial<PageElement>) : null;
 }

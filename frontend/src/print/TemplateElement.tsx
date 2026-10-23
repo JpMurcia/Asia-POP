@@ -21,6 +21,7 @@ import FooterBlock from './blocks/FooterBlock';
 import IntroBlock from './blocks/IntroBlock';
 import ProductsBlock from './blocks/ProductsBlock';
 import TermsBlock from './blocks/TermsBlock';
+import { bgStyle, shadowCss } from './text-effects';
 import { useFit } from './useFit';
 
 export interface ElementContext {
@@ -137,7 +138,8 @@ function textStyle(el: TextEl, palette: Palette, fonts: Template['fonts']): CSSP
     textDecorationLine: (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : undefined,
     WebkitTextStroke: el.strokeW > 0 && stroke !== 'transparent' ? `calc(${el.strokeW}px * var(--fit, 1)) ${stroke}` : undefined,
     paintOrder: 'stroke fill',
-    textShadow: glow !== 'transparent' ? glowText(glow) : undefined,
+    // Resplandor primero y sombra después: el neón no queda tapado por una sombra oscura (feature 011)
+    textShadow: [glow !== 'transparent' ? glowText(glow) : undefined, shadowCss(el, palette)].filter(Boolean).join(', ') || undefined,
     whiteSpace: 'pre-wrap',
   };
 }
@@ -151,14 +153,16 @@ function TextBody({ el, palette, fonts, tokens }: { el: TextEl; palette: Palette
   const content = resolveTokens(el.text, tokens);
   const style = textStyle(el, palette, fonts);
   const box: CSSProperties = { justifyContent: JUSTIFY[el.align] };
+  // Fondo del texto (feature 011): un <span> solo si está activo y hay texto; sin él, el HTML es el de siempre
+  const bg = content ? bgStyle(el, palette) : undefined;
   if (el.vAlign === 'top' || el.vAlign === 'bottom') box.alignItems = ANCHOR[el.vAlign];
   // El largo de un texto con datos insertables depende de los datos: se ajusta. Los textos libres se muestran tal cual.
   return hasTokens(el.text) ? (
-    <FitText box={box} style={style} content={content} el={el} fonts={fonts} />
+    <FitText box={box} style={style} bg={bg} content={content} el={el} fonts={fonts} />
   ) : (
     <div className="tpl-text-box" style={box}>
       <div className="tpl-text" style={{ ...style, overflowWrap: 'anywhere' }}>
-        {content}
+        {bg ? <span style={bg}>{content}</span> : content}
       </div>
     </div>
   );
@@ -167,25 +171,27 @@ function TextBody({ el, palette, fonts, tokens }: { el: TextEl; palette: Palette
 function FitText({
   box,
   style,
+  bg,
   content,
   el,
   fonts,
 }: {
   box: CSSProperties;
   style: CSSProperties;
+  bg?: CSSProperties;
   content: string;
   el: TextEl;
   fonts: Template['fonts'];
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useFit(ref, [content, el.size, el.weight, el.ls, el.lh, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h], {
+  useFit(ref, [content, el.size, el.weight, el.ls, el.lh, el.strokeW, el.upper, el.font, fonts.title, fonts.body, el.w, el.h, el.bg, el.bgPad], {
     axis: 'both',
   });
   return (
     <div className="tpl-text-box" style={box}>
       {/* Las palabras no se parten: una palabra larguísima reduce la letra en vez de cortarse a media palabra */}
       <div className="tpl-text" data-fit="true" ref={ref} style={{ ...style, overflowWrap: 'normal' }}>
-        {content}
+        {bg ? <span style={bg}>{content}</span> : content}
       </div>
     </div>
   );

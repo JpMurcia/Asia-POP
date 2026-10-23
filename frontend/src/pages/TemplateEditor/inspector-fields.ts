@@ -1,6 +1,7 @@
 import {
   RANGES,
   TEXT_DEFAULTS,
+  TEXT_EFFECT_DEFAULTS,
   WEIGHTS,
   isAutoBlock,
   type PageBg,
@@ -14,7 +15,7 @@ import {
  */
 export type FieldDesc =
   | { kind: 'heading'; label: string }
-  | { kind: 'color'; key: string; label: string; none?: 'none' | 'transparent' }
+  | { kind: 'color'; key: string; label: string; none?: 'none' | 'transparent'; fallback?: string; lockable?: boolean }
   | {
       kind: 'range';
       key: string;
@@ -33,6 +34,8 @@ export type FieldDesc =
       numeric?: boolean;
       /** Decimales del campo numérico (por defecto 2). */
       decimals?: number;
+      /** Se deshabilita con el elemento bloqueado (feature 011; los demás campos no lo hacían). */
+      lockable?: boolean;
     }
   | {
       kind: 'segmented';
@@ -47,7 +50,7 @@ export type FieldDesc =
   | { kind: 'font'; key: string; label: string }
   | { kind: 'textarea'; key: string; label: string; rows?: number }
   | { kind: 'tokens'; key: string; label: string }
-  | { kind: 'toggle'; key: string; label: string }
+  | { kind: 'toggle'; key: string; label: string; lockable?: boolean }
   /** Imágenes subidas por la persona (feature 010): elegir, subir y borrar. Escribe `key` con `upload:<archivo>`. */
   | { kind: 'imagePicker'; key: string; label: string }
   | {
@@ -88,6 +91,15 @@ const range = (key: string, label: string, [min, max]: readonly [number, number]
   step,
   unit,
 });
+/** Parámetro numérico de la sombra o del fondo del texto (feature 011): deslizador + campo, con su valor por defecto. */
+const effectRange = (key: keyof typeof TEXT_EFFECT_DEFAULTS, label: string, r: readonly [number, number], unit: string): FieldDesc => ({
+  ...(range(key, label, r, 1, unit) as Extract<FieldDesc, { kind: 'range' }>),
+  fallback: TEXT_EFFECT_DEFAULTS[key] as number,
+  numeric: true,
+  decimals: 0,
+  lockable: true,
+});
+const effectColor = (key: 'shColor' | 'bgColor', label: string): FieldDesc => ({ ...(color(key, label) as Extract<FieldDesc, { kind: 'color' }>), fallback: TEXT_EFFECT_DEFAULTS[key], lockable: true });
 const seg = (key: string, label: string, options: readonly (readonly [string | number, string])[]): FieldDesc => ({
   kind: 'segmented',
   key,
@@ -140,6 +152,25 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         color('stroke', 'Contorno', 'none'),
         ...(t.stroke !== 'none' ? [range('strokeW', 'Grosor del contorno', RANGES.strokeW, 0.5)] : []),
         color('glow', 'Resplandor neón', 'none'),
+        { kind: 'toggle', key: 'shadow', label: 'Sombra', lockable: true },
+        ...(t.shadow
+          ? [
+              effectRange('shDist', 'Distancia de la sombra', RANGES.shDist, ' px'),
+              effectRange('shAngle', 'Dirección de la sombra', RANGES.shAngle, '°'),
+              effectRange('shBlur', 'Desenfoque de la sombra', RANGES.shBlur, ' px'),
+              effectRange('shAlpha', 'Transparencia de la sombra', RANGES.alpha, ' %'),
+              effectColor('shColor', 'Color de la sombra'),
+            ]
+          : []),
+        { kind: 'toggle', key: 'bg', label: 'Fondo', lockable: true },
+        ...(t.bg
+          ? [
+              effectRange('bgRadius', 'Redondez del fondo', RANGES.bgRadius, ' px'),
+              effectRange('bgPad', 'Separación del fondo', RANGES.bgPad, ' px'),
+              effectRange('bgAlpha', 'Transparencia del fondo', RANGES.alpha, ' %'),
+              effectColor('bgColor', 'Color del fondo'),
+            ]
+          : []),
       ];
     }
     case 'badge':
