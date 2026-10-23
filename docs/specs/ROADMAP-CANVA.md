@@ -26,5 +26,5 @@ Cada feature es grande por sí sola; se hacen **una por una** porque tocan los m
 
 ## Estado
 
-- [x] 012 (2026-10-22, falta su revisión manual T031) · [ ] 013 · [ ] 014 · [ ] 015
+- [x] 012 (2026-10-22, revisión manual T031 hecha el 2026-10-23) · [ ] 013 · [ ] 014 · [ ] 015
 - Evidencia de partida: `docs/specs/rea-evidence/` (22 capturas), `canva-fields-inventory.md` §6 revisada.

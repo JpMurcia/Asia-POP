@@ -76,7 +76,7 @@
 - [X] T028 Pruebas de fidelidad en Chrome real en `backend/tests/integration/pdf-template-fidelity.test.ts` («feature 012»): cursiva, subrayado, justificado, lista con viñetas y numerada, cada efecto, todos a la vez, y curvar +60/−60 se ven igual en el lienzo y en el PDF; un texto con datos largo con lista no desborda
 - [X] T029 (8 de 8 PDF idénticos byte a byte) Reconstruir `frontend/dist` y comparar byte a byte: `BASELINE_DIR=<carpeta de T001> npx tsx tests/fixtures/pdf-baseline.ts compare`; las 8 salidas **idénticas** (SC-001)
 - [X] T030 (frontend 979/979; backend: todo en verde salvo el límite de plantillas del arnés de fidelidad, ya corregido, y `pdf-template-fidelity` 41/41; `tsc` limpio; `eslint` solo marca `round1` sin usar en `FieldRenderer.tsx`, anterior a esta feature) [P] Suites completas (`npx vitest run` en `frontend/` y `backend/`), `tsc --noEmit` en ambos y `eslint` de lo tocado; corregir regresiones
-- [ ] T031 (PENDIENTE: no se hizo; hay que levantar la app con datos temporales y probarlo a mano) Revisión manual en el navegador con datos temporales (`quickstart.md` §6) y anotar el resultado
+- [X] T031 (23-oct-2026, app con `DATA_DIR` temporal y simulador: lista numerada, cursiva, cuadrícula de efectos con Sombra + Neón combinados, Curvar +60 y guardar/recargar conservan todo; el PDF de Chrome lo cubre T028; Copiar estilo y −60 solo con pruebas automáticas; el arco de Curvar sobresale de la caja y puede tapar elementos vecinos) Revisión manual en el navegador con datos temporales (`quickstart.md` §6) y anotar el resultado
 - [X] T032 [P] Actualizar documentación: `docs/specs/ROADMAP-CANVA.md` (012 hecha), `docs/specs/canva-fields-inventory.md` §3.2, `docs/specs/PENDIENTES-REA.md` y `README.md`
 
 ---
