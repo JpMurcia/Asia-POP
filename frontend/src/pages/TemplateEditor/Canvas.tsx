@@ -72,7 +72,7 @@ export default function Canvas({
     if (e.button !== 0 || !selected || selected.locked) return;
     e.stopPropagation();
     e.preventDefault();
-    begin(e, selected.id, 'resize', selected);
+    begin(e, selected.id, 'resize', selected, 'lockAspect' in selected && selected.lockAspect === true);
   }
 
   const px = (n: number) => `${n / scale}px`;

@@ -22,6 +22,7 @@ import IntroBlock from './blocks/IntroBlock';
 import ProductsBlock from './blocks/ProductsBlock';
 import TermsBlock from './blocks/TermsBlock';
 import CurvedText from './CurvedText';
+import ShapeSvg from './ShapeSvg';
 import { bgStyle, hollowStyle, textShadowOf } from './text-effects';
 import { LIST_INDENT, decorationLine, listLines } from './text-format';
 import { useFit } from './useFit';
@@ -48,14 +49,22 @@ function TemplateElementImpl({ el, palette, fonts, tokens, items, terms, introTe
   if (el.visible === false) return null;
   if (el.type === 'intro' && !introText) return null;
 
+  // Voltear (feature 013, solo formas e imágenes): se compone con el giro; sin volteo el transform es el de siempre
+  const flip = el.type === 'shape' || el.type === 'image' ? { h: el.flipH === true, v: el.flipV === true } : { h: false, v: false };
+  const transform = [el.rot ? `rotate(${el.rot}deg)` : '', flip.h || flip.v ? `scale(${flip.h ? -1 : 1}, ${flip.v ? -1 : 1})` : '']
+    .filter(Boolean)
+    .join(' ');
   const wrapper: CSSProperties = {
     left: `${el.x}%`,
     top: `${el.y}%`,
     width: `${el.w}%`,
     height: `${el.h}%`,
-    ...(el.rot ? { transform: `rotate(${el.rot}deg)` } : {}),
+    ...(transform ? { transform } : {}),
     ...(el.opacity !== 1 ? { opacity: el.opacity } : {}),
   };
+
+  // Enlace (feature 013): solo texto, insignia, forma e imagen; vacío = sin enlace
+  const href = el.type === 'text' || el.type === 'badge' || el.type === 'shape' || el.type === 'image' ? el.href || undefined : undefined;
 
   let body;
   switch (el.type) {
@@ -105,7 +114,13 @@ function TemplateElementImpl({ el, palette, fonts, tokens, items, terms, introTe
       data-locked={el.locked ? 'true' : undefined}
       style={wrapper}
     >
-      {body}
+      {href ? (
+        <a className="tpl-link" href={href} target="_blank" rel="noopener noreferrer">
+          {body}
+        </a>
+      ) : (
+        body
+      )}
     </div>
   );
 }
@@ -272,6 +287,8 @@ function FitBadgeText({
 // ---------------------------------------------------------------------------------------------------------------
 
 function ShapeBody({ el, palette }: { el: ShapeEl; palette: Palette }) {
+  // Las figuras de la feature 013 y la línea se dibujan en SVG; rectángulo, círculo y píldora conservan su CSS
+  if (el.kind !== 'rect' && el.kind !== 'circle' && el.kind !== 'pill') return <ShapeSvg el={el} palette={palette} />;
   const c = (ref: string) => resolveColor(palette, ref);
   const border = c(el.border);
   const glow = c(el.glow);
@@ -280,7 +297,7 @@ function ShapeBody({ el, palette }: { el: ShapeEl; palette: Palette }) {
       className="tpl-shape"
       style={{
         backgroundColor: c(el.fill),
-        border: el.bw > 0 && border !== 'transparent' ? `${el.bw}px solid ${border}` : 'none',
+        border: el.bw > 0 && border !== 'transparent' ? `${el.bw}px ${el.bs ?? 'solid'} ${border}` : 'none',
         borderRadius: el.kind === 'circle' ? '50%' : el.kind === 'pill' ? '999px' : `${el.radius}px`,
         boxShadow: glow !== 'transparent' ? `0 0 16px ${glow}, inset 0 0 12px ${glow}` : undefined,
       }}

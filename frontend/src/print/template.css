@@ -86,6 +86,15 @@
   box-sizing: border-box;
 }
 
+/* Enlace de un elemento (feature 013): cubre su caja y no cambia cómo se ve el contenido */
+.tpl-link {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
 .tpl-image {
   display: block;
   width: 100%;

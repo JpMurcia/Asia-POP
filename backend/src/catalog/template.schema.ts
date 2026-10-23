@@ -7,18 +7,22 @@ import { z } from 'zod';
 import {
   AUTO_BLOCK_TYPES,
   BASE_IDS,
+  BORDER_STYLES,
   CARD_STYLES,
   FONT_KEYS,
   IMAGE_KEYS,
   LIMITS,
+  LINE_CAPS,
   NAME_STYLES,
   PAGE_LABELS,
   PRODUCTS_ZONE_MIN,
   RANGES,
   REQUIRED_BLOCKS,
+  SHAPE_KINDS,
   UPLOAD_IMAGE_RE,
   WEIGHTS,
   isColorRef,
+  isValidLink,
   type AutoBlockType,
   type PageKey,
   type Template,
@@ -85,6 +89,12 @@ const auto = {
   visible: z.literal(true, { error: 'Un bloque automático no se puede ocultar.' }),
 };
 
+const bool = z.boolean({ error: 'Debe ser verdadero o falso.' });
+/** Enlace de un elemento (feature 013): `''` = sin enlace; si no, http(s) sin espacios. */
+const link = z
+  .string({ error: 'El enlace debe ser un texto.' })
+  .refine(isValidLink, 'El enlace debe empezar con http:// o https:// y no tener espacios (hasta 2000 caracteres).');
+
 // ---------------------------------------------------------------------------------------------------------------
 // Elementos
 // ---------------------------------------------------------------------------------------------------------------
@@ -137,6 +147,7 @@ const textEl = z.object({
   fxDist: num(RANGES.fxDist, 'La distancia del efecto').optional(),
   fxI: num(RANGES.fxI, 'La intensidad del efecto').optional(),
   curve: num(RANGES.curve, 'La curvatura').optional(),
+  href: link.optional(),
 });
 
 const badgeEl = z.object({
@@ -147,17 +158,26 @@ const badgeEl = z.object({
   color: colorRef,
   font: fontRef,
   size: num(RANGES.badgeSize, 'El tamaño'),
+  href: link.optional(),
 });
 
 const shapeEl = z.object({
   ...free,
   type: z.literal('shape'),
-  kind: oneOf(['rect', 'circle', 'pill'], 'La forma'),
+  kind: oneOf(SHAPE_KINDS, 'La forma'),
   fill: colorRef,
   border: colorRef,
   bw: num(RANGES.shapeBw, 'El grosor del borde'),
   radius: num(RANGES.shapeRadius, 'Las esquinas'),
   glow: colorRef,
+  // Feature 013: opcionales; hay que declararlos, z.object descarta las claves que no conoce
+  bs: oneOf(BORDER_STYLES, 'El estilo del borde').optional(),
+  capStart: oneOf(LINE_CAPS, 'El extremo inicial').optional(),
+  capEnd: oneOf(LINE_CAPS, 'El extremo final').optional(),
+  flipH: bool.optional(),
+  flipV: bool.optional(),
+  lockAspect: bool.optional(),
+  href: link.optional(),
 });
 
 /** Una imagen de la galería o una subida (`upload:<archivo>`, sin separadores ni `..`). */
@@ -174,6 +194,10 @@ const imageEl = z.object({
   src: imageSrc,
   fit: oneOf(['contain', 'cover', 'fill'], 'El ajuste'),
   radius: num(RANGES.imageRadius, 'Las esquinas'),
+  flipH: bool.optional(),
+  flipV: bool.optional(),
+  lockAspect: bool.optional(),
+  href: link.optional(),
 });
 
 const introEl = z.object({

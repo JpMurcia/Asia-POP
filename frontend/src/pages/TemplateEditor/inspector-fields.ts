@@ -1,5 +1,6 @@
 import {
   RANGES,
+  SHAPE_DEFAULTS,
   TEXT_DEFAULTS,
   TEXT_EFFECT_DEFAULTS,
   WEIGHTS,
@@ -44,11 +45,15 @@ export type FieldDesc =
       options: readonly (readonly [string | number, string])[];
       /** Opción activa cuando la propiedad falta (opcionales de 007 y 008, como el anclaje vertical). */
       fallback?: string | number;
+      /** Las opciones pasan a otra línea cuando no caben (feature 013: nueve tipos de forma). */
+      wrap?: boolean;
     }
   | { kind: 'select'; key: string; label: string; options: readonly (readonly [string, string])[] }
   /** Selector de fuente (feature 009): reemplaza la lista desplegable de texto plano. */
   | { kind: 'font'; key: string; label: string }
   | { kind: 'textarea'; key: string; label: string; rows?: number }
+  /** Texto de una línea que se guarda al pulsar Enter o salir del campo (feature 013: «Enlace»). */
+  | { kind: 'input'; key: string; label: string; placeholder?: string; lockable?: boolean }
   | { kind: 'tokens'; key: string; label: string }
   | { kind: 'toggle'; key: string; label: string; lockable?: boolean }
   /** Imágenes subidas por la persona (feature 010): elegir, subir y borrar. Escribe `key` con `upload:<archivo>`. */
@@ -108,6 +113,39 @@ const seg = (key: string, label: string, options: readonly (readonly [string | n
   label,
   options,
 });
+
+const segFallback = (key: string, label: string, options: readonly (readonly [string | number, string])[], fallback: string | number, wrap = false): FieldDesc => ({
+  kind: 'segmented',
+  key,
+  label,
+  options,
+  fallback,
+  ...(wrap ? { wrap } : {}),
+});
+
+/** Tipos de forma que ofrece el inspector (la línea se agrega desde «Elementos» y tiene sus propios campos). */
+const KIND_OPTIONS = [
+  ['rect', 'Rectángulo'],
+  ['circle', 'Círculo'],
+  ['pill', 'Píldora'],
+  ['triangle', 'Triángulo'],
+  ['diamond', 'Rombo'],
+  ['star', 'Estrella'],
+  ['burst', 'Estallido'],
+  ['arrow', 'Flecha'],
+  ['bubble', 'Globo'],
+] as const;
+const BORDER_STYLE_OPTIONS = [['solid', 'Sólido'], ['dashed', 'Discontinuo'], ['dotted', 'Punteado']] as const;
+const CAP_OPTIONS = [['none', 'Ninguno'], ['arrow', 'Flecha'], ['circle', 'Círculo'], ['square', 'Cuadrado'], ['diamond', 'Rombo']] as const;
+
+/** Voltear y bloquear proporción (feature 013): formas, líneas e imágenes. */
+const flipFields = (): FieldDesc[] => [
+  { kind: 'toggle', key: 'flipH', label: 'Voltear horizontal', lockable: true },
+  { kind: 'toggle', key: 'flipV', label: 'Voltear vertical', lockable: true },
+  { kind: 'toggle', key: 'lockAspect', label: 'Bloquear proporción' },
+];
+/** Enlace (feature 013): texto, insignia, forma, línea e imagen. */
+const linkFields = (): FieldDesc[] => [heading('Enlace'), { kind: 'input', key: 'href', label: 'Enlace', placeholder: 'https://', lockable: true }];
 
 export const IMAGE_OPTIONS = [
   ['logo', 'Logo'],
@@ -185,6 +223,7 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         heading('Forma'),
         { ...(range('curve', 'Curvar', RANGES.curve, 1, '') as Extract<FieldDesc, { kind: 'range' }>), fallback: 0, numeric: true, decimals: 0, lockable: true },
         { kind: 'note', id: 'curve-note', text: t.curve && t.text.includes('\n') ? 'Curvar admite una línea: solo se curva la primera.' : '' },
+        ...linkFields(),
       ];
     }
     case 'badge':
@@ -195,16 +234,31 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         color('color', 'Color del texto'),
         { kind: 'font', key: 'font', label: 'Fuente' },
         range('size', 'Tamaño', RANGES.badgeSize, 1),
+        ...linkFields(),
       ];
     case 'shape': {
       const s = el as El<'shape'>;
+      if (s.kind === 'line') {
+        return [
+          color('fill', 'Color'),
+          { ...(range('bw', 'Grosor', [1, RANGES.shapeBw[1]], 1) as Extract<FieldDesc, { kind: 'range' }>), fallback: 1 },
+          segFallback('bs', 'Estilo', BORDER_STYLE_OPTIONS, SHAPE_DEFAULTS.bs),
+          segFallback('capStart', 'Extremo inicial', CAP_OPTIONS, SHAPE_DEFAULTS.capStart, true),
+          segFallback('capEnd', 'Extremo final', CAP_OPTIONS, SHAPE_DEFAULTS.capEnd, true),
+          ...flipFields(),
+          ...linkFields(),
+        ];
+      }
+      const hasBorder = s.border !== 'none';
       return [
-        seg('kind', 'Forma', [['rect', 'Rectángulo'], ['circle', 'Círculo'], ['pill', 'Píldora']]),
+        segFallback('kind', 'Forma', KIND_OPTIONS, 'rect', true),
         color('fill', 'Relleno', 'transparent'),
         color('border', 'Borde', 'none'),
-        ...(s.border !== 'none' ? [range('bw', 'Grosor del borde', RANGES.shapeBw, 1)] : []),
+        ...(hasBorder ? [range('bw', 'Grosor del borde', RANGES.shapeBw, 1), segFallback('bs', 'Estilo del borde', BORDER_STYLE_OPTIONS, SHAPE_DEFAULTS.bs)] : []),
         ...(s.kind === 'rect' ? [range('radius', 'Esquinas', RANGES.shapeRadius, 1)] : []),
         color('glow', 'Resplandor neón', 'none'),
+        ...flipFields(),
+        ...linkFields(),
       ];
     }
     case 'image':
@@ -213,6 +267,8 @@ function ownFields(el: PageElement, template: Template, extras: FieldExtras): Fi
         { kind: 'imagePicker', key: 'src', label: 'Mis imágenes' },
         seg('fit', 'Ajuste', [['contain', 'Contener'], ['cover', 'Cubrir'], ['fill', 'Estirar']]),
         { ...(range('radius', 'Esquinas', RANGES.imageRadius, 2) as Extract<FieldDesc, { kind: 'range' }>), circleAt: RANGES.imageRadius[1] },
+        ...flipFields(),
+        ...linkFields(),
       ];
     case 'intro':
       return [

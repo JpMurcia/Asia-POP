@@ -5,6 +5,7 @@ import {
   LIMITS,
   PRODUCTS_ZONE_MIN,
   RANGES,
+  SHAPE_DEFAULTS,
   TEXT_DEFAULTS,
   TEXT_EFFECT_DEFAULTS,
   isAutoBlock,
@@ -23,6 +24,7 @@ import {
 import { baseTemplate } from '../../../../backend/src/catalog/template-presets';
 import { isHexColor } from '../../../../backend/src/catalog/theme';
 import type { BusinessSettings } from '../../../../backend/src/catalog/types';
+import { lockedSize } from './lock-aspect';
 import { ZONE_MIN_MESSAGE, photoHeightMessage, photoWidthMessage, productLimits } from './product-limits';
 
 /** Pasos que se pueden deshacer (FR-010). */
@@ -243,6 +245,9 @@ const clampTo = ([min, max]: readonly [number, number], n: number, decimals: num
   return Math.round(Math.min(max, Math.max(min, n)) * f) / f;
 };
 
+/** Valores efectivos de los opcionales de la feature 013 cuando el elemento no los trae: elegir uno igual no agrega un paso. */
+const OPTIONAL_DEFAULTS: Record<string, unknown> = { ...SHAPE_DEFAULTS, flipH: false, flipV: false, lockAspect: false, href: '' };
+
 /** ¿Algún valor del parche difiere del actual? (comparación por valor de las claves del parche) */
 const changes = (current: Record<string, unknown>, patch: Record<string, unknown>): boolean =>
   Object.entries(patch).some(([k, v]) => current[k] !== v);
@@ -392,8 +397,15 @@ export function editorReducer(s: EditorState, action: EditorAction): EditorState
       if (!el) return s;
       let patch = sanitize(el, action.patch);
       let notice: string | null = null;
+      // Proporción bloqueada (feature 013): un parche con solo el ancho o solo el alto deriva el otro
+      if ((el.type === 'shape' || el.type === 'image') && el.lockAspect === true) patch = { ...patch, ...lockedSize(el, patch as { w?: number; h?: number }) };
       // Un parche que no cambia nada no agrega un paso de deshacer (texto: con sus valores por defecto; features 008 y 009)
-      const settled = el.type === 'text' ? settleText(el, patch) : changes(el as unknown as Record<string, unknown>, patch) ? patch : null;
+      const settled =
+        el.type === 'text'
+          ? settleText(el, patch)
+          : changes({ ...OPTIONAL_DEFAULTS, ...(el as unknown as Record<string, unknown>) }, patch)
+            ? patch
+            : null;
       if (!settled) return s;
       patch = settled;
       if (el.type === 'products') ({ patch, notice } = clampProducts(el, patch));

@@ -169,5 +169,6 @@ Las fuentes del panel y del catálogo se instalan en local (`@fontsource`); la a
 - [`specs/009-color-font-pickers/`](specs/009-color-font-pickers/): los selectores de color (con colores de la plantilla, buscador y cuentagotas) y de fuente del inspector, y su revisión manual.
 - [`specs/011-text-shadow-background/`](specs/011-text-shadow-background/): la sombra y el fondo del texto, y «Agregar subtítulo».
 - [`specs/012-canva-text-styles/`](specs/012-canva-text-styles/): texto estilo Canva (cursiva, subrayado, justificado, listas, panel de efectos en cuadrícula, curvar y copiar estilo).
+- [`specs/013-canva-elements-shapes/`](specs/013-canva-elements-shapes/): elementos y formas estilo Canva (formas nuevas, estilo de borde, línea con extremos, voltear, bloquear proporción y enlaces clicables).
 
 Cada carpeta tiene especificación, plan, modelo de datos, contrato REST y tareas. El proyecto sigue [Spec Kit](https://github.com/github/spec-kit).

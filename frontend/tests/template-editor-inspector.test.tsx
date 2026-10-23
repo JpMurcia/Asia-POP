@@ -201,12 +201,14 @@ describe('inspector por tipo de elemento (FR-011, FR-012)', () => {
       expect(screen.getByLabelText('Esquinas')).toBeInTheDocument();
     });
 
-    it('la línea es un rectángulo delgado de 0,4 % de alto con esquinas rectas', async () => {
+    it('la línea (feature 013) es una forma de tipo línea con su color, grosor, estilo y extremos', async () => {
       await start();
       await add('Línea');
-      expect(screen.getByLabelText('Alto %')).toHaveValue('0.4');
-      expect(inGroup('Forma', 'Rectángulo')).toHaveAttribute('aria-pressed', 'true');
-      expect(range('Esquinas').value).toBe('0');
+      expect(screen.getByLabelText('Alto %')).toHaveValue('2');
+      expect(screen.queryByRole('group', { name: 'Forma' })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Esquinas')).not.toBeInTheDocument();
+      for (const g of ['Color', 'Estilo', 'Extremo inicial', 'Extremo final']) expect(group(g)).toBeInTheDocument();
+      expect(bounds('Grosor')).toEqual([1, 12]);
     });
   });
 

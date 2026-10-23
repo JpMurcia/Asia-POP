@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { RANGES, type PageElement } from '../../../../backend/src/catalog/template';
+import { lockedSize } from './lock-aspect';
 import { clampBox } from './useTemplateEditor';
 
 /** Tamaños mínimos de un elemento (% de la página). */
@@ -35,7 +36,14 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
  * dentro de los rangos del esquema (`clampBox`): un arrastre muy largo con el zoom al mínimo, si no, dejaría valores
  * que el servidor rechaza con 422 al guardar.
  */
-export function computeDrag(mode: DragMode, origin: Box, dx: number, dy: number): DragResult {
+export function computeDrag(mode: DragMode, origin: Box, dx: number, dy: number, lockAspect = false): DragResult {
+  if (mode === 'resize' && lockAspect && origin.w > 0 && origin.h > 0) {
+    // Con la proporción bloqueada manda el eje que más cambia y el otro lo sigue (feature 013)
+    const sw = (origin.w + dx) / origin.w;
+    const sh = (origin.h + dy) / origin.h;
+    const s = Math.abs(sw - 1) >= Math.abs(sh - 1) ? sw : sh;
+    return { patch: lockedSize(origin, { w: origin.w * s }), guideV: false, guideH: false };
+  }
   if (mode === 'resize') {
     return {
       patch: { w: clampBox.w(round1(origin.w + dx)), h: clampBox.h(round1(origin.h + dy)) },
@@ -66,6 +74,8 @@ interface Session {
   origin: Box;
   rect: DOMRect;
   started: boolean;
+  /** Redimensionar conservando la relación ancho/alto (feature 013). */
+  lockAspect: boolean;
 }
 
 interface Handlers {
@@ -95,7 +105,7 @@ export function usePointerDrag(pageRef: RefObject<HTMLElement | null>, handlers:
       s.started = true;
       latest.current.onCheckpoint();
     }
-    const r = computeDrag(s.mode, s.origin, dx, dy);
+    const r = computeDrag(s.mode, s.origin, dx, dy, s.lockAspect);
     latest.current.onPatch(s.id, r.patch);
     setGuides((g) => (g.v === r.guideV && g.h === r.guideH ? g : { v: r.guideV, h: r.guideH }));
   }, []);
@@ -112,11 +122,11 @@ export function usePointerDrag(pageRef: RefObject<HTMLElement | null>, handlers:
 
   /** Empieza un gesto sobre un elemento libre. Devuelve `false` si no hay hoja que medir. */
   const begin = useCallback(
-    (e: { clientX: number; clientY: number }, id: string, mode: DragMode, origin: Box): boolean => {
+    (e: { clientX: number; clientY: number }, id: string, mode: DragMode, origin: Box, lockAspect = false): boolean => {
       const rect = pageRef.current?.getBoundingClientRect();
       if (!rect) return false;
       stop();
-      session.current = { id, mode, startX: e.clientX, startY: e.clientY, origin: { ...origin }, rect, started: false };
+      session.current = { id, mode, startX: e.clientX, startY: e.clientY, origin: { ...origin }, rect, started: false, lockAspect };
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', stop);
       window.addEventListener('pointercancel', stop);

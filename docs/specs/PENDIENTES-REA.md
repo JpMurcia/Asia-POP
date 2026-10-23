@@ -145,3 +145,9 @@ Marca cada casilla de este archivo al terminarla y sube los cambios a la rama al
 - [x] Implementada y probada (`specs/009-color-font-pickers/`): panel anclado, «Colores de la plantilla», buscador, cuentagotas y selector de fuente; PDF de las plantillas base idéntico byte a byte.
 - [ ] **Sin medir con REA**: las medidas en píxeles de los controles dentro de cada panel de Canva y la pestaña «Estilo» de la fuente (quedan fuera de la 009, ver su spec).
 - [ ] **Revisión manual** pendiente (T027, `specs/009-color-font-pickers/quickstart.md` §7).
+
+### Feature 013 — elementos y formas (2026-10-23)
+
+- Hecha (`specs/013-canva-elements-shapes/`): formas nuevas, estilo de borde, línea con extremos, voltear, bloquear proporción y enlaces.
+- **Sin medir con REA**: la barra contextual de una forma y de una línea en Canva (la captura `rea-evidence/25-forma-seleccionada-013.png` solo muestra el panel «Elementos»; no había forma seleccionada). Los grosores, el tamaño de los extremos y los contornos de las figuras son elecciones propias. Para medirlos: con Vivaldi en primer plano y el puerto 9222, seleccionar una forma, una línea y una imagen en Canva y capturar cada una.
+- Pendiente (013b): marcos con forma, agrupar y desagrupar, selección múltiple.

@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { FONT_LABELS, type PageElement, type Template } from '../../../../../backend/src/catalog/template';
 import { circleHeight, draftBadge, draftImage, draftShape, draftText } from '../../../../../backend/src/catalog/template-presets';
 import { IMAGES } from '../../../print/assets';
+import { shapePath } from '../../../print/shapes';
 import { newElementId, type EditorActions, type EditorWorkspace } from '../useTemplateEditor';
 
 /** Lo que recibe cada panel del riel: la plantilla abierta, todo el conjunto en edición y las acciones. */
@@ -27,7 +28,14 @@ const FACTORIES = {
   rect: () => draftShape({ name: 'Rectángulo' }),
   circle: () => draftShape({ name: 'Círculo', kind: 'circle', x: 35, y: 38, w: 30, h: circleHeight(30) }),
   pill: () => draftShape({ name: 'Píldora', kind: 'pill', x: 25, y: 46, w: 50, h: 7 }),
-  line: () => draftShape({ name: 'Línea', kind: 'rect', fill: 'ink', radius: 0, x: 15, y: 50, w: 70, h: 0.4 }),
+  // Feature 013: figuras con SVG; el alto sale del ancho para que se vean proporcionadas en la hoja
+  triangle: () => draftShape({ name: 'Triángulo', kind: 'triangle', x: 35, y: 38, w: 30, h: circleHeight(30) }),
+  diamond: () => draftShape({ name: 'Rombo', kind: 'diamond', x: 35, y: 38, w: 30, h: circleHeight(30) }),
+  star: () => draftShape({ name: 'Estrella', kind: 'star', x: 35, y: 38, w: 30, h: circleHeight(30) }),
+  burst: () => draftShape({ name: 'Estallido', kind: 'burst', x: 30, y: 36, w: 40, h: circleHeight(40) }),
+  arrow: () => draftShape({ name: 'Flecha', kind: 'arrow', x: 25, y: 44, w: 50, h: circleHeight(50) * 0.5 }),
+  bubble: () => draftShape({ name: 'Globo', kind: 'bubble', x: 25, y: 40, w: 50, h: circleHeight(50) * 0.7 }),
+  line: () => draftShape({ name: 'Línea', kind: 'line', fill: 'ink', border: 'none', bw: 3, radius: 0, x: 15, y: 49, w: 70, h: 2 }),
   logo: () => draftImage({ name: 'Logo', src: 'logo', x: 36, y: 40, w: 28, h: 20 }),
   collage: () => draftImage({ name: 'Collage', src: 'collage' }),
 } as const;
@@ -47,6 +55,16 @@ const SHAPES: { key: FactoryKey; label: string; style: CSSProperties }[] = [
   { key: 'circle', label: 'Círculo', style: { width: 22, height: 22, borderRadius: '50%' } },
   { key: 'pill', label: 'Píldora', style: { width: 26, height: 12, borderRadius: 999 } },
   { key: 'line', label: 'Línea', style: { width: 26, height: 3, borderRadius: 0 } },
+];
+
+/** Figuras SVG de la feature 013: la vista previa se dibuja con el mismo contorno que el elemento. */
+const SVG_SHAPES: { key: FactoryKey; label: string; kind: 'triangle' | 'diamond' | 'star' | 'burst' | 'arrow' | 'bubble' }[] = [
+  { key: 'triangle', label: 'Triángulo', kind: 'triangle' },
+  { key: 'diamond', label: 'Rombo', kind: 'diamond' },
+  { key: 'star', label: 'Estrella', kind: 'star' },
+  { key: 'burst', label: 'Estallido', kind: 'burst' },
+  { key: 'arrow', label: 'Flecha', kind: 'arrow' },
+  { key: 'bubble', label: 'Globo', kind: 'bubble' },
 ];
 
 const IMAGE_BUTTONS: { key: FactoryKey; label: string; src: string }[] = [
@@ -99,6 +117,13 @@ export default function ElementosPanel({ template, actions }: PanelProps) {
           {SHAPES.map((s) => (
             <button key={s.key} type="button" title={s.label} aria-label={s.label} onClick={() => add(s.key)}>
               <span style={s.style} />
+            </button>
+          ))}
+          {SVG_SHAPES.map((s) => (
+            <button key={s.key} type="button" title={s.label} aria-label={s.label} onClick={() => add(s.key)}>
+              <svg width="26" height="22" viewBox="0 0 26 22" aria-hidden="true">
+                <path d={shapePath(s.kind, 26, 22)} fill="var(--ed-pink)" />
+              </svg>
             </button>
           ))}
         </div>

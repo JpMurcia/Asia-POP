@@ -146,6 +146,49 @@ function NumberField({
   );
 }
 
+/** Texto de una línea: guarda al pulsar Enter o al salir del campo (un solo paso del historial), no a cada tecla. */
+function TextInputField({
+  label,
+  value,
+  placeholder,
+  disabled,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  disabled?: boolean;
+  onCommit: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const settle = () => {
+    if (draft !== null && draft.trim() !== value) onCommit(draft.trim());
+    setDraft(null);
+  };
+  return (
+    <div className="ed-field">
+      <div className="ed-field-label">
+        <span>{label}</span>
+      </div>
+      <input
+        type="text"
+        aria-label={label}
+        placeholder={placeholder}
+        disabled={disabled}
+        spellCheck={false}
+        autoComplete="off"
+        value={draft ?? value}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') settle();
+          if (e.key === 'Escape') setDraft(null);
+        }}
+        onBlur={settle}
+      />
+    </div>
+  );
+}
+
 /** Dibuja la lista de descriptores de `inspector-fields.ts`: una línea por propiedad. */
 export default function FieldRenderer({ fields, values, palette, template, onChange, onAction, sectionOpen, onSectionToggle, locked }: FieldRendererProps) {
   const colorSource = template ?? { palette, pages: {} as Template['pages'], fonts: { title: 'fredoka', body: 'poppins' } as Template['fonts'] };
@@ -216,7 +259,7 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
                 <div className="ed-field-label">
                   <span>{f.label}</span>
                 </div>
-                <div className="ed-seg">
+                <div className={f.wrap ? 'ed-seg ed-seg-wrap' : 'ed-seg'}>
                   {f.options.map(([v, text]) => (
                     <button
                       key={String(v)}
@@ -264,6 +307,18 @@ export default function FieldRenderer({ fields, values, palette, template, onCha
                   onChange={(e) => onChange({ [f.key]: e.target.value }, f.key)}
                 />
               </div>
+            );
+
+          case 'input':
+            return (
+              <TextInputField
+                key={`${f.key}-input`}
+                label={f.label}
+                placeholder={f.placeholder}
+                value={typeof values[f.key] === 'string' ? (values[f.key] as string) : ''}
+                disabled={locked && f.lockable}
+                onCommit={(text) => onChange({ [f.key]: text })}
+              />
             );
 
           case 'tokens':

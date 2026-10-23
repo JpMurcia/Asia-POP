@@ -75,7 +75,7 @@
 | Duplicar / Eliminar | Botones | Ctrl+D / Supr | ✅ | — |
 | Comentar, Info alternativa (alt) | Menú "…" | Texto libre | ❌ | Baja |
 | Agrupar / Desagrupar | Botón (con multi-selección) | Ctrl+G / Ctrl+Mayús+G | ❌ | Media (requiere multi-selección) |
-| Voltear | Menú | Horizontal, vertical | ❌ | Baja |
+| Voltear | Menú | Horizontal, vertical | ✅ en imágenes, formas y líneas (feature 013) | — |
 
 ### 3.2 Texto
 
@@ -100,9 +100,9 @@
 
 | Campo | Control | Opciones / valores | Asia-POP | Valor |
 | --- | --- | --- | --- | --- |
-| Tipo de forma | Biblioteca | Decenas (rect., círculo, triángulo, estrella, flechas, globos…) | ⚠️ Rectángulo, Círculo, Píldora | Media (estrella/estallido para "PROMO") |
+| Tipo de forma | Biblioteca | Decenas (rect., círculo, triángulo, estrella, flechas, globos…) | ✅ Rectángulo, Círculo, Píldora, Triángulo, Rombo, Estrella, Estallido, Flecha y Globo (feature 013) | — |
 | Color de relleno | Selector | Sólido o degradado, transparente | ✅ sólido o transparente | — |
-| Estilo de borde | Botones + sliders | Sin borde, Sólido, Discontinuo, Punteado; grosor; **redondeo de esquinas** | ⚠️ sólido + grosor + esquinas (solo rect.) | Baja |
+| Estilo de borde | Botones + sliders | Sin borde, Sólido, Discontinuo, Punteado; grosor; **redondeo de esquinas** | ✅ sólido, discontinuo y punteado + grosor + esquinas (solo rect.) (feature 013) | — |
 | Color del borde | Selector | — | ✅ | — |
 | Texto dentro de la forma | Doble clic | Con todos los campos de Texto | ❌ (se usa Insignia) | — |
 
@@ -110,9 +110,9 @@
 
 | Campo | Control | Opciones / valores | Asia-POP | Valor |
 | --- | --- | --- | --- | --- |
-| Color, grosor, estilo | Selector + slider + botones | Sólido, discontinuo, punteado | ❌ | Media (divisores) |
-| Inicio / fin de línea | Select | Ninguno, flecha, círculo, cuadrado, rombo (rellenos o vacíos) | ❌ | Baja |
-| Tipo de línea | Select | Recta, en codo, curva | ❌ | Baja |
+| Color, grosor, estilo | Selector + slider + botones | Sólido, discontinuo, punteado | ✅ elemento Línea propio (feature 013) | — |
+| Inicio / fin de línea | Select | Ninguno, flecha, círculo, cuadrado, rombo (rellenos o vacíos) | ⚠️ los cinco, solo rellenos (feature 013) | Baja |
+| Tipo de línea | Select | Recta, en codo, curva | ⚠️ solo recta (el giro es la rotación) | Baja |
 
 ### 3.5 Imágenes
 
@@ -132,7 +132,7 @@
 
 | Campo | Control | Opciones / valores | Asia-POP | Valor |
 | --- | --- | --- | --- | --- |
-| Forma del marco | Biblioteca | Círculo, polígonos, letras, dispositivos, polaroid | ⚠️ imagen con esquinas hasta círculo | Baja |
+| Forma del marco | Biblioteca | Círculo, polígonos, letras, dispositivos, polaroid | ⚠️ imagen con esquinas hasta círculo; marcos con forma → 013b | Baja |
 | Imagen dentro | Arrastrar; doble clic para reencuadrar | — | ❌ | Baja |
 | Cuadrícula → Espaciado | Slider | ⏳ | ❌ | Baja |
 

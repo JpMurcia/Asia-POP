@@ -16,6 +16,10 @@
 .ed-canvas .tpl-el {
   cursor: move;
 }
+/* Un enlace (feature 013) solo selecciona el elemento en el editor; no navega */
+.ed-canvas .tpl-link {
+  pointer-events: none;
+}
 .ed-canvas .tpl-el[data-locked] {
   cursor: pointer;
 }
@@ -768,6 +772,13 @@
   font-weight: 700;
   font-size: 12px;
   white-space: nowrap;
+}
+/* Muchas opciones (feature 013): pasan a otra línea en vez de apretarse */
+.ed-seg-wrap {
+  flex-wrap: wrap;
+}
+.ed-seg-wrap button {
+  flex: 1 0 30%;
 }
 .ed-seg button[aria-pressed='true'] {
   background: #fff;

@@ -150,6 +150,22 @@ export function usesPhotoCards(template: Pick<Template, 'pages'>): boolean {
 /** Un `radius` de imagen en este valor o más es un círculo. */
 export const CIRCLE_RADIUS = 300;
 
+/** Tipos de forma (feature 013 suma los seis últimos; `line` es la línea con extremos). */
+export const SHAPE_KINDS = ['rect', 'circle', 'pill', 'triangle', 'diamond', 'star', 'burst', 'arrow', 'bubble', 'line'] as const;
+export type ShapeKind = (typeof SHAPE_KINDS)[number];
+/** Estilos de borde y de línea. */
+export const BORDER_STYLES = ['solid', 'dashed', 'dotted'] as const;
+export type BorderStyle = (typeof BORDER_STYLES)[number];
+/** Extremos de una línea. */
+export const LINE_CAPS = ['none', 'arrow', 'circle', 'square', 'diamond'] as const;
+export type LineCap = (typeof LINE_CAPS)[number];
+/** Valores de `bs`, `capStart` y `capEnd` cuando una forma no los trae (feature 013). Único lugar donde viven. */
+export const SHAPE_DEFAULTS = { bs: 'solid', capStart: 'none', capEnd: 'none' } as const satisfies { bs: BorderStyle; capStart: LineCap; capEnd: LineCap };
+/** Enlace de un elemento: solo http(s), sin espacios, hasta `LINK_MAX` caracteres; `''` = sin enlace. */
+export const LINK_MAX = 2000;
+export const LINK_RE = /^https?:\/\/\S+$/i;
+export const isValidLink = (v: string): boolean => v === '' || (v.length <= LINK_MAX && LINK_RE.test(v));
+
 // ---------------------------------------------------------------------------------------------------------------
 // Tipos del documento de plantilla (data-model.md)
 // ---------------------------------------------------------------------------------------------------------------
@@ -231,6 +247,8 @@ export interface TextEl extends ElementBase {
   fxI?: number;
   /** Curvatura del texto: −100 a 100, 0 = recto. Solo la primera línea. */
   curve?: number;
+  /** Enlace (feature 013). */
+  href?: string;
 }
 
 /** Lista de un texto: sin lista, con viñetas o numerada. */
@@ -267,16 +285,28 @@ export interface BadgeEl extends ElementBase {
   color: ColorRef;
   font: FontRef;
   size: number;
+  href?: string;
 }
 
 export interface ShapeEl extends ElementBase {
   type: 'shape';
-  kind: 'rect' | 'circle' | 'pill';
+  kind: ShapeKind;
+  /** En `kind: 'line'`, el color de la línea. */
   fill: ColorRef;
   border: ColorRef;
+  /** En `kind: 'line'`, el grosor de la línea (se dibuja con mínimo 1). */
   bw: number;
   radius: number;
   glow: ColorRef;
+  /** Feature 013, todos opcionales: su ausencia equivale al comportamiento anterior (ver `SHAPE_DEFAULTS`). */
+  bs?: BorderStyle;
+  capStart?: LineCap;
+  capEnd?: LineCap;
+  flipH?: boolean;
+  flipV?: boolean;
+  /** Solo del editor: al redimensionar se conserva la relación ancho/alto. */
+  lockAspect?: boolean;
+  href?: string;
 }
 
 export interface ImageEl extends ElementBase {
@@ -285,6 +315,11 @@ export interface ImageEl extends ElementBase {
   /** `fill` estira la imagen a la caja (como el marco de portada de 002); el editor ofrece los tres. */
   fit: 'contain' | 'cover' | 'fill';
   radius: number;
+  /** Feature 013, opcionales. */
+  flipH?: boolean;
+  flipV?: boolean;
+  lockAspect?: boolean;
+  href?: string;
 }
 
 /** Introducción de una sección propia: se pinta solo si la sección tiene `introText`. */

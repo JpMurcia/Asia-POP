@@ -11,7 +11,7 @@ import {
   type PageKey,
   type Template,
 } from '../../src/catalog/template';
-import { baseTemplate, draftText } from '../../src/catalog/template-presets';
+import { baseTemplate, draftImage, draftShape, draftText } from '../../src/catalog/template-presets';
 import { PNG, copyOf, startHarness, type Harness } from '../fixtures/pdf-harness';
 
 /**
@@ -51,6 +51,16 @@ interface Measured {
   rows: number | null;
   isCurve: boolean;
   curveBox: { left: number; right: number; top: number; bottom: number } | null;
+  /** Formas SVG, borde, volteo y enlace (feature 013). */
+  isSvg: boolean;
+  svgPaths: number | null;
+  svgFill: string | null;
+  dash: string | null;
+  borderStyle: string | null;
+  /** Determinante del transform: negativo con un solo volteo (feature 013). */
+  flipDet: number;
+  href: string | null;
+  linkSize: { w: number; h: number } | null;
 }
 interface PageMeasure {
   key: PageKey;
@@ -90,8 +100,16 @@ const MEASURE = `(() => {
         fontStyle: bcs ? bcs.fontStyle : null,
         textAlign: bcs ? bcs.textAlign : null,
         rows: body ? body.children.length : null,
-        isCurve: !!body && body.tagName.toLowerCase() === 'svg',
-        curveBox: body && body.tagName.toLowerCase() === 'svg' ? (() => { const b = body.querySelector('text').getBoundingClientRect(), t = el.getBoundingClientRect(), k = el.offsetWidth / t.width; return { left: (b.left - t.left) * k, right: (b.right - t.left) * k, top: (b.top - t.top) * k, bottom: (b.bottom - t.top) * k }; })() : null,
+        isCurve: !!body && body.classList.contains('tpl-text-curve'),
+        curveBox: body && body.classList.contains('tpl-text-curve') ? (() => { const b = body.querySelector('text').getBoundingClientRect(), t = el.getBoundingClientRect(), k = el.offsetWidth / t.width; return { left: (b.left - t.left) * k, right: (b.right - t.left) * k, top: (b.top - t.top) * k, bottom: (b.bottom - t.top) * k }; })() : null,
+        isSvg: !!body && body.tagName.toLowerCase() === 'svg' && body.classList.contains('tpl-shape'),
+        svgPaths: body && body.tagName.toLowerCase() === 'svg' ? body.querySelectorAll('path').length : null,
+        svgFill: body && body.tagName.toLowerCase() === 'svg' && body.querySelector('path') ? getComputedStyle(body.querySelector('path')).fill : null,
+        dash: body && body.tagName.toLowerCase() === 'svg' && body.querySelector('line, path') ? getComputedStyle(body.querySelector('line, path')).strokeDasharray : null,
+        borderStyle: bcs ? bcs.borderTopStyle : null,
+        flipDet: m.a * m.d - m.b * m.c,
+        href: el.querySelector('a') ? el.querySelector('a').getAttribute('href') : null,
+        linkSize: el.querySelector('a') ? { w: el.querySelector('a').offsetWidth, h: el.querySelector('a').offsetHeight } : null,
         spanLines: body && body.querySelector('span') ? body.querySelector('span').getClientRects().length : null,
         spanBox: body && body.querySelector('span') ? (() => { const b = body.querySelector('span').getBoundingClientRect(), t = el.getBoundingClientRect(); return { left: (b.left - t.left) / t.width * el.offsetWidth, right: (b.right - t.left) / t.width * el.offsetWidth }; })() : null,
       });
@@ -167,7 +185,10 @@ function expectMatchesDocument(t: Template, measure: Measure) {
       expect(Math.abs(m.y - (el.y / 100) * PAGE_H), `${at} y`).toBeLessThanOrEqual(tolY);
       expect(Math.abs(m.w - (el.w / 100) * PAGE_W), `${at} ancho`).toBeLessThanOrEqual(tolX);
       expect(Math.abs(m.h - (el.h / 100) * PAGE_H), `${at} alto`).toBeLessThanOrEqual(tolY);
-      expect(Math.abs(m.rot - (el.rot || 0)), `${at} rotación`).toBeLessThanOrEqual(0.5);
+      // Con volteo horizontal la matriz gira 180° más (feature 013)
+      const flippedH = (el.type === 'shape' || el.type === 'image') && el.flipH === true;
+      const turn = (((m.rot - (el.rot || 0) - (flippedH ? 180 : 0)) % 360) + 540) % 360 - 180;
+      expect(Math.abs(turn), `${at} rotación`).toBeLessThanOrEqual(0.5);
       expect(Number(m.opacity), `${at} opacidad`).toBeCloseTo(el.opacity, 2);
       // Un texto curvo es un SVG: su color y su tipografía son atributos del SVG y se comprueban aparte (feature 012)
       const curved = el.type === 'text' && !!el.curve;
@@ -184,7 +205,8 @@ function expectMatchesDocument(t: Template, measure: Measure) {
         const lines = [el.underline ? 'underline' : '', (el.strike ?? TEXT_DEFAULTS.strike) ? 'line-through' : ''].filter(Boolean).join(' ');
         expect(m.decoration, `${at} subrayado y tachado`).toBe(lines || 'none');
       }
-      if (el.type === 'shape') {
+      // Las figuras SVG (feature 013) llevan su relleno en el trazado, no en el fondo de la caja
+      if (el.type === 'shape' && !m.isSvg) {
         expect(m.bg, `${at} relleno`).toBe(rgb(resolveColor(t.palette, el.fill)));
       }
     }
@@ -470,5 +492,83 @@ describe('texto estilo Canva (feature 012, FR-014, SC-002)', () => {
   it('curvatura 0 se dibuja como un texto recto normal', async () => {
     const { el } = await generated({ text: 'Recto', curve: 0 });
     expect(el.isCurve).toBe(false);
+  }, 120_000);
+});
+
+describe('elementos y formas (feature 013, FR-017, SC-002)', () => {
+  let seq = 0;
+  const generated = async (el: PageElement) => {
+    const id = `tfx013-${++seq}`;
+    const t = copyOf(baseTemplate('neon'), id, `Neón formas ${seq}`);
+    t.pages.portada.els.push(el);
+    // Una sola plantilla de esta serie a la vez: el conjunto tiene un máximo de plantillas
+    await h.save((ws) => ({ templates: [...ws.templates.filter((x) => !x.id.startsWith('tfx013-')), t] }));
+    const r = await h.generate({ prepare: { templateId: id } });
+    const measure = r.measure as Measure;
+    expectMatchesDocument(r.payload.template, measure);
+    return { r, measure, el: measure.pages.find((p) => p.key === 'portada')!.els.find((e) => e.id === el.id)! };
+  };
+  const shape = (over: Record<string, unknown>): PageElement =>
+    ({ ...draftShape({ x: 20, y: 40, w: 40, h: 20, fill: '#FF007A', ...over } as never), id: 'f13' }) as PageElement;
+  /** Los bytes del PDF como texto: las anotaciones de enlace no van comprimidas. */
+  const pdfText = (r: { pdf: Buffer }) => r.pdf.toString('latin1');
+
+  it.each(['triangle', 'diamond', 'star', 'burst', 'arrow', 'bubble'])('la forma %s llega al PDF como una figura SVG con su relleno', async (kind) => {
+    const { el } = await generated(shape({ kind, border: '#112233', bw: 4 }));
+    expect(el.isSvg).toBe(true);
+    expect(el.svgPaths).toBe(1);
+    expect(el.svgFill).toBe('rgb(255, 0, 122)');
+  }, 120_000);
+
+  it.each(['dashed', 'dotted'])('el borde %s llega al PDF en una forma de CSS y en una figura SVG', async (bs) => {
+    const css = await generated(shape({ kind: 'rect', border: '#112233', bw: 4, bs }));
+    expect(css.el.borderStyle).toBe(bs);
+    const svg = await generated(shape({ kind: 'star', border: '#112233', bw: 4, bs }));
+    expect(svg.el.dash).not.toBe('none');
+  }, 180_000);
+
+  it.each([
+    ['sin extremos', {}, 0],
+    ['flecha en los dos extremos', { capStart: 'arrow', capEnd: 'arrow' }, 2],
+    ['círculo y rombo', { capStart: 'circle', capEnd: 'diamond' }, 2],
+    ['cuadrado al final', { capEnd: 'square' }, 1],
+  ] as const)('la línea %s se dibuja en el PDF con sus extremos y gira con el volteo', async (_n, caps, paths) => {
+    const { el } = await generated(shape({ kind: 'line', fill: '#112233', bw: 4, h: 2, rot: 10, ...caps }));
+    expect(el.isSvg).toBe(true);
+    expect(el.svgPaths).toBe(paths);
+    expect(el.h).toBeLessThan(40);
+  }, 120_000);
+
+  it.each([
+    [{ flipH: true }, true],
+    [{ flipV: true }, true],
+    [{ flipH: true, flipV: true }, false],
+    [{}, false],
+  ] as const)('el volteo %j se mide en el PDF, también con giro', async (flip, negativeDet) => {
+    const { el } = await generated(shape({ kind: 'arrow', rot: 20, ...flip }));
+    expect(el.flipDet < 0).toBe(negativeDet);
+  }, 120_000);
+
+  it('una imagen volteada y girada coincide con su documento', async () => {
+    const { el } = await generated({ ...draftImage({ x: 20, y: 40, w: 30, h: 15, rot: 15 }), id: 'f13', flipH: true } as PageElement);
+    expect(el.flipDet).toBeLessThan(0);
+  }, 120_000);
+
+  it.each([
+    ['imagen', { ...draftImage({ x: 20, y: 40, w: 30, h: 15 }), id: 'f13', href: 'https://example.com/imagen' }],
+    ['texto', { ...draftText({ text: 'Pídelo aquí', x: 20, y: 40, w: 50, h: 8 }), id: 'f13', href: 'https://example.com/texto' }],
+    ['forma', shape({ href: 'https://example.com/forma' })],
+  ] as const)('el enlace de un(a) %s es clicable en el PDF y cubre toda su caja', async (_n, el) => {
+    const { r, el: m } = await generated(el as PageElement);
+    expect(m.href).toBe((el as { href: string }).href);
+    expect(Math.abs(m.linkSize!.w - m.w)).toBeLessThanOrEqual(1);
+    expect(Math.abs(m.linkSize!.h - m.h)).toBeLessThanOrEqual(1);
+    expect(pdfText(r)).toContain(`/URI (${(el as { href: string }).href})`);
+  }, 120_000);
+
+  it('sin enlace el PDF de la plantilla no trae anotaciones de enlace nuevas', async () => {
+    const { r, el } = await generated(shape({ kind: 'star' }));
+    expect(el.href).toBeNull();
+    expect(pdfText(r)).not.toContain('example.com');
   }, 120_000);
 });
